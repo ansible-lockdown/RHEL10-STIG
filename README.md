@@ -239,12 +239,11 @@ molecule verify -s ubi
 
 local testing uses:
 
-- ansible-core
-- molecule 4.0.1
-- molecule-docker 2.0.0
-- molecule-podman 2.0.2
-- molecule-vagrant 1.0.0
-- molecule-azure 0.5.0
+- ansible-core >= 2.19
+- molecule >= 25.0
+- molecule-plugins[docker]
+- docker
+- passlib
 
 ## Credits and Thanks
 
