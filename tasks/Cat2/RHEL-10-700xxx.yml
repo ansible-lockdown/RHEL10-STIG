@@ -425,14 +425,14 @@
   loop_control:
     label: "{{ item.device }}"
 
-- name: "MEDIUM | RHEL-10-700160 | PATCH | RHEL 10 must mount /var with the nosuid option."
+- name: "MEDIUM | RHEL-10-700160 | PATCH | RHEL 10 must mount /tmp with the nosuid option."
   when:
     - rhel10stig_700160
-    - item.mount == '/var'
+    - item.mount == '/tmp'
     - "'nosuid' not in item.options"
   notify:
     - Systemd daemon reload
-    - Remount var
+    - Remount tmp
   tags:
     - RHEL-10-700160
     - CAT2
@@ -442,10 +442,10 @@
     - V-281240
     - NIST800-53R4_CM-7
   ansible.posix.mount:
-    path: /var/log
+    path: /tmp
     src: "{{ item.device }}"
     fstype: "{{ item.fstype }}"
-    opts: "{{ item.options }}{% if discovered_var_nodev.changed and 'nodev' not in item.options %},nodev{% endif %}{% if discovered_var_noexec.changed and 'noexec' not in item.options %},noexec{% endif %},nosuid"
+    opts: "{{ item.options }}{% if discovered_tmp_nodev.changed and 'nodev' not in item.options %},nodev{% endif %}{% if discovered_tmp_noexec.changed and 'noexec' not in item.options %},noexec{% endif %},nosuid"
     state: present
   loop: "{{ ansible_facts['mounts'] }}"
   loop_control:
