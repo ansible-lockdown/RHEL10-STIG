@@ -4,8 +4,8 @@
   when: not skip_os_check
   tags: always
   ansible.builtin.assert:
-    that: (ansible_distribution != 'CentOS' and ansible_os_family == 'RedHat' or ansible_os_family == "Rocky") and ansible_distribution_major_version is version_compare('10',
-      '==')
+    that: (ansible_facts['distribution'] != 'CentOS' and ansible_facts['os_family'] == 'RedHat' or ansible_facts['os_family'] == "Rocky") and ansible_facts['distribution_major_version']
+      is version_compare('10', '==')
     fail_msg: This role can only be run against RHEL/Rocky 10 families. {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_major_version'] }} is not supported.
     success_msg: This role is running against a supported OS {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_major_version'] }}
 
@@ -19,7 +19,7 @@
 - name: Setup rules if container
   when:
     - ansible_connection == 'docker' or
-      ansible_virtualization_type in ["docker", "lxc", "openvz", "podman", "container"]
+      ansible_facts['virtualization_type'] in ["docker", "lxc", "openvz", "podman", "container"]
   tags:
     - container_discovery
     - always
@@ -69,7 +69,7 @@
 - name: Include OS specific variables
   tags: always
   ansible.builtin.include_vars:
-    file: "{{ ansible_distribution }}.yml"
+    file: "{{ ansible_facts['distribution'] }}.yml"
 
 - name: Check rhel10stig_bootloader_password_hash variable has been changed
   tags: grub
@@ -160,7 +160,7 @@
   when:
     - create_benchmark_facts
     - (post_audit_summary is defined) or
-      (ansible_local['compliance_facts']['lockdown_audit_details']['audit_summary'] is undefined and post_audit_summary is undefined)
+      (ansible_facts['local']['compliance_facts']['lockdown_audit_details']['audit_summary'] is undefined and post_audit_summary is undefined)
   tags:
     - always
     - benchmark

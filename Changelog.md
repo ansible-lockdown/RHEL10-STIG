@@ -1,5 +1,12 @@
 # RHEL10STIG
 
+## Based on STIG V1R1 - 2026 August - Fact access moved to ansible_facts for ansible-core 2.24
+
+- the role read facts through the injected top-level names (`ansible_distribution`, `ansible_os_family`, `ansible_distribution_major_version`, `ansible_virtualization_type`, `ansible_mounts`, `ansible_local`, `ansible_default_ipv4`). `INJECT_FACTS_AS_VARS` defaulting to `true` is deprecated and the behaviour is removed in ansible-core 2.24, at which point each of those names becomes undefined. Ten references across seven lines now use `ansible_facts['<name>']` in `tasks/main.yml`, `tasks/prelim.yml`, `defaults/main.yml` and `vars/main.yml`
+- `tasks/main.yml` was already half-converted: the assert messages used `ansible_facts['distribution']` while the `that:` expression on the same task still used the injected names. The expression, the OS-vars include, the container `when:` and the local-facts lookup are now consistent with the messages
+- deliberately left alone, because they are not facts and have no `ansible_facts` equivalent: `ansible_version` (magic variable), `ansible_connection` (connection variable), `ansible_user` and `ansible_become` (connection variables), `ansible_run_tags` (magic variable) and `ansible_facts_path` (this role's own default variable, despite the name). The deprecation warning cites the line holding `ansible_connection`, but that is only where the `when:` expression starts - the fact reference on the following line was the trigger. Converting `ansible_connection` would have silently disabled container detection
+- verified by parsing the reflowed `that:` scalar back out of the YAML and comparing it to the intended expression, rather than by reading the diff, since the folded plain scalar carries a mix of single and double quotes. `ansible-playbook --syntax-check` exits 0 and `ansible-lint` reports no new findings
+
 ## Based on STIG V1R1 - 2026 August - RHEL-10-700160 corrected to /tmp nosuid
 
 - RHEL-10-700160 carries `SV-281240r1166672_rule`, which V1R1 defines as mounting `/tmp` with the `nosuid` option, but the task was written against `/var`. The title, the `item.mount` condition, the `notify` handler and the `path` have all been corrected to `/tmp`. No coverage is lost: `/var` with `nodev` is `SV-281241` and is handled by RHEL-10-700165, and no rule in V1R1 asks for `/var` with `nosuid`. The change closes a real gap, since `/tmp` was receiving `nodev` from RHEL-10-700150 and `noexec` from RHEL-10-700155 but never `nosuid`
