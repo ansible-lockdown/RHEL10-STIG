@@ -1,0 +1,56 @@
+---
+
+- name: Converge - apply RHEL 10 STIG remediation on UBI 10
+  hosts: all
+  any_errors_fatal: true
+  vars:
+    setup_audit: true
+    run_audit: true
+    # audit_git_version intentionally omitted: vars/audit.yml derives it from
+    # benchmark_version via include_vars (which outranks play/host vars), so a
+    # value here is inert. Pin a QA branch at run time with:
+    #   molecule converge -s ubi -- --extra-vars 'audit_git_version=<branch>'
+    system_is_container: true
+    skip_reboot: true
+    rhel10stig_disruption_high: true
+    # The minimal UBI image has no full RHEL repos, so these packages are not
+    # installable (aide, firewalld, chrony, audit). Disable the controls that
+    # install them so this scenario runs green on what UBI actually supports.
+    # (The default rockylinux:10-ubi-init scenario exercises all of them.)
+    # NOTE: these are play vars because converge.yml play vars override the
+    # molecule.yml inventory host_vars in Ansible precedence.
+    rhel10stig_use_aide: false          # aide
+    rhel10stig_auditd_required: false   # audit, audit-rules, audispd-plugins
+    rhel10stig_200520: false            # s-nail
+    rhel10stig_200530: false            # firewalld
+    rhel10stig_200540: false            # chrony (install)
+    rhel10stig_200541: false            # chronyd (service enable)
+    rhel10stig_200542: false            # chrony config (/etc/chrony.conf)
+    rhel10stig_200543: false            # chrony config (/etc/chrony.conf)
+    rhel10stig_800040: false            # chrony config (/etc/chrony.conf)
+    rhel10stig_200560: false            # usbguard (install)
+    rhel10stig_200561: false            # usbguard (service enable)
+    rhel10stig_200562: false            # usbguard (list/generate-policy)
+    rhel10stig_200563: false            # usbguard (audit logging)
+    rhel10stig_200600: false            # fapolicyd (install)
+    rhel10stig_200602: false            # fapolicyd (service)
+    rhel10stig_200620: false            # opensc (install)
+    rhel10stig_200621: false            # opensc (config)
+    rhel10stig_200650: false            # rsyslog-gnutls
+    rhel10stig_200660: false            # audit
+    rhel10stig_200680: false            # libreswan
+    rhel10stig_200730: false            # pkcs11-provider
+    rhel10stig_700400: false            # SELinux config (/etc/selinux/config absent on UBI)
+    rhel10stig_700420: false            # SELinux config (/etc/selinux/config absent on UBI)
+    rhel10stig_700430: false            # policycoreutils-python3
+    # UBI lacks a fully-initialized crypto-policies subsystem (no state/CURRENT.pol;
+    # `update-crypto-policies --check` errors), so these crypto-policy controls cannot run here.
+    rhel10stig_300010: false
+    rhel10stig_300090: false
+  pre_tasks:
+    - name: Set root password so PAM rules do not lock us out
+      ansible.builtin.user:
+        name: root
+        password: "{{ 'changeme123!' | password_hash('sha512') }}"
+  roles:
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"

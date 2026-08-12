@@ -1,0 +1,8 @@
+{{ file_managed_by_ansible }}
+
+# RHEL 10 STIG DConf Config for STIG
+{% if rhel10stig_700020 %}
+# RHEL-10-700020 | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a graphical user login.
+[org/gnome/login-screen]
+banner-message-text='{{ rhel10stig_logon_banner }}'
+{% endif %}

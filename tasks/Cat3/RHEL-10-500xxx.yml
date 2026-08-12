@@ -1,0 +1,38 @@
+---
+
+- name: "LOW | RHEL-10-500100 | AUDIT | RHEL 10 must allocate audit record storage capacity to store at least one week's worth of audit records."
+  when:
+    - rhel10stig_500100
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500100
+    - CAT3
+    - CCI-001849
+    - CCI-001851
+    - SRG-OS-000341-GPOS-00132
+    - SRG-OS-000342-GPOS-00133
+    - SV-281106r1166270_rule
+    - V-281106
+    - NIST800-53R4_AU-4
+    - auditd
+  block:
+    - name: "LOW | RHEL-10-500100 | AUDIT | RHEL 10 must allocate audit record storage capacity to store at least one week's worth of audit records."
+      ansible.builtin.set_fact:
+        audit_filesystem_space_left: "{{ (audit_mount.size_available / 1024 / 1024) | int }}"
+      vars:
+        audit_mount: "{{ ansible_facts['mounts'] | selectattr('mount', 'equalto', rhel10stig_audit_log_filesystem) | list | first }}"
+
+    - name: "LOW | RHEL-10-500100 | WARN | RHEL 10 must allocate audit record storage capacity to store at least one week's worth of audit records."
+      ansible.builtin.debug:
+        msg:
+          - "WARNING!! Below is the path and size of the partition for the audit logs."
+          - "Please make sure there is enough disk space for 1 week of logs"
+          - "Mount: {{ rhel10stig_audit_log_filesystem }}"
+          - "Logfile: {{ prelim_auditd_logfile_path.stdout }}"
+          - "Disk Space remaining: {{ audit_filesystem_space_left }}MB"
+
+    - name: "MEDIUM | RHEL-10-500100 | WARN | RHEL 10 must allocate audit record storage capacity to store at least one week's worth of audit records."
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-500100"

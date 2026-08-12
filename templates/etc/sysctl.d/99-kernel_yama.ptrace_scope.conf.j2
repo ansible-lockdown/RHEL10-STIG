@@ -1,0 +1,4 @@
+{{ file_managed_by_ansible }}
+
+# RHEL-10-701140 | RHEL 10 must restrict usage of ptrace to descendant processes.
+kernel.yama.ptrace_scope = 1

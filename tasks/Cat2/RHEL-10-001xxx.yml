@@ -1,0 +1,49 @@
+---
+
+- name: "MEDIUM | RHEL-10-001020 | PATCH | RHEL 10 must ensure cryptographic verification of vendor software packages."
+  when: rhel10stig_001020
+  tags:
+    - RHEL-10-001020
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000366-GPOS-00153
+    - SV-280931r1197213_rule
+    - V-280931
+    - NIST800-NA
+  block:
+    - name: "MEDIUM | RHEL-10-001020 | AUDIT | RHEL 10 must ensure cryptographic verification of vendor software packages. | find keys"
+      ansible.builtin.shell: |
+        set -o pipefail
+        rpm -qa | grep {{ os_gpg_key_pubkey_name }}
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_os_installed_pub_keys
+
+    - name: "MEDIUM | RHEL-10-001020 | AUDIT | RHEL 10 must ensure cryptographic verification of vendor software packages. | query keys"
+      when: discovered_os_installed_pub_keys.rc == 0
+      ansible.builtin.shell: |
+        set -o pipefail
+        rpm -q --queryformat "%{PACKAGER} %{VERSION}\\n" {{ os_gpg_key_pubkey_name }} | grep "{{ os_gpg_key_pubkey_content }}"
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_os_gpg_key_check
+
+    - name: "MEDIUM | RHEL-10-001020 | WARN | RHEL 10 must ensure cryptographic verification of vendor software packages. | Warning"
+      when:
+        - discovered_os_installed_pub_keys.rc == 1 or
+          discovered_os_gpg_key_check.rc == 1
+      ansible.builtin.debug:
+        msg: "Warning!! Installed GPG Keys do not meet expected values or expected keys are not installed"
+
+    - name: "MEDIUM | RHEL-10-001020 | WARN | RHEL 10 must ensure cryptographic verification of vendor software packages. | Warning"
+      when:
+        - discovered_os_installed_pub_keys.rc == 1 or
+          discovered_os_gpg_key_check.rc == 1
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-001020"

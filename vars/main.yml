@@ -1,0 +1,45 @@
+---
+# vars file for RHEL10-STIG
+
+min_ansible_version: 2.16.1
+
+rhel10stig_min_supported_os_ver: 10.0
+
+# Set dynamically if discovered to be non UEFI boot
+rhel10stig_legacy_boot: false
+
+# tweak role to run in a non-privileged container (default value)- dynamically discovered in tasks/main.yml
+system_is_container: false
+
+# Note this can change how some of the ansible.builtin.shell tasks work and may require adjustments to args.executable for those tasks
+# Used mainly for overriding to use a more POSIX compliant shell such as dash or ash when running in a container environment
+rhel10stig_shell_executable: /bin/bash
+
+# Used to control warning summary
+warn_control_list: ""
+warn_count: 0
+
+gpg_key_package: "{{ ansible_distribution | lower }}-gpg-keys"
+
+# Default for facts
+change_requires_reboot: false
+update_audit_template: false
+
+# Default for crypto policy needs install
+crypto_policy_needs_install: false
+
+# RHEL-10-215105 - set default value
+combined_crypto_policy_config: FIPS
+
+# dod_ciphers:
+#   - aes256-gcm@openssh.com
+#   - aes256-ctr
+#   - aes128-gcm@openssh.com
+#   - aes128-ctr
+
+company_title: 'MindPoint Group - A Tyto Athene Company'
+
+file_managed_by_ansible: |-
+  # File managed by ansible as part of {{ benchmark }} benchmark
+  # As part of Ansible-lockdown
+  # Provided by {{ company_title }}

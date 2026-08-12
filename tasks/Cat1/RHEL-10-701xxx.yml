@@ -1,0 +1,19 @@
+---
+
+- name: "HIGH | RHEL-10-701050 | PATCH | RHEL 10 must prevent the loading of a new kernel for later execution."
+  when: rhel10stig_701050
+  tags:
+    - RHEL-10-701050
+    - CAT1
+    - CCI-NA
+    - SRG-OS-000366-GPOS-00153
+    - SV-281307r1184629_rule
+    - V-281307
+    - NIST800-53R4_NA
+  ansible.builtin.template:
+    src: etc/sysctl.d/99-kernel_kexec_load_disabled.conf.j2
+    dest: "/etc/sysctl.d/99-kernel_kexec_load_disabled.conf"
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl

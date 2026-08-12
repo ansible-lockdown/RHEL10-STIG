@@ -1,0 +1,39 @@
+---
+
+- name: "MEDIUM | RHEL-10-900000 | PATCH | RHEL 10 must enforce mode 0640 or less for the /etc/audit/auditd.conf file to prevent unauthorized access."
+  when:
+    - rhel10stig_900000
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-900000
+    - CAT2
+    - CCI-000171
+    - SRG-OS-000063-GPOS-00032
+    - SV-281364r1167242_rule
+    - V-281364
+    - NIST800-53R4_AU-12
+    - auditd
+  ansible.builtin.file:
+    path: /etc/audit/auditd.conf
+    mode: 'u-x,g-wx,o-rwx'
+
+- name: "MEDIUM | RHEL-10-900100 | PATCH | RHEL 10 must prevent unauthorized changes to the audit system."
+  when:
+    - rhel10stig_900100
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-900100
+    - CAT2
+    - CCI-000162
+    - CCI-000163
+    - CCI-000164
+    - CCI-000172
+    - SRG-OS-000057-GPOS-00027
+    - SRG-OS-000058-GPOS-00028
+    - SRG-OS-000059-GPOS-00029
+    - SV-281365r1167245_rule
+    - V-281365
+    - NIST800-53R4_AU-9
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true

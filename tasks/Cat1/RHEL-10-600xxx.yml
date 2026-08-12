@@ -1,0 +1,175 @@
+---
+
+- name: "HIGH | RHEL-10-600560 | PATCH | RHEL 10 must require users to provide a password for privilege escalation"
+  when:
+    - rhel10stig_600560
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600560
+    - CAT1
+    - CCI-002038
+    - SRG-OS-000373-GPOS-00156
+    - SRG-OS-000373-GPOS-00157
+    - SRG-OS-000373-GPOS-00158
+    - SV-281211r1166585_rule
+    - V-281211
+    - NIST800-53R4_IA-11
+  block:
+    - name: "HIGH | RHEL-10-600560 | AUDIT | RHEL 10 must require users to provide a password for privilege escalation"
+      ansible.builtin.find:
+        paths: prelim_sudoers_files.stdout_lines
+        patterns: "NOPASSWD"
+        recurse: true
+      changed_when: false
+      failed_when: false
+      register: discovered_sudoers_nopasswd_config
+
+    - name: "HIGH | RHEL-10-600560 | PATCH | RHEL 10 must require users to provide a password for privilege escalation"
+      when:
+        - discovered_sudoers_nopasswd_config.files | length > 0
+        - rhel10stig_disruption_high
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: '^((?!#|{% for name in rhel10stig_sudoers_exclude_nopasswd_list %}{{ name }}{% if not loop.last -%}|{%- endif -%}{% endfor %}).*)NOPASSWD(.*)'
+        replace: '\1PASSWD\2'
+        validate: '/usr/sbin/visudo -cf %s'
+      loop: "{{ discovered_sudoers_nopasswd_config.files }}"
+
+    - name: "HIGH | RHEL-10-600560 | AUDIT | RHEL 10 must require users to provide a password for privilege escalation | Warning message"
+      when:
+        - discovered_sudoers_nopasswd_config.files | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.debug:
+        msg: "Warning!! You have sudo commands that require NO Password Please Investigate"
+
+    - name: "HIGH | RHEL-10-600560 | AUDIT | RHEL 10 must require users to provide a password for privilege escalation | Add warning count"
+      when:
+        - discovered_sudoers_nopasswd_config.files | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-600560"
+
+- name: HIGH | RHEL-10-600640 | PATCH | RHEL 10 must enable the Pluggable Authentication Module (PAM) interface for SSHD.
+  when:
+    - rhel10stig_600640
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-600640
+    - CAT1
+    - CCI-000877
+    - SRG-OS-000125-GPOS-00065
+    - SV-281216r1166600_rule
+    - V-281216
+    - NIST800-53R4_MA-4
+    - ssh
+    - pam
+  ansible.builtin.lineinfile:
+    path: "{{ rhel10stig_sshd_config_file }}"
+    regexp: (?i)^(#?)usepam
+    line: UsePAM yes
+    validate: sshd -t -f %s
+  notify: Restart sshd service
+
+- name: "HIGH | RHEL-10-600730 | PATCH | RHEL 10 must employ FIPS 140-3 approved cryptographic hashing algorithms for all stored passwords."
+  when:
+    - rhel10stig_600730
+    - not skip_fips_mode
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600730
+    - CAT1
+    - CCI-000803
+    - SRG-OS-000073-GPOS-00041
+    - SRG-OS-000120-GPOS-00061
+    - SV-281221r1166615_rule
+    - V-281221
+    - NIST800-53R4_IA-7
+    - fips
+    - users
+    - encryption
+  block:
+    - name: "HIGH | RHEL-10-600730 | AUDIT | RHEL 10 must employ FIPS 140-3 approved cryptographic hashing algorithms for all stored passwords. | Get user accounts not using FIPS 140-2 hashing"
+      ansible.builtin.shell: |
+        set -o pipefail
+        cat /etc/shadow | grep -v "*" | grep -v "!" | grep -v '$6$' | cut -d':' -f1
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_non_fips_hashed_accounts
+
+    - name: "HIGH | RHEL-10-600730 | PATCH | RHEL 10 must employ FIPS 140-3 approved cryptographic hashing algorithms for all stored passwords. | Lock user not using FIPS 140-3 hashing"
+      when:
+        - discovered_non_fips_hashed_accounts.stdout | length > 0
+        - rhel10stig_disruption_high
+        - "'root' not in item"
+        - ansible_facts['env']['SUDO_USER'] not in item
+      ansible.builtin.command: "passwd -l {{ item }}"
+      changed_when: true
+      loop: "{{ discovered_non_fips_hashed_accounts.stdout_lines }}"
+      register: discovered_non_fips_hashed_accounts_locked
+
+    - name: "HIGH | RHEL-10-600730 | AUDIT | RHEL 10 must employ FIPS 140-3 approved cryptographic hashing algorithms for all stored passwords. | Message out user accounts"
+      when:
+        - prelim_current_fips_enabled.stdout == '1'
+        - discovered_non_fips_hashed_accounts.stdout | length > 0
+        - discovered_non_fips_hashed_accounts_locked is not defined
+      ansible.builtin.debug:
+        msg:
+          - "WARNING!! The following accounts do not have FIPS 140-3 hashing. Please review the accounts and correct to conform to control 600730 of the RHEL10 STIG"
+          - "{{ discovered_non_fips_hashed_accounts.stdout_lines }}"
+
+    - name: "HIGH | RHEL-10-600730 | AUDIT | RHEL 10 must employ FIPS 140-3 approved cryptographic hashing algorithms for all stored passwords. | Message out user accounts"
+      when: prelim_current_fips_enabled.stdout != '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! FIPS mode is not enabled. A new installation is required to enable FIPS mode."
+
+    - name: "HIGH | RHEL-10-600730 | AUDIT | RHEL 10 must employ FIPS 140-3 approved cryptographic hashing algorithms for all stored passwords. | Message out user accounts"
+      when:
+        - discovered_non_fips_hashed_accounts.stdout | length > 0
+        - discovered_non_fips_hashed_accounts_locked is not defined
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-600730"
+
+- name: "HIGH | RHEL-10-600740 | PATCH | RHEL 10 must be configured to use the shadow file to store only encrypted representations of passwords."
+  when:
+    - rhel10stig_600740
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600740
+    - CAT1
+    - CCI-NA
+    - SRG-OS-000073-GPOS-00041
+    - SV-281222r1166622_rule
+    - V-281222
+    - NIST800-NA
+    - encryption
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: (?i)^\s*ENCRYPT_METHOD
+    line: ENCRYPT_METHOD SHA512
+    backrefs: true
+
+- name: "HIGH | RHEL-10-600750 | PATCH | RHEL 10 must be configured so that user and group account administration utilities are configured to store only encrypted representations of passwords."
+  when:
+    - rhel10stig_600750
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600750
+    - CAT1
+    - CCI-NA
+    - SRG-OS-000073-GPOS-00041
+    - SV-281223r1166621_rule
+    - V-281223
+    - NIST800-NA
+    - encryption
+  community.general.ini_file:
+    path: /etc/libuser.conf
+    option: crypt_style
+    section: 'defaults'
+    value: 'sha512'
+    mode: 'u-x,go-wx'

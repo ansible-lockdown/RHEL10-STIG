@@ -1,0 +1,283 @@
+{{ file_managed_by_ansible }}
+
+{% if rhel10stig_500300 %}
+# RHEL10-STIG rule 500300
+{% set syscalls = ["execve"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -C uid!=euid -F euid=0 -k execpriv
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -C uid!=euid -F euid=0 -k execpriv
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -C gid!=egid -F egid=0 -k execpriv
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -C gid!=egid -F egid=0 -k execpriv
+{% endif %}
+{% if rhel10stig_500310 %}
+# RHEL10-STIG rule 500310
+{% set syscalls = ["setxattr","fsetxattr","lsetxattr","removexattr","fremovexattr","lremovexattr"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid=0 -k perm_mod
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid=0 -k perm_mod
+{% endif %}
+{% if rhel10stig_500320 %}
+# RHEL10-STIG rule 500320
+-a always,exit -F arch=b32 -F path=/usr/bin/umount -F perm=x -F auid>=1000 -F auid!=unset -k privileged-mount
+-a always,exit -F arch=b64 -F path=/usr/bin/umount -F perm=x -F auid>=1000 -F auid!=unset -k privileged-mount
+{% endif %}
+{% if rhel10stig_500330 %}
+# RHEL10-STIG rule 500330
+-a always,exit -F arch=b32 -F path=/usr/bin/chacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -F path=/usr/bin/chacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+{% endif %}
+{% if rhel10stig_500340 %}
+# RHEL10-STIG rule 500340
+-a always,exit -F arch=b32 -F path=/usr/bin/setfacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -F path=/usr/bin/setfacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+{% endif %}
+{% if rhel10stig_500350 %}
+# RHEL10-STIG rule 500350
+-a always,exit -F arch=b32 -F path=/usr/bin/chcon -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -F path=/usr/bin/chcon -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod
+{% endif %}
+{% if rhel10stig_500360 %}
+# RHEL10-STIG rule 500360
+-a always,exit -F arch=b32 -F path=/usr/sbin/semanage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/semanage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500370 %}
+# RHEL10-STIG rule 500370
+-a always,exit -F arch=b32 -F path=/usr/sbin/setfiles -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/setfiles -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500380 %}
+# RHEL10-STIG rule 500380
+-a always,exit -F arch=b32 -F path=/usr/sbin/setsebool -F perm=x -F auid>=1000 -F auid!=unset -F key=privileged
+-a always,exit -F arch=b64 -F path=/usr/sbin/setsebool -F perm=x -F auid>=1000 -F auid!=unset -F key=privileged
+{% endif %}
+{% if rhel10stig_500390 %}
+# RHEL10-STIG rule 500390
+{% set syscalls = ["truncate","ftruncate","creat","open","openat","open_by_handle_at"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F exit=-EPERM -F auid>=1000 -F auid!=unset -k perm_access
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F exit=-EPERM -F auid>=1000 -F auid!=unset -k perm_access
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -k perm_access
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F exit=-EACCES -F auid>=1000 -F auid!=unset -k perm_access
+{% endif %}
+{% if rhel10stig_500400 %}
+# RHEL10-STIG rule 500400
+{% set syscalls = ["delete_module"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k module_chng
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k module_chng
+{% endif %}
+{% if rhel10stig_500410 %}
+# RHEL10-STIG rule 500410
+{% set syscalls = ["init_module","finit_module"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k module_chng
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k module_chng
+{% endif %}
+{% if rhel10stig_500420 %}
+# RHEL10-STIG rule 500420
+-a always,exit -F arch=b32 -F path=/usr/bin/chage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-chage
+-a always,exit -F arch=b64 -F path=/usr/bin/chage -F perm=x -F auid>=1000 -F auid!=unset -k privileged-chage
+{% endif %}
+{% if rhel10stig_500430 %}
+# RHEL10-STIG rule 500430
+-a always,exit -F arch=b32 -F path=/usr/bin/chsh -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+-a always,exit -F arch=b64 -F path=/usr/bin/chsh -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+{% endif %}
+{% if rhel10stig_500440 %}
+# RHEL10-STIG rule 500440
+-a always,exit -F arch=b32 -F path=/usr/bin/crontab -F perm=x -F auid>=1000 -F auid!=unset -k privileged-crontab
+-a always,exit -F arch=b64 -F path=/usr/bin/crontab -F perm=x -F auid>=1000 -F auid!=unset -k privileged-crontab
+{% endif %}
+{% if rhel10stig_500450 %}
+# RHEL10-STIG rule 500450
+-a always,exit -F arch=b32 -F path=/usr/bin/gpasswd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-gpasswd
+-a always,exit -F arch=b64 -F path=/usr/bin/gpasswd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-gpasswd
+{% endif %}
+{% if rhel10stig_500460 %}
+# RHEL10-STIG rule 500460
+-a always,exit -F arch=b32 -F path=/usr/bin/kmod -F perm=x -F auid>=1000 -F auid!=unset -k modules
+-a always,exit -F arch=b64 -F path=/usr/bin/kmod -F perm=x -F auid>=1000 -F auid!=unset -k modules
+{% endif %}
+{% if rhel10stig_500470 %}
+# RHEL10-STIG rule 500470
+-a always,exit -F arch=b32 -F path=/usr/bin/newgrp -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+-a always,exit -F arch=b64 -F path=/usr/bin/newgrp -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+{% endif %}
+{% if rhel10stig_500480 %}
+# RHEL10-STIG rule 500480
+-a always,exit -F arch=b32 -F path=/usr/sbin/pam_timestamp_check -F perm=x -F auid>=1000 -F auid!=unset -k privileged-pam_timestamp_check
+-a always,exit -F arch=b64 -F path=/usr/sbin/pam_timestamp_check -F perm=x -F auid>=1000 -F auid!=unset -k privileged-pam_timestamp_check
+{% endif %}
+{% if rhel10stig_500490 %}
+# RHEL10-STIG rule 500490
+-a always,exit -F arch=b32 -F path=/usr/bin/passwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-passwd
+-a always,exit -F arch=b64 -F path=/usr/bin/passwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-passwd
+{% endif %}
+{% if rhel10stig_500500 %}
+# RHEL10-STIG rule 500500
+-a always,exit -F arch=b32 -F path=/usr/sbin/postdrop -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/postdrop -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500510 %}
+# RHEL10-STIG rule 500510
+-a always,exit -F arch=b32 -F path=/usr/sbin/postqueue -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/postqueue -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500520 %}
+# RHEL10-STIG rule 500520
+-a always,exit -F arch=b32 -F path=/usr/bin/ssh-agent -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+-a always,exit -F arch=b64 -F path=/usr/bin/ssh-agent -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+{% endif %}
+{% if rhel10stig_500530 %}
+# RHEL10-STIG rule 500530
+-a always,exit -F arch=b32 -F path=/usr/libexec/openssh/ssh-keysign -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+-a always,exit -F arch=b64 -F path=/usr/libexec/openssh/ssh-keysign -F perm=x -F auid>=1000 -F auid!=unset -k privileged-ssh
+{% endif %}
+{% if rhel10stig_500540 %}
+# RHEL10-STIG rule 500540
+-a always,exit -F arch=b32 -F path=/usr/bin/su -F perm=x -F auid>=1000 -F auid!=unset -k privileged-priv_change
+-a always,exit -F arch=b64 -F path=/usr/bin/su -F perm=x -F auid>=1000 -F auid!=unset -k privileged-priv_change
+{% endif %}
+{% if rhel10stig_500550 %}
+# RHEL10-STIG rule 500550
+-a always,exit -F arch=b32 -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+-a always,exit -F arch=b64 -F path=/usr/bin/sudo -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+{% endif %}
+{% if rhel10stig_500560 %}
+# RHEL10-STIG rule 500560
+-a always,exit -F arch=b32 -F path=/usr/bin/sudoedit -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+-a always,exit -F arch=b64 -F path=/usr/bin/sudoedit -F perm=x -F auid>=1000 -F auid!=unset -k priv_cmd
+{% endif %}
+{% if rhel10stig_500570 %}
+# RHEL10-STIG rule 500570
+-a always,exit -F arch=b32 -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/unix_chkpwd -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500580 %}
+# RHEL10-STIG rule 500580
+-a always,exit -F arch=b32 -F path=/usr/sbin/unix_update -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/unix_update -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500590 %}
+# RHEL10-STIG rule 500590
+-a always,exit -F arch=b32 -F path=/usr/sbin/userhelper -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+-a always,exit -F arch=b64 -F path=/usr/sbin/userhelper -F perm=x -F auid>=1000 -F auid!=unset -k privileged-unix-update
+{% endif %}
+{% if rhel10stig_500600 %}
+# RHEL10-STIG rule 500600
+-a always,exit -F arch=b32 -F path=/usr/sbin/usermod -F perm=x -F auid>=1000 -F auid!=unset -k privileged-usermod
+-a always,exit -F arch=b64 -F path=/usr/sbin/usermod -F perm=x -F auid>=1000 -F auid!=unset -k privileged-usermod
+{% endif %}
+{% if rhel10stig_500610 %}
+# RHEL10-STIG rule 500610
+-a always,exit -F arch=b32 -S mount -F auid>=1000 -F auid!=unset -k export
+-a always,exit -F arch=b64 -S mount -F auid>=1000 -F auid!=unset -k export
+{% endif %}
+{% if rhel10stig_500620 %}
+# RHEL10-STIG rule 500620
+-a always,exit -F arch=b32 -F path=/usr/sbin/init -F perm=x -F auid>=1000 -F auid!=unset -k privileged-init
+-a always,exit -F arch=b64 -F path=/usr/sbin/init -F perm=x -F auid>=1000 -F auid!=unset -k privileged-init
+{% endif %}
+{% if rhel10stig_500630 %}
+# RHEL10-STIG rule 500630
+-a always,exit -F arch=b32 -F path=/usr/sbin/poweroff -F perm=x -F auid>=1000 -F auid!=unset -k privileged-poweroff
+-a always,exit -F arch=b64 -F path=/usr/sbin/poweroff -F perm=x -F auid>=1000 -F auid!=unset -k privileged-poweroff
+{% endif %}
+{% if rhel10stig_500640 %}
+# RHEL10-STIG rule 500640
+-a always,exit -F arch=b32 -F path=/usr/sbin/reboot -F perm=x -F auid>=1000 -F auid!=unset -k privileged-reboot
+-a always,exit -F arch=b64 -F path=/usr/sbin/reboot -F perm=x -F auid>=1000 -F auid!=unset -k privileged-reboot
+{% endif %}
+{% if rhel10stig_500650 %}
+# RHEL10-STIG rule 500650
+-a always,exit -F arch=b32 -F path=/usr/sbin/shutdown -F perm=x -F auid>=1000 -F auid!=unset -k privileged-shutdown
+-a always,exit -F arch=b64 -F path=/usr/sbin/shutdown -F perm=x -F auid>=1000 -F auid!=unset -k privileged-shutdown
+{% endif %}
+{% if rhel10stig_500660 %}
+# RHEL10-STIG rule 500660
+-a always,exit -F arch=b32 -S umount -F auid>=1000 -F auid!=unset -k privileged-umount
+{% endif %}
+{% if rhel10stig_500670 %}
+# RHEL10-STIG rule 500670
+{% set syscalls = ["umount2"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k privileged-umount
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k privileged-umount
+{% endif %}
+{% if rhel10stig_500680 %}
+# RHEL10-STIG rule 500680
+-a always,exit -F arch=b32 -F path=/etc/sudoers -F perm=wa -F key=logins
+-a always,exit -F arch=b64 -F path=/etc/sudoers -F perm=wa -F key=logins
+{% endif %}
+{% if rhel10stig_500690 %}
+# RHEL10-STIG rule 500690
+-a always,exit -F arch=b32 -F dir=/etc/sudoers.d/ -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F dir=/etc/sudoers.d/ -F perm=wa -F key=identity
+{% endif %}
+{% if rhel10stig_500700 %}
+# RHEL10-STIG rule 500700
+-a always,exit -F arch=b32 -F path=/etc/group -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/group -F perm=wa -F key=identity
+{% endif %}
+{% if rhel10stig_500710 %}
+# RHEL10-STIG rule 500710
+-a always,exit -F arch=b32 -F path=/etc/gshadow -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/gshadow -F perm=wa -F key=identity
+{% endif %}
+{% if rhel10stig_500720 %}
+# RHEL10-STIG rule 500720
+-a always,exit -F arch=b32 -F path=/etc/security/opasswd -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/security/opasswd -F perm=wa -F key=identity
+{% endif %}
+{% if rhel10stig_500730 %}
+# RHEL10-STIG rule 500730
+-a always,exit -F arch=b32 -F path=/etc/passwd -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/passwd -F perm=wa -F key=identity
+{% endif %}
+{% if rhel10stig_500740 %}
+# RHEL10-STIG rule 500740
+-a always,exit -F arch=b32 -F path=/etc/shadow -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/shadow -F perm=wa -F key=identity
+{% endif %}
+{% if rhel10stig_500750 %}
+# RHEL10-STIG rule 500750
+-a always,exit -F arch=b32 -F path=/var/log/faillock -F perm=wa -F key=logins
+-a always,exit -F arch=b64 -F path=/var/log/faillock -F perm=wa -F key=logins
+{% endif %}
+{% if rhel10stig_500760 %}
+# RHEL10-STIG rule 500760
+-a always,exit -F arch=b32 -F path=/var/log/lastlog -F perm=wa -F key=logins
+-a always,exit -F arch=b64 -F path=/var/log/lastlog -F perm=wa -F key=logins
+{% endif %}
+{% if rhel10stig_500780 %}
+# RHEL10-STIG rule 500780
+{% set syscalls = ["chmod","fchmod","fchmodat","fchmodat2"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+{% endif %}
+{% if rhel10stig_500790 %}
+# RHEL10-STIG rule 500790
+{% set syscalls = ["chown","fchown","fchownat","lchown"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+{% endif %}
+{% if rhel10stig_500810 %}
+# RHEL10-STIG rule 500810
+{% set syscalls = ["rename","unlink","rmdir","renameat","renameat2","unlinkat"] %}
+{% set arch_syscalls = syscalls | select("in", supported_syscalls) | list %}
+-a always,exit -F arch=b32 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+-a always,exit -F arch=b64 -S {{ arch_syscalls|join(',') }} -F auid>=1000 -F auid!=unset -k perm_mod
+{% endif %}
+{% if rhel10stig_900100 %}
+# RHEL10-STIG rule 900100
+#-e 2
+{% endif %}
+{% if rhel10stig_500035 %}
+# RHEL10-STIG rule 500035
+#-f 2
+{% endif %}

@@ -1,0 +1,1893 @@
+---
+
+- name: "MEDIUM | RHEL-10-500000 | PATCH | RHEL 10 must enable the systemd-journald service."
+  when: rhel10stig_500000
+  tags:
+    - RHEL-10-500000
+    - CAT2
+    - CCI-001665
+    - SRG-OS-000269-GPOS-00103
+    - SV-281096r1165643_rule
+    - V-281096
+    - NIST800-53R4_SC-24
+    - journald
+  notify: Systemd daemon reload
+  ansible.builtin.systemd:
+    name: systemd-journald
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-500005 | PATCH | RHEL 10 must enable auditing of processes that start prior to the audit daemon."
+  when:
+    - rhel10stig_500005
+    - rhel10stig_auditd_required
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-500005
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281097r1165646_rule
+    - V-281097
+    - NIST800-53R4_AC-3
+    - auditd
+  block:
+    - name: "MEDIUM | RHEL-10-500005 | PATCH | RHEL 10 must enable auditing of processes that start prior to the audit daemon."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep -v 'audit=1'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_audit_1.rc not in [ 0, 1 ]
+      register: discovered_grubby_audit_1
+
+    - name: "MEDIUM | RHEL-10-500005 | PATCH | RHEL 10 must enable auditing of processes that start prior to the audit daemon."
+      when: discovered_grubby_audit_1.stdout | length > 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="audit=1"
+      changed_when: true
+
+    - name: "MEDIUM | RHEL-10-500005 | PATCH | RHEL 10 must enable auditing of processes that start prior to the audit daemon."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub | cut -f2 -d'"' | grep "audit=1"
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_def_grub_audit_1.rc not in [ 0, 1 ]
+      register: discovered_def_grub_audit_1
+
+    - name: "MEDIUM | RHEL-10-500005 | PATCH | RHEL 10 must enable auditing of processes that start prior to the audit daemon."
+      when: discovered_def_grub_audit_1.rc != 0
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: ^(GRUB_CMDLINE_LINUX=")(.*)"
+        line: '\1\2 audit=1"'
+        backrefs: true
+
+- name: "MEDIUM | RHEL-10-500010 | PATCH | RHEL 10 audit system must audit local events."
+  when:
+    - rhel10stig_500010
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500010
+    - CAT2
+    - CCI-000169
+    - SRG-OS-000062-GPOS-00031
+    - SV-281098r1165649_rule
+    - V-281098
+    - NIST800-53R4_AU-12
+    - auditd
+  notify: Auditd checks
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*local_events\s*=
+    line: local_events = yes
+
+- name: "MEDIUM | RHEL-10-500015 | PATCH | RHEL 10 must write audit records to disk."
+  when:
+    - rhel10stig_500015
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500015
+    - CAT2
+    - CCI-000163
+    - SRG-OS-000058-GPOS-00028
+    - SV-281099r1165652_rule
+    - V-281099
+    - NIST800-53R4_AU-9
+    - auditd
+  notify: Auditd checks
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*write_logs\s*=
+    line: write_logs = yes
+
+- name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful logon attempts occur."
+  when:
+    - rhel10stig_500020
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-500020
+    - CAT2
+    - CCI-000044
+    - SRG-OS-000021-GPOS-00005
+    - SV-281100r1165655_rule
+    - V-281100
+    - NIST800-53R4_AC-7
+    - auditd
+  block:
+    - name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful logon attempts occur."
+      ansible.builtin.lineinfile:
+        path: /etc/security/faillock.conf
+        regexp: ^(#?)\s*audit\s*=
+        line: audit = yes
+
+    - name: "MEDIUM | RHEL-10-500020 | AUDIT | RHEL 10 must log username information when unsuccessful logon attempts occur."
+      ansible.builtin.shell: |
+        set -o pipefail
+        authselect current | grep with-faillock
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_authselect_faillock_state.rc not in [ 0, 1 ]
+      register: discovered_authselect_faillock_state
+
+    - name: "MEDIUM | RHEL-10-500020 | AUDIT | RHEL 10 must log username information when unsuccessful logon attempts occur."
+      ansible.builtin.debug:
+        msg: "discovered_authselect_faillock_state: {{ discovered_authselect_faillock_state }}"
+
+    - name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful logon attempts occur."
+      when: "'with-faillock' not in discovered_authselect_faillock_state.stdout"
+      ansible.builtin.command: authselect enable-feature with-faillock
+      changed_when: true
+      failed_when: discovered_authselect_faillock.rc not in [ 0, 1 ]
+      register: discovered_authselect_faillock
+
+- name: " MEDIUM | RHEL-10-500025 | PATCH | RHEL 10 must allow only the information system security manager (ISSM) (or individuals or roles appointed by the ISSM) to select which auditable events are to be audited."
+  when:
+    - rhel10stig_500025
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500025
+    - CAT2
+    - CCI-000171
+    - SRG-OS-000063-GPOS-00032
+    - SV-281101r1195411_rule
+    - V-281101
+    - NIST800-53R4_AU-12
+    - auditd
+  block:
+    - name: "MEDIUM | RHEL-10-500025 | PATCH | RHEL 10 must allow only the information system security manager (ISSM) (or individuals or roles appointed by the ISSM) to select which auditable events are to be audited."
+      ansible.builtin.find:
+        paths: /etc/audit/rules.d/
+        patterns: '*.rules'
+        file_type: file
+      changed_when: false
+      register: discovered_audit_rules_mode
+
+    - name: "MEDIUM | RHEL-10-500025 | PATCH | RHEL 10 must allow only the information system security manager (ISSM) (or individuals or roles appointed by the ISSM) to select which auditable events are to be audited."
+      when: discovered_audit_rules_mode.matched > 0
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: "{% if item.path == '/etc/audit/rules.d/audit.rules' %}u-x,go-rwx{% else %}u-x,g-wx,o-rwx{% endif %}"
+      loop: "{{ discovered_audit_rules_mode.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: "MEDIUM | RHEL-10-500025 | PATCH | RHEL 10 must allow only the information system security manager (ISSM) (or individuals or roles appointed by the ISSM) to select which auditable events are to be audited."
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: 'u-x,g-wx,o-rwx'
+      register: discovered_audit_rules_changed
+      failed_when: discovered_audit_rules_changed.state not in [ 'file', 'absent' ]
+      loop:
+        - { path: '/etc/audit/auditd.conf' }
+        - { path: '/etc/audit/audit.rules' }
+
+- name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an 'audit_backlog_limit' of sufficient size to capture processes that start prior to the audit daemon."
+  when:
+    - rhel10stig_500030
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500030
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-001464
+    - CCI-001849
+    - CCI-002884
+    - CCI-000172
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000254-GPOS-00095
+    - SRG-OS-000341-GPOS-00132
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281102r1166264_rule
+    - V-281102
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-4
+    - NIST800-53R4_AU-14
+    - NIST800-53R4_MA-4
+    - auditd
+  block:
+    - name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an 'audit_backlog_limit' of sufficient size to capture processes that start prior to the audit daemon."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep "audit_backlog_limit={{ rhel10stig_audit_backlog_limit }}"
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_audit_backlog_limit.rc not in [ 0, 1 ]
+      register: discovered_grubby_audit_backlog_limit
+
+    - name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an 'audit_backlog_limit' of sufficient size to capture processes that start prior to the audit daemon."
+      when: discovered_grubby_audit_backlog_limit.stdout | length == 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="audit_backlog_limit={{ rhel10stig_audit_backlog_limit }}"
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-500035 | PATCH | RHEL 10 must take appropriate action when a critical audit processing failure occurs."
+  when:
+    - rhel10stig_500035
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500035
+    - CAT2
+    - CCI-000139
+    - SRG-OS-000046-GPOS-00022
+    - SV-281103r1166261_rule
+    - V-281103
+    - NIST800-53R4_AU-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500040 | PATCH | RHEL 10 must take action when allocated audit record storage volume reaches 75 percent of the repository maximum audit record storage capacity."
+  when:
+    - rhel10stig_500040
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500040
+    - CAT2
+    - CCI-001855
+    - SRG-OS-000343-GPOS-00134
+    - SV-281104r1166264_rule
+    - V-281104
+    - NIST800-53R4_AU-5
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*space_left\s*=
+    line: space_left = {{ rhel10stig_audit_conf_space_left }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500045 | PATCH | RHEL 10 must label all offloaded audit logs before sending them to the central log server."
+  when:
+    - rhel10stig_500045
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500045
+    - CAT2
+    - CCI-000132
+    - SRG-OS-000039-GPOS-00017
+    - SV-281105r1166267_rule
+    - V-281105
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-4
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*name_format\s*=
+    line: name_format = {{ rhel10stig_audit_conf_name_format }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500105 | PATCH | RHEL 10 must take action when allocated audit record storage volume reaches 95 percent of the audit record storage capacity."
+  when:
+    - rhel10stig_500105
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500105
+    - CAT2
+    - CCI-001855
+    - SRG-OS-000343-GPOS-00134
+    - SV-281107r1166273_rule
+    - V-281107
+    - NIST800-53R4_AU-5
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*admin_space_left\s*=
+    line: admin_space_left = {{ rhel10stig_audit_conf_admin_space_left }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500110 | PATCH | RHEL 10 must take action when allocated audit record storage volume reaches 95 percent of the repository maximum audit record storage capacity."
+  when:
+    - rhel10stig_500110
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500110
+    - CAT2
+    - CCI-001855
+    - SRG-OS-000343-GPOS-00134
+    - SV-281108r1166276_rule
+    - V-281108
+    - NIST800-53R4_AU-5
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*admin_space_left_action\s*=
+    line: admin_space_left_action = {{ rhel10stig_audit_conf_admin_space_left_action }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500115 | PATCH | RHEL 10 must take appropriate action when the internal event queue is full."
+  when:
+    - rhel10stig_500115
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500115
+    - CAT2
+    - CCI-001851
+    - SRG-OS-000342-GPOS-00133
+    - SV-281109r1166279_rule
+    - V-281109
+    - NIST800-53R4_AU-4
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*overflow_action\s*=
+    line: overflow_action = {{ rhel10stig_audit_conf_overflow_action }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500120 | PATCH | RHEL 10 must produce audit records containing information to establish the identity of any individual or process associated with the event."
+  when:
+    - rhel10stig_500120
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500120
+    - CAT2
+    - CCI-001487
+    - SRG-OS-000255-GPOS-00096
+    - SV-281110r1166282_rule
+    - V-281110
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_CM-6
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*log_format\s*=
+    line: log_format = {{ rhel10stig_audit_conf_log_format }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500125 | PATCH | RHEL 10 must periodically flush audit records to disk to ensure that audit records are not lost."
+  when:
+    - rhel10stig_500125
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500125
+    - CAT2
+    - CCI-000154
+    - SRG-OS-000051-GPOS-00024
+    - SV-281111r1166285_rule
+    - V-281111
+    - NIST800-53R4_AU-6
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*freq\s*=
+    line: freq = {{ rhel10stig_audit_conf_freq }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500205 | PATCH | RHEL 10 must notify the system administrator (SA) and information system security officer (ISSO) (at a minimum) when allocated audit record storage volume 75 percent utilization."
+  when:
+    - rhel10stig_500205
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500205
+    - CAT2
+    - CCI-001855
+    - SRG-OS-000343-GPOS-00134
+    - SV-281112r1166288_rule
+    - V-281112
+    - NIST800-53R4_AU-5
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*space_left_action\s*=
+    line: space_left_action = {{ rhel10stig_audit_conf_space_left_action }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500210 | PATCH | RHEL 10 System Administrator (SA) and/or information system security officer (ISSO) (at a minimum) must be alerted of an audit processing failure event."
+  when:
+    - rhel10stig_500210
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500210
+    - CAT2
+    - CCI-000139
+    - CCI-001855
+    - SRG-OS-000046-GPOS-00022
+    - SRG-OS-000343-GPOS-00134
+    - SV-281113r1166294_rule
+    - V-281113
+    - NIST800-53R4_AU-4
+    - auditd
+  ansible.builtin.lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: ^(#?)\s*action_mail_acct\s*=
+    line: action_mail_acct = {{ rhel10stig_audit_conf_action_mail_acct }}
+  notify: Auditd checks
+
+- name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log SSH connection attempts and failures to the server."
+  when:
+    - rhel10stig_500215
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-500215
+    - CAT2
+    - CCI-000067
+    - SRG-OS-000032-GPOS-00013
+    - SV-257982r1045021_rule
+    - V-257982
+    - NIST800-53R4_AC-17
+    - ssh
+    - auditd
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log SSH connection attempts and failures to the server. | Remove"
+      when: "item.path != '/etc/ssh/sshd_config.d/50-stig-loglevel.conf'"
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: (?i)(^LogLevel.*)
+        replace: '#\1'
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log SSH connection attempts and failures to the server."
+      ansible.builtin.template:
+        src: "etc/ssh/sshd_config.d/50-stig-loglevel.conf.j2"
+        dest: "/etc/ssh/sshd_config.d/50-stig-loglevel.conf"
+        mode: 'go-rwx'
+        group: root
+        owner: root
+        validate: sshd -t -f %s
+      notify: Restart sshd service
+
+- name: "MEDIUM | RHEL-10-500300 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the 'execve' system call."
+  when:
+    - rhel10stig_500300
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500300
+    - CAT2
+    - CCI-002233
+    - CCI-002234
+    - SRG-OS-000326-GPOS-00126
+    - SRG-OS-000327-GPOS-00127
+    - SRG-OS-000755-GPOS-00220
+    - SV-281116r1166300_rule
+    - V-281116
+    - NIST800-53R4_AC-6
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500310 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the setxattr, fsetxattr, lsetxattr, removexattr, fremovexattr, and lremovexattr system calls."
+  when:
+    - rhel10stig_500310
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500310
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000458-GPOS-00203
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000463-GPOS-00207
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000474-GPOS-00219
+    - SRG-OS-000064-GPOS-00033
+    - SRG-OS-000466-GPOS-00210
+    - SV-281117r1166302_rule
+    - V-281117
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500320 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses on umount system calls."
+  when:
+    - rhel10stig_500320
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500320
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281118r1166306_rule
+    - V-281118
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500330 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the chacl command."
+  when:
+    - rhel10stig_500330
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500330
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281119r1166309_rule
+    - V-281119
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500340 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the setfacl command."
+  when:
+    - rhel10stig_500340
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500340
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281120r1166312_rule
+    - V-281120
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500350 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the chcon command."
+  when:
+    - rhel10stig_500350
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500350
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000463-GPOS-00207
+    - SRG-OS-000465-GPOS-00209
+    - SRG-OS-000468-GPOS-00212
+    - SRG-OS-000471-GPOS-00215
+    - SV-281121r1166315_rule
+    - V-281121
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500360 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the semanage command."
+  when:
+    - rhel10stig_500360
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500360
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000463-GPOS-00207
+    - SRG-OS-000465-GPOS-00209
+    - SRG-OS-000471-GPOS-00215
+    - SV-281122r1166318_rule
+    - V-281122
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500370 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the setfiles command."
+  when:
+    - rhel10stig_500370
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500370
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000463-GPOS-00207
+    - SRG-OS-000465-GPOS-00209
+    - SRG-OS-000471-GPOS-00215
+    - SV-281123r1166321_rule
+    - V-281123
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500380 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the setsebool command."
+  when:
+    - rhel10stig_500380
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500380
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000064-GPOS-00033
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000458-GPOS-00203
+    - SRG-OS-000461-GPOS-00205
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281124r1166324_rule
+    - V-281124
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500390 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the truncate, ftruncate, creat, open, openat, and open_by_handle_at system calls."
+  when:
+    - rhel10stig_500390
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500390
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000064-GPOS-00033
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000458-GPOS-00203
+    - SRG-OS-000461-GPOS-00205
+    - SRG-OS-000471-GPOS-00215
+    - SV-281125r1197225_rule
+    - V-281125
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500400 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the delete_module system calls"
+  when:
+    - rhel10stig_500400
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500400
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000471-GPOS-00216
+    - SRG-OS-000477-GPOS-00222
+    - SV-281126r1166330_rule
+    - V-281126
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500410 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the init_module and finit_module system calls."
+  when:
+    - rhel10stig_500410
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500410
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000471-GPOS-00216
+    - SRG-OS-000477-GPOS-00222
+    - SV-281127r1166333_rule
+    - V-281127
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500420 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the chage command."
+  when:
+    - rhel10stig_500420
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500420
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281128r1166336_rule
+    - V-281128
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500430 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the chsh command."
+  when:
+    - rhel10stig_500430
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500430
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281129r1166339_rule
+    - V-281129
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500440 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the crontab command."
+  when:
+    - rhel10stig_500440
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500440
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281130r1166342_rule
+    - V-281130
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500450 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the gpasswd command."
+  when:
+    - rhel10stig_500450
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500450
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281131r1166345_rule
+    - V-281131
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500460 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the kmod command."
+  when:
+    - rhel10stig_500460
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500460
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000477-GPOS-00222
+    - SV-281132r1166348_rule
+    - V-281132
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500470 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the newgrp command."
+  when:
+    - rhel10stig_500470
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500470
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281133r1166351_rule
+    - V-281133
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500480 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the pam_timestamp_check command."
+  when:
+    - rhel10stig_500480
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500480
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281134r1166354_rule
+    - V-281134
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500490 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the passwd command."
+  when:
+    - rhel10stig_500490
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500490
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281135r1184693_rule
+    - V-281135
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500500 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the postdrop command."
+  when:
+    - rhel10stig_500500
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500500
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281136r1166360_rule
+    - V-281136
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500510 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the postqueue command."
+  when:
+    - rhel10stig_500510
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500510
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281137r1197226_rule
+    - V-281137
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500520 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the ssh-agent command."
+  when:
+    - rhel10stig_500520
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500520
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281138r1197227_rule
+    - V-281138
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500530 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the ssh-keysign command."
+  when:
+    - rhel10stig_500530
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500530
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281139r1197228_rule
+    - V-281139
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500540 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the su command."
+  when:
+    - rhel10stig_500540
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500540
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000755-GPOS-00220
+    - SV-281140r1197229_rule
+    - V-281140
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500550 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the sudo command."
+  when:
+    - rhel10stig_500550
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500550
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000755-GPOS-00220
+    - SV-281141r1197230_rule
+    - V-281141
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500560 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the sudoedit command."
+  when:
+    - rhel10stig_500560
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500560
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000755-GPOS-00220
+    - SV-281142r1197231_rule
+    - V-281142
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500570 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the unix_chkpwd command."
+  when:
+    - rhel10stig_500570
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500570
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281143r1197232_rule
+    - V-281143
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500580 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the unix_update command."
+  when:
+    - rhel10stig_500580
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500580
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281144r1166384_rule
+    - V-281144
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500590 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the userhelper command."
+  when:
+    - rhel10stig_500590
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500590
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281145r1197233_rule
+    - V-281145
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500600 | PATCH | RHEL 10 must generate  audit records for successful and unsuccessful uses of the usermod command."
+  when:
+    - rhel10stig_500600
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500600
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000471-GPOS-00215
+    - SV-281146r1197235_rule
+    - V-281146
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500610 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the mount command."
+  when:
+    - rhel10stig_500610
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500610
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281147r1166393_rule
+    - V-281147
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500620 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the init command."
+  when:
+    - rhel10stig_500620
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500620
+    - CAT2
+    - CCI-000172
+    - SRG-OS-000477-GPOS-00222
+    - SV-281148r1166396_rule
+    - V-281148
+    - NIST800-53R4_AU-12
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500630 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the poweroff command."
+  when:
+    - rhel10stig_500630
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500630
+    - CAT2
+    - CCI-000172
+    - SRG-OS-000477-GPOS-00222
+    - SV-281149r1166399_rule
+    - V-281149
+    - NIST800-53R4_AU-12
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500640 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the reboot command."
+  when:
+    - rhel10stig_500640
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500640
+    - CAT2
+    - CCI-000172
+    - SRG-OS-000477-GPOS-00222
+    - SV-281150r1166402_rule
+    - V-281150
+    - NIST800-53R4_AU-12
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500650 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the shutdown command."
+  when:
+    - rhel10stig_500650
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500650
+    - CAT2
+    - CCI-000172
+    - SRG-OS-000477-GPOS-00222
+    - SV-281151r1166405_rule
+    - V-281151
+    - NIST800-53R4_AU-12
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500660 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the umount system call."
+  when:
+    - rhel10stig_500660
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500660
+    - CAT2
+    - CCI-000130
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281152r1166408_rule
+    - V-281152
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500670 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the umount2 system call."
+  when:
+    - rhel10stig_500670
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500670
+    - CAT2
+    - CCI-000130
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SV-281153r1166411_rule
+    - V-281153
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500680 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination actions that affect /etc/sudoers."
+  when:
+    - rhel10stig_500680
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500680
+    - CAT2
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000015
+    - CCI-000172
+    - CCI-002884
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281154r1166414_rule
+    - V-281154
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500690 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination actions that affect /etc/sudoers.d directory and any contained files."
+  when:
+    - rhel10stig_500690
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500690
+    - CAT2
+    - CCI-000015
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281155r1197236_rule
+    - V-281155
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500700 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/group"
+  when:
+    - rhel10stig_500700
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500700
+    - CAT2
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000015
+    - CCI-002884
+    - CCI-000172
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281156r1166420_rule
+    - V-281156
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500710 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/gshadow"
+  when:
+    - rhel10stig_500710
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500710
+    - CAT2
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000015
+    - CCI-002884
+    - CCI-000172
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281157r1166423_rule
+    - V-281157
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500720 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/opasswd"
+  when:
+    - rhel10stig_500720
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500720
+    - CAT2
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000015
+    - CCI-002884
+    - CCI-000172
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281158r1166426_rule
+    - V-281158
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500730 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/passwd"
+  when:
+    - rhel10stig_500730
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500730
+    - CAT2
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000015
+    - CCI-002884
+    - CCI-000172
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281159r1166429_rule
+    - V-281159
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500740 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/shadow"
+  when:
+    - rhel10stig_500740
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500740
+    - CAT2
+    - CCI-000018
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000015
+    - CCI-002884
+    - CCI-000172
+    - CCI-001403
+    - CCI-001404
+    - CCI-001405
+    - CCI-002130
+    - SRG-OS-000004-GPOS-00004
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000239-GPOS-00089
+    - SRG-OS-000240-GPOS-00090
+    - SRG-OS-000241-GPOS-00091
+    - SRG-OS-000303-GPOS-00120
+    - SRG-OS-000304-GPOS-00121
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000476-GPOS-00221
+    - SV-281160r1184695_rule
+    - V-281160
+    - NIST800-53R4_AC-2
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500750 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /var/log/faillock"
+  when:
+    - rhel10stig_500750
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500750
+    - CAT2
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000473-GPOS-00218
+    - SV-281161r1166435_rule
+    - V-281161
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500760 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /var/log/lastlog"
+  when:
+    - rhel10stig_500760
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500760
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000470-GPOS-00214
+    - SRG-OS-000473-GPOS-00218
+    - SV-281162r1166438_rule
+    - V-281162
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500780 | PATCH | RHEL 10 must generate audit records for all uses of the chmod, fchmod, fchmodat, and fchmodat2 syscalls."
+  when:
+    - rhel10stig_500780
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500780
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000064-GPOS-00033
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000458-GPOS-00203
+    - SV-281163r1166441_rule
+    - V-281163
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500790 | PATCH | RHEL 10 must generate audit records for all uses of the chown, fchown, fchownat, and lchown syscalls."
+  when:
+    - rhel10stig_500790
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500790
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000471-GPOS-00215
+    - SRG-OS-000064-GPOS-00033
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000458-GPOS-00203
+    - SRG-OS-000474-GPOS-00219
+    - SV-281164r1166444_rule
+    - V-281164
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true
+
+- name: "MEDIUM | RHEL-10-500810 | PATCH | RHEL 10 must generate audit records for all uses of the rename, unlink, rmdir, renameat, and unlinkat system calls."
+  when:
+    - rhel10stig_500810
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-500810
+    - CAT2
+    - CCI-000130
+    - CCI-000135
+    - CCI-000169
+    - CCI-000172
+    - CCI-002884
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000042-GPOS-00020
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000462-GPOS-00206
+    - SRG-OS-000466-GPOS-00210
+    - SRG-OS-000467-GPOS-00211
+    - SRG-OS-000468-GPOS-00212
+    - SRG-OS-000471-GPOS-00215
+    - SV-281165r1166447_rule
+    - V-281165
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.set_fact:
+    update_audit_template: true

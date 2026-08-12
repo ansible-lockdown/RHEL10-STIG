@@ -1,0 +1,1623 @@
+---
+
+- name: PRELIM | Interactive Users
+  tags: always
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep -Ev 'nologin|/sbin' /etc/passwd | awk -F: '$3 >= {{ min_int_uid | int }} {print $1}'
+  args:
+    executable: "{{ rhel10stig_shell_executable }}"
+  changed_when: false
+  register: discovered_interactive_users_accounts
+
+- name: PRELIM | Gather accounts with empty password fields
+  when: rhel10stig_600460
+  tags: passwords
+  ansible.builtin.shell: |
+    set -o pipefail
+    cat /etc/shadow | awk -F: '($2 == "" ) {j++;print $1; } END {exit j}'
+  args:
+    executable: "{{ rhel10stig_shell_executable }}"
+  changed_when: false
+  failed_when: discovered_empty_password_accounts.rc not in [ 0, 1 ]
+  register: discovered_empty_password_accounts
+
+- name: "MEDIUM | RHEL-10-600000 | PATCH | RHEL 10 must require a boot loader superuser password."
+  when:
+    - rhel10stig_600000
+    - rhel10stig_set_boot_pass
+    - not system_is_container
+  tags:
+    - RHEL-10-600000
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281166r1166450_rule
+    - V-281166
+    - NIST800-53R4_AC-3
+    - grub
+  block:
+    - name: "MEDIUM | RHEL-10-600000 | PATCH | RHEL 10 must require a boot loader superuser password. | | Set fact if using salt (no python passlib required)"
+      when: rhel10stig_bootloader_salt | length == 0
+      ansible.builtin.set_fact:
+        rhel10stig_compiled_bootloader_password: "{{ rhel10stig_bootloader_password_hash }}"
+
+    - name: "MEDIUM | RHEL-10-600000 | PATCH | RHEL-10-600000 | PATCH | RHEL 10 must require a boot loader superuser password. | Set fact if using salt (python passlib required)"
+      when: rhel10stig_bootloader_salt | length > 0
+      ansible.builtin.set_fact:
+        rhel10stig_compiled_bootloader_password: "{{ (rhel10stig_bootloader_password | grub_hash(salt=rhel10stig_bootloader_salt)) }}"
+
+    - name: "MEDIUM | RHEL-10-600000 | PATCH | RHEL-10-600000 | PATCH | RHEL 10 must require a boot loader superuser password."
+      ansible.builtin.copy:
+        dest: /boot/grub2/user.cfg
+        content: "GRUB2_PASSWORD={{ rhel10stig_compiled_bootloader_password }}"
+        mode: '0600'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600010 | PATCH | RHEL 10 must require a unique superusers name upon booting into single-user and maintenance mode."
+  when:
+    - rhel10stig_600010
+    - not system_is_container
+    - rhel10stig_set_boot_pass
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600010
+    - CAT2
+    - CCI-002038
+    - SRG-OS-000080-GPOS-00048
+    - SV-281167r1166453_rule
+    - V-281167
+    - NIST800-53R4_AC-3
+    - grub
+  block:
+    - name: "MEDIUM | RHEL-10-600010 | PATCH | RHEL 10 must require a unique superusers name upon booting into single-user and maintenance mode. | Set superusers name"
+      notify: Rebuild grub
+      ansible.builtin.lineinfile:
+        path: /etc/grub.d/01_users
+        regexp: '^set superusers=".*"'
+        line: "set superusers=\"{{ rhel10stig_grub_superuser }}\""
+
+    - name: "MEDIUM | RHEL-10-600010 | PATCH | RHEL 10 must require a unique superusers name upon booting into single-user and maintenance mode. | Align password_pbkdf2 user to the superuser"
+      notify: Rebuild grub
+      ansible.builtin.replace:
+        path: /etc/grub.d/01_users
+        regexp: '^(\s*password_pbkdf2\s+)\S+'
+        replace: '\1{{ rhel10stig_grub_superuser }}'
+
+- name: "MEDIUM | RHEL-10-600020 | PATCH | RHEL 10 system accounts must not have an interactive login shell."
+  when:
+    - rhel10stig_600020
+    - item.id != "root"
+    - item.uid < min_int_uid | int
+    - item.shell != "      /bin/false"
+    - item.shell != "      /sbin/nologin"
+  tags:
+    - RHEL-10-600020
+    - CAT2
+    - CCI-000366
+    - SRG-OS-000480-GPOS-00227
+    - SV-281168r1195416_rule
+    - V-281168
+    - NIST800-53R4_CM-6
+  ansible.builtin.user:
+    name: "{{ item.id }}"
+    shell: /sbin/nologin
+  loop: "{{ prelim_captured_passwd_data }}"
+  loop_control:
+    label: "{{ item.id }}"
+
+- name: "MEDIUM | RHEL-10-600100 | PATCH | RHEL 10 user account passwords for new users or password changes must have a 60-day maximum password lifetime restriction in /etc/login.defs."
+  when: rhel10stig_600100
+  tags:
+    - RHEL-10-600100
+    - CAT2
+    - CCI-000199
+    - SRG-OS-000076-GPOS-00044
+    - SV-281169r1166459_rule
+    - V-281169
+    - NIST800-53R4_IA-5
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: ^(#|)\s*PASS_MAX_DAYS
+    line: "PASS_MAX_DAYS {{ rhel10stig_pass_max_days }}"
+
+- name: "MEDIUM | RHEL-10-600110 | PATCH | RHEL 10 user account passwords for new users or password changes must have a 60-day maximum password lifetime restriction in /etc/login.defs."
+  when: rhel10stig_600110
+  tags:
+    - RHEL-10-600110
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000076-GPOS-00044
+    - SV-281170r1184651_rule
+    - V-281170
+    - NIST800-53R4_NA
+  block:
+    - name: "MEDIUM | RHEL-10-600110 | AUDIT | RHEL 10 user account passwords for new users or password changes must have a 60-day maximum password lifetime restriction in /etc/login.defs."
+      ansible.builtin.command: "awk -F: '$1 !~ /^root$/ && $2 !~ /^[!*]/ && $5 > {{ rhel10stig_pass_max_days }} {print $1}' /etc/shadow"
+      changed_when: false
+      failed_when: discovered_users_passwd_max.rc not in [ 0, 1 ]
+      register: discovered_users_passwd_max
+
+    - name: "MEDIUM | RHEL-10-600110 | PATCH | RHEL 10 user account passwords for new users or password changes must have a 60-day maximum password lifetime restriction in /etc/login.defs."
+      when:
+        - rhel10stig_disruption_high
+        - discovered_users_passwd_max is defined
+        - discovered_users_passwd_max.stdout | length > 0
+        - "ansible_user not in item"
+      ansible.builtin.command: "passwd -x {{ rhel10stig_pass_max_days }} {{ item }}"
+      changed_when: true
+      failed_when: discovered_users_passwd_max.rc not in [ 0, 1 ]
+      loop: "{{ discovered_users_passwd_max.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600110 | WARN | RHEL 10 user account passwords for new users or password changes must have a 60-day maximum password lifetime restriction in /etc/login.defs."
+      when:
+        - not rhel10stig_disruption_high or (ansible_facts['user_id'] in discovered_interactive_users_accounts.stdout_lines)
+        - discovered_users_passwd_max is defined
+        - discovered_users_passwd_max.stdout | length > 0
+      ansible.builtin.debug:
+        msg: "Warning!! The following users do not match maximum password life {{ discovered_users_passwd_max.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600110 | WARN | RHEL 10 user account passwords for new users or password changes must have a 60-day maximum password lifetime restriction in /etc/login.defs.| Warning Count"
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_users_passwd_max is defined
+        - discovered_users_passwd_max.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600110"
+
+- name: "MEDIUM | RHEL-10-600120 | PATCH | All RHEL 10 local interactive user accounts must be assigned a home directory upon creation."
+  when: rhel10stig_600120
+  tags:
+    - RHEL-10-600120
+    - CAT2
+    - CCI-002824
+    - SRG-OS-000480-GPOS-00227
+    - SV-281171r1166465_rule
+    - V-281171
+    - NIST800-53R4_SI-16
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: (?i)^(#?)\s*CREATE_HOME (no|yes)
+    line: "CREATE_HOME yes"
+
+- name: "MEDIUM | RHEL-10-600130 | PATCH | RHEL 10 duplicate User IDs (UIDs) must not exist for interactive users."
+  when: rhel10stig_600130
+  tags:
+    - RHEL-10-600130
+    - CAT2
+    - CCI-000764
+    - CCI-000804
+    - SRG-OS-000104-GPOS-00051
+    - SV-281172r1166468_rule
+    - V-281172
+    - NIST800-53R4_IA-2
+    - NIST800-53R4_IA-8
+  block:
+    - name: "MEDIUM | RHEL-10-600130 | PATCH | RHEL 10 duplicate User IDs (UIDs) must not exist for interactive users."
+      ansible.builtin.shell: |
+        set -o pipefail
+        cat /etc/passwd | awk -F: '{ print $3}' | sort -n | uniq -d
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_duplicate_uids.rc not in [ 0, 1 ]
+      register: discovered_duplicate_uids
+
+    - name: "MEDIUM | RHEL-10-600130 | WARN | RHEL 10 duplicate User IDs (UIDs) must not exist for interactive users."
+      when:
+        - discovered_duplicate_uids is defined
+        - discovered_duplicate_uids.stdout | length > 0
+      ansible.builtin.debug:
+        msg: "Warning!! Duplicate UIDs have been found Please investigate"
+
+    - name: "MEDIUM | RHEL-10-600130 | WARN | RHEL 10 duplicate User IDs (UIDs) must not exist for interactive users."
+      when:
+        - discovered_duplicate_uids is defined
+        - discovered_duplicate_uids.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600130"
+
+- name: "MEDIUM | RHEL-10-600140 | WARN | RHEL 10 must automatically expire temporary accounts within 72 hours."
+  when: rhel10stig_600140
+  tags:
+    - RHEL-10-600140
+    - CAT2
+    - CCI-000016
+    - CCI-001682
+    - SRG-OS-000123-GPOS-00064
+    - SRG-OS-000002-GPOS-00002
+    - SV-281173r1166471_rule
+    - V-281173
+    - NIST800-53R4_AC-2
+  block:
+    - name: "MEDIUM | RHEL-10-600140 | WARN | RHEL 10 must automatically expire temporary accounts within 72 hours."
+      ansible.builtin.debug:
+        msg:
+          - "WARNING!!  Please check temporary accounts for expiration dates to be 72 hours or less."
+          - "To do this please run sudo chage -l account_name for the accounts you need to check"
+          - "The results will display the Account Expires information"
+          - 'To set account expire run sudo chage -E `date -d "+3 days" +%Y-%m-%d` account_name'
+
+    - name: "MEDIUM | RHEL-10-600140 | WARN | RHEL 10 must automatically expire temporary accounts within 72 hours."
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600140"
+
+- name: "MEDIUM | RHEL-10-600150 | AUDIT | RHEL 10 must assign a primary group to all interactive users"
+  when: rhel10stig_600150
+  tags:
+    - RHEL-10-600150
+    - CAT2
+    - CCI-000764
+    - SRG-OS-000104-GPOS-00051
+    - SV-281174r1166474_rule
+    - V-258048
+    - NIST800-53R4_AC-2
+  block:
+    - name: "MEDIUM | RHEL-10-600150 | AUDIT | All RHEL 10 interactive users must have a primary group that exists."
+      ansible.builtin.command: pwck -qr
+      changed_when: false
+      failed_when: discovered_gid_exists.rc not in [ 0, 1, 2 ]
+      register: discovered_gid_exists
+
+    - name: "MEDIUM | RHEL-10-600150 | AUDIT | All RHEL 10 interactive users must have a primary group that exists."
+      ansible.builtin.shell: |
+        set -o pipefail
+        cat /etc/passwd | awk -F: '{ print $4 }' | sort | uniq -d | awk '$1 > {{ min_int_uid | int }}'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_duplicate_gids.rc not in [ 0, 1 ]
+      register: discovered_duplicate_gids
+
+    - name: "MEDIUM | RHEL-10-600150 | WARN | All RHEL 10 interactive users must have a primary group that exists."
+      when: discovered_duplicate_gids is defined or discovered_gid_exists is defined
+      ansible.builtin.debug:
+        msg: "Warning!! Issues with primary user groups have been found Please investigate"
+      loop: "{{ discovered_duplicate_gids.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600150 | WARN | All RHEL 10 interactive users must have a primary group that exists.."
+      when:
+        - discovered_duplicate_gids is defined
+        - discovered_duplicate_gids.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600150"
+
+- name: "MEDIUM | RHEL-10-600160 | PATCH | RHEL 10 must disable account identifiers (individuals, groups, roles, and devices) after 35 days of inactivity."
+  when: rhel10stig_600160
+  tags:
+    - RHEL-10-600160
+    - CAT2
+    - CCI-NA
+    - SV-281175r1197238_rule
+    - V-281175
+    - NIST800-53R4_NA
+  block:
+    - name: "MEDIUM | RHEL-10-600160 | AUDIT | RHEL 10 must disable account identifiers (individuals, groups, roles, and devices) after 35 days of inactivity."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -i inactive /etc/default/useradd | cut -f2 -d=
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_inactive_user_setting.rc not in [ 0, 1 ]
+      check_mode: false
+      register: discovered_inactive_user_setting
+
+    - name: "MEDIUM | RHEL-10-600160 | PATCH | RHEL 10 must disable account identifiers (individuals, groups, roles, and devices) after 35 days of inactivity."
+      when:
+        - discovered_inactive_user_setting is defined
+        - "'-1' in discovered_inactive_user_setting.stdout"
+        - "rhel10stig_user_inactive_days not in discovered_inactive_user_setting.stdout"
+      ansible.builtin.command: "useradd -D -f {{ rhel10stig_user_inactive_days }}"
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-600170 | PATCH | Executable search paths within the initialization files of all local interactive RHEL 10 users must only contain paths that resolve to the system default or the users home directory."
+  when: rhel10stig_600170
+  tags:
+    - RHEL-10-600170
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000362-GPOS-00149
+    - SV-281176r1166480_rule
+    - V-281176
+    - NIST800-53R4_NA
+  block:
+    - name: "MEDIUM | RHEL-10-600170 | AUDIT | Executable search paths within the initialization files of all local interactive RHEL 10 users must only contain paths that resolve to the system default or the users home directory."
+      ansible.builtin.find:
+        path: "{{ rhel10stig_home_filesystem }}"
+        contains: PATH=\".*\"
+        depth: 2
+        file_type: file
+        hidden: true
+        read_whole_file: true
+        recurse: true
+        use_regex: true
+      register: discovered_user_initialization
+
+    - name: "MEDIUM | RHEL-10-600170 | PATCH | Executable search paths within the initialization files of all local interactive RHEL 10 users must only contain paths that resolve to the system default or the users home directory."
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: ^\s*PATH
+        line: "PATH={{ rhel10stig_env_path }}"
+      loop: "{{ discovered_user_initialization.files }}"
+
+- name: |
+    "MEDIUM | RHEL-10-600180 | PATCH | All RHEL 10 local interactive users must have a home directory assigned in the /etc/passwd file."
+    "MEDIUM | RHEL-10-600190 | PATCH | All RHEL 10 local interactive user home directories defined in the /etc/passwd file must exist."
+  when:
+    - rhel10stig_600180 or
+      rhel10stig_600190
+  tags:
+    - RHEL-10-600180
+    - RHEL-10-600190
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-281177r1184748_rule
+    - SV-281178r1195418_rule
+    - V-281177
+    - V-281178
+    - NIST800-53R4_SC-5
+    - users
+  block:
+    - name: |
+        "MEDIUM | RHEL-10-600180 | PATCH | All RHEL 10 local interactive users must have a home directory assigned in the /etc/passwd file."
+        "MEDIUM | RHEL-10-600190 | PATCH | All RHEL 10 local interactive user home directories defined in the /etc/passwd file must exist."
+      ansible.builtin.file:
+        path: "{{ item.dir }}"
+        state: directory
+        owner: "{{ item.id }}"
+        group: "{{ item.gid }}"
+        mode: 'o-rwx'
+      register: discovered_home_dir
+      loop: "{{ prelim_captured_passwd_data | selectattr('uid', '>=', min_int_uid | int) | selectattr('uid', '<=', max_int_uid | int) | list }}"
+      loop_control:
+        label: "{{ item.id }}"
+
+    # set default ACLs so the homedir has an effective umask of 0027
+    - name: |
+        "MEDIUM | RHEL-10-600180 | PATCH | All RHEL 10 local interactive users must have a home directory assigned in the /etc/passwd file."
+        "MEDIUM | RHEL-10-600190 | PATCH | All RHEL 10 local interactive user home directories defined in the /etc/passwd file must exist."
+      ansible.posix.acl:
+        path: "{{ item.path }}"
+        default: true
+        etype: group
+        permissions: rx
+        state: present
+      loop: "{{ discovered_home_dir.results }}"
+      when: not system_is_container
+
+    - name: |
+        "MEDIUM | RHEL-10-600180 | PATCH | All RHEL 10 local interactive users must have a home directory assigned in the /etc/passwd file."
+        "MEDIUM | RHEL-10-600190 | PATCH | All RHEL 10 local interactive user home directories defined in the /etc/passwd file must exist."
+      ansible.posix.acl:
+        path: "{{ item.path }}"
+        default: true
+        etype: other
+        permissions: 0
+        state: present
+      loop: "{{ discovered_home_dir.results }}"
+      when: not system_is_container
+
+- name: "MEDIUM | RHEL-10-600200 | PATCH | RHEL 10 must enforce a delay of at least four seconds between logon prompts following a failed logon attempt."
+  when: rhel10stig_600200
+  tags:
+    - RHEL-10-600200
+    - CAT2
+    - CCI-002238
+    - SRG-OS-000329-GPOS-00128
+    - SV-281179r1166489_rule
+    - V-281179
+    - NIST800-53R4_AC-7
+    - login
+    - users
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: ^(#?)\s*FAIL_DELAY
+    line: "FAIL_DELAY {{ rhel10stig_login_defs_fail_delay }}"
+
+- name: "MEDIUM | RHEL-10-600210 | PATCH | RHEL 10 passwords for new users or password changes must have a 24 hours minimum password lifetime restriction in /etc/login.defs."
+  when:
+    - rhel10stig_600210
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600210
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000075-GPOS-00043
+    - SV-281180r1166492_rule
+    - V-281180
+    - NIST800-53R4_NA
+    - login
+    - users
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: \s*PASS_MIN_DAYS\s*
+    line: "PASS_MIN_DAYS {{ rhel10stig_pass_min_days }}"
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-600220 | PATCH | RHEL 10 passwords must be created with a minimum of 15 characters."
+  when: rhel10stig_600220
+  tags:
+    - RHEL-10-600220
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000078-GPOS-00046
+    - SV-281181r1195421_rule
+    - V-281181
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600220 | PATCH | RHEL 10 passwords must be created with a minimum of 15 characters."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600220 | PATCH | RHEL 10 passwords must be created with a minimum of 15 characters."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600230 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one special character be used."
+  when:
+    - rhel10stig_600230
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600230
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000266-GPOS-00101
+    - SV-281182r1195424_rule
+    - V-281182
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600230 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one special character be used."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600230 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one special character be used."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600240 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one lowercase character be used."
+  when:
+    - rhel10stig_600240
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600240
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000070-GPOS-00038
+    - SV-281183r1195427_rule
+    - V-281183
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600240 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one lowercase character be used."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600240 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one lowercase character be used."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600250 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used."
+  when:
+    - rhel10stig_600250
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600250
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SV-281184r1197239_rule
+    - V-281184
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600250 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600250 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600260 | PATCH | RHEL 10 must require the change of at least eight characters when passwords are changed."
+  when:
+    - rhel10stig_600260
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600260
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000072-GPOS-00040
+    - SV-281185r1195433_rule
+    - V-281185
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600260 | PATCH | RHEL 10 must require the change of at least eight characters when passwords are changed."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600260 | PATCH | RHEL 10 must require the change of at least eight characters when passwords are changed."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600270 | PATCH | RHEL 10 must enforce that passwords have a 24 hours/1 day minimum lifetime restriction in /etc/shadow"
+  when: rhel10stig_600270
+  tags:
+    - RHEL-10-600270
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000075-GPOS-00043
+    - SV-281186r1184622_rule
+    - V-281186
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600270 | AUDIT | RHEL 10 passwords must have a 24 hours minimum password lifetime restriction in /etc/shadow. | Capture accts"
+      ansible.builtin.command: "awk -F: '$4 < 1 {printf \"%s %d\\n\", $1, $4}' /etc/shadow"
+      changed_when: false
+      failed_when: discovered_24hr_passwd_restrict.rc not in [ 0, 1 ]
+      register: discovered_24hr_passwd_restrict
+
+    - name: "MEDIUM | RHEL-10-600270 | PATCH | RHEL 10 passwords must have a 24 hours minimum password lifetime restriction in /etc/shadow."
+      when:
+        - discovered_24hr_passwd_restrict.stdout | length > 0
+        - rhel10stig_disruption_high
+        - item in discovered_interactive_users_accounts
+      ansible.builtin.command: "passwd -n 1 {{ item }}"
+      changed_when: true
+      loop: "{{ discovered_24hr_passwd_restrict.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600270 | WARN | RHEL 10 passwords must have a 24 hours minimum password lifetime restriction in /etc/shadow. | Warning"
+      when:
+        - discovered_24hr_passwd_restrict.stdout | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.debug:
+        msg: "Warning!! Accounts have been found to have an incorrect password lifetime"
+
+    - name: "MEDIUM | RHEL-10-600270 | WARN | RHEL 10 passwords must have a 24 hours minimum password lifetime restriction in /etc/shadow. | Warning"
+      when:
+        - discovered_24hr_passwd_restrict.stdout | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600270"
+
+- name: "MEDIUM | RHEL-10-600280 | PATCH | RHEL 10 must require the maximum number of repeating characters of the same character class be limited to four when passwords are changed."
+  when:
+    - rhel10stig_600280
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600280
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000072-GPOS-00040
+    - SV-281187r1195436_rule
+    - V-281187
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600280 | PATCH | RHEL 10 must require the maximum number of repeating characters of the same character class be limited to four when passwords are changed."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600280 | PATCH | RHEL 10 must require the maximum number of repeating characters of the same character class be limited to four when passwords are changed."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600290 | PATCH | RHEL 10 must require the maximum number of repeating characters be limited to three when passwords are changed."
+  when:
+    - rhel10stig_600290
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600290
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000072-GPOS-00040
+    - SV-281188r1195439_rule
+    - V-281188
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600290 | PATCH | RHEL 10 must require the maximum number of repeating characters be limited to three when passwords are changed."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600290 | PATCH | RHEL 10 must require the maximum number of repeating characters be limited to three when passwords are changed."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600300 | PATCH | RHEL 10 must require the change of at least four character classes when passwords are changed."
+  when:
+    - rhel10stig_600300
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600300
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000072-GPOS-00040
+    - SV-281189r1195442_rule
+    - V-281189
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600300 | PATCH | RHEL 10 must require the change of at least four character classes when passwords are changed."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600300 | PATCH | RHEL 10 must require the change of at least four character classes when passwords are changed."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600310 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used."
+  when:
+    - rhel10stig_600310
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600310
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SV-281190r1195445_rule
+    - V-281190
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600310 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600310 | PATCH | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600320 | PATCH | RHEL 10 must prevent the use of dictionary words for passwords."
+  when:
+    - rhel10stig_600320
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600320
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000480-GPOS-00225
+    - SV-281191r1195448_rule
+    - V-281191
+    - NIST800-53R4_NA
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600320 | PATCH | RHEL 10 must prevent the use of dictionary words for passwords."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600320 | PATCH | RHEL 10 must prevent the use of dictionary words for passwords."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600400 | AUDIT | RHEL 10 must allow only the root account to have unrestricted access to the system."
+  when:
+    - rhel10stig_600400
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600400
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281192r1166528_rule
+    - V-281192
+    - NIST800-53R4_IA-5
+    - login
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600400 | AUDIT | RHEL 10 must allow only the root account to have unrestricted access to the system."
+      ansible.builtin.command: "awk -F: '$3 == 0 && $1 != \"root\" {print $1}' /etc/passwd"
+      changed_when: false
+      failed_when: discovered_uid_zero_accounts_except_root.rc not in [ 0, 1 ]
+      register: discovered_uid_zero_accounts_except_root
+
+    - name: "MEDIUM | RHEL-10-600400 | AUDIT | RHEL 10 must allow only the root account to have unrestricted access to the system."
+      when:
+        - discovered_uid_zero_accounts_except_root is defined
+        - discovered_uid_zero_accounts_except_root.stdout | length > 0
+      ansible.builtin.debug:
+        msg: "Warning!! Accounts have been found to have unrestricted access to the system {{ discovered_uid_zero_accounts_except_root.stdout }}"
+
+    - name: "MEDIUM | RHEL-10-600400 | WARN | RHEL 10 must allow only the root account to have unrestricted access to the system."
+      when:
+        - discovered_uid_zero_accounts_except_root is defined
+        - discovered_uid_zero_accounts_except_root.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600400"
+
+- name: "MEDIUM | RHEL-10-600405 | PATCH | RHEL 10 must enforce password complexity rules for the root account."
+  when:
+    - rhel10stig_600405
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600405
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000072-GPOS-00040
+    - SV-281193r1166531_rule
+    - V-281193
+    - NIST800-53R4_NA
+    - users
+    - login
+  block:
+    - name: "MEDIUM | RHEL-10-600405 | PATCH | RHEL 10 must enforce password complexity rules for the root account."
+      ansible.builtin.file:
+        path: /etc/security/pwquality.conf.d
+        state: directory
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-600405 | PATCH | RHEL 10 must enforce password complexity rules for the root account."
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600410 | PATCH | RHEL 10 must automatically lock an account when three unsuccessful logon attempts occur."
+  when: rhel10stig_600410
+  tags:
+    - RHEL-10-600410
+    - CAT2
+    - CCI-002238
+    - CCI-000044
+    - SRG-OS-000329-GPOS-00128
+    - SRG-OS-000021-GPOS-00005
+    - SV-281194r1166534_rule
+    - V-281194
+    - NIST800-53R4_AC-7
+    - faillock
+    - login
+  notify: Reboot required
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: ^(#?)\s*deny\s*=\s*\d*$
+    line: "deny = {{ rhel10stig_faillock_deny }}"
+
+- name: "MEDIUM | RHEL-10-600415 | PATCH | RHEL 10 must automatically lock the root account until the root account is released by an administrator when three unsuccessful logon attempts occur during a 15-minute time period."
+  when: rhel10stig_600415
+  tags:
+    - RHEL-10-600415
+    - CAT2
+    - CCI-000044
+    - CCI-002238
+    - SRG-OS-000329-GPOS-00128
+    - SRG-OS-000021-GPOS-00005
+    - SV-281195r1166537_rule
+    - V-281195
+    - NIST800-53R4_AC-7
+    - faillock
+  notify: Reboot required
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: ^(#?)\s*even_deny_root
+    line: even_deny_root
+    mode: 'go-wx'
+
+- name: "MEDIUM | RHEL-10-600420 | PATCH | RHEL 10 must automatically lock an account when three unsuccessful logon attempts occur during a 15-minute time period."
+  when: rhel10stig_600420
+  tags:
+    - RHEL-10-600420
+    - CAT2
+    - CCI-000044
+    - CCI-002238
+    - SRG-OS-000329-GPOS-00128
+    - SRG-OS-000021-GPOS-00005
+    - SV-281196r1166540_rule
+    - V-281196
+    - NIST800-53R4_AC-7
+    - faillock
+    - login
+  notify: Reboot required
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: ^(#?)\s*fail_interval\s*=
+    line: "fail_interval = {{ rhel10stig_faillock_fail_interval }}"
+    mode: 'go-wx'
+
+- name: "MEDIUM | RHEL-10-600425 | PATCH | RHEL 10 must maintain an account lock until the locked account is released by an administrator."
+  when:
+    - rhel10stig_600425
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600425
+    - CAT2
+    - CCI-000044
+    - CCI-002238
+    - SRG-OS-000329-GPOS-00128
+    - SRG-OS-000021-GPOS-00005
+    - SV-281197r1166543_rule
+    - V-281197
+    - NIST800-53R4_AC-7
+    - faillock
+    - login
+  notify: Reboot required
+  ansible.builtin.lineinfile:
+    path: /etc/security/faillock.conf
+    regexp: ^(#?)\s*unlock_time\s*=\s*\d*
+    line: "unlock_time = {{ rhel10stig_faillock_unlock_time }}"
+    mode: 'go-wx'
+
+- name: "MEDIUM | RHEL-10-600430 | PATCH | RHEL 10 must ensure account lockouts persist."
+  when: rhel10stig_600430
+  tags:
+    - RHEL-10-600430
+    - CAT2
+    - CCI-000044
+    - CCI-002238
+    - SRG-OS-000329-GPOS-00128
+    - SRG-OS-000021-GPOS-00005
+    - SV-281198r1166546_rule
+    - V-281198
+    - NIST800-53R4_AC-7
+    - faillock
+    - login
+  block:
+    - name: "MEDIUM | RHEL-10-600430 | PATCH | RHEL 10 must ensure account lockouts persist."
+      ansible.builtin.file:
+        path: "{{ rhel10stig_faillock_dir }}"
+        group: root
+        owner: root
+        state: directory
+        mode: 'g-w,o-wx'
+
+    - name: "MEDIUM | RHEL-10-600430 | PATCH | RHEL 10 must ensure account lockouts persist."
+      ansible.builtin.lineinfile:
+        path: /etc/security/faillock.conf
+        regexp: ^(#?)\s*dir\s*=
+        line: "dir = {{ rhel10stig_faillock_dir }}"
+        mode: 'go-wx'
+      notify: Reboot required
+
+- name: "MEDIUM | RHEL-10-600450 | PATCH | RHEL 10 must not have unauthorized accounts."
+  when: rhel10stig_600450
+  tags:
+    - RHEL-10-600450
+    - CAT2
+    - CCI-000366
+    - SRG-OS-000480-GPOS-00227
+    - SV-281199r1166549_rule
+    - V-281199
+    - NIST800-53R4_CM-6
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600450 | AUDIT | RHEL 10 must not have unauthorized accounts. | Find unnecessary accounts"
+      ansible.builtin.debug:
+        msg: "Warning!! Manual Check for Unauthorized accounts"
+
+    - name: "MEDIUM | RHEL-10-600450 | WARN | RHEL 10 must not have unauthorized accounts. | Warning"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600450"
+
+- name: "MEDIUM | RHEL-10-600455 | PATCH | RHEL 10 must not allow blank or null passwords."
+  when:
+    - rhel10stig_600455
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600455
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SV-281200r1166552_rule
+    - V-281200
+    - NIST800-53R4_NA
+    - pam
+  ansible.builtin.replace:
+    path: "{{ item }}"
+    regexp: nullok
+    replace: ''
+  loop:
+    - /etc/pam.d/password-auth
+    - /etc/pam.d/system-auth
+
+- name: "MEDIUM | RHEL-10-600460 | PATCH | RHEL 10 must not have accounts configured with blank or null passwords."
+  when:
+    - rhel10stig_600460
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600460
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SV-281201r1166555_rule
+    - V-281201
+    - NIST800-53R4_NA
+    - users
+    - pam
+  block:
+    - name: "MEDIUM | RHEL-10-600460 | PATCH | RHEL 10 must not have accounts configured with blank or null passwords."
+      when:
+        - rhel10stig_disruption_high
+        - discovered_empty_password_accounts.stdout | length > 0
+      ansible.builtin.user:
+        name: "{{ item }}"
+        password_lock: true
+      loop: "{{ discovered_empty_password_accounts.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600460 | WARN | RHEL 10 must not have accounts configured with blank or null passwords."
+      when:
+        - discovered_empty_password_accounts.stdout | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.debug:
+        msg: "Warning!! The following accounts have blank or null passwords: {{ discovered_empty_password_accounts.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600460 | WARN | RHEL 10 must not have accounts configured with blank or null passwords."
+      when:
+        - discovered_empty_password_accounts.stdout | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-600460"
+
+- name: "MEDIUM | RHEL-10-600470 | PATCH | RHEL 10 must have unique group ID (GID) for each group in /etc/group."
+  when: rhel10stig_600470
+  tags:
+    - RHEL-10-600470
+    - CAT2
+    - CCI-000764
+    - SRG-OS-000104-GPOS-00051
+    - SV-281202r1166558_rule
+    - V-281202
+    - NIST800-53R4_IA-2
+    - users
+  block:
+    - name: "MEDIUM | RHEL-10-600470 | AUDIT | RHEL 10 must have unique group ID (GID) for each group in /etc/group."
+      ansible.builtin.shell: |
+        set -o pipefail
+        getent passwd | cut -d: -f1 | sort -n | uniq -d
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_dup_group_check.rc not in [ 0, 1 ]
+      check_mode: false
+      register: discovered_dup_group_check
+
+    - name: "MEDIUM | RHEL-10-600470 | WARN | RHEL 10 must have unique group ID (GID) for each group in /etc/group. | Warning"
+      when: discovered_dup_group_check.stdout | length > 0
+      ansible.builtin.debug:
+        msg: "Warning!! The following group names are duplicates: {{ discovered_dup_group_check.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-600470 | WARN | RHEL 10 must have unique group ID (GID) for each group in /etc/group. | Warning count"
+      when: discovered_dup_group_check.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: 'MEDIUM | RHEL-10-600470'
+
+- name: "MEDIUM | RHEL-10-600485 | PATCH | RHEL 10 must ensure the password complexity module in the system-auth file is configured for three or fewer retries."
+  when:
+    - rhel10stig_600485
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600485
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SV-281204r1197240_rule
+    - V-281204
+    - NIST800-53R4_NA
+    - pam
+  block:
+    - name: "MEDIUM | RHEL-10-600485 | PATCH | RHEL 10 must ensure the password complexity module in the system-auth file is configured for three retries or less."
+      ansible.builtin.find:
+        paths:
+          - /etc/security/pwquality.conf.d
+        pattern: '^#?retry\s*=\s*\d*$'
+      changed_when: false
+      register: discovered_pwquality_retry_conf_files
+
+    - name: "MEDIUM | RHEL-10-600485 | PATCH | RHEL 10 must ensure the password complexity module in the system-auth file is configured for three or fewer retries. | Set if no pw required pam_pwquality"
+      when:
+        - discovered_pwquality_retry_conf_files.matched > 0
+        - "item.path not /etc/security/pwquality.conf.d/stig_passwd.conf"
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regexp: '^(retry\s*=\s*\d*)$'
+        line: '#\1'
+        backrefs: true
+      loop: "{{ discovered_pwquality_retry_conf_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-600485 | PATCH | RHEL 10 must ensure the password complexity module in the system-auth file is configured for three or fewer retries. | Set if no pw required pam_pwquality"
+      ansible.builtin.lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: '^(retry\s*=\s*\d*)$'
+        line: '#\1'
+        backrefs: true
+
+    - name: "MEDIUM | RHEL-10-600485 | PATCH | RHEL 10 must ensure the password complexity module in the system-auth file is configured for three or fewer retries. | Replace if already exists"
+      ansible.builtin.template:
+        src: etc/security/pwquality.conf.d/stig_passwd.conf.j2
+        dest: /etc/security/pwquality.conf.d/stig_passwd.conf
+        mode: 'o-rwx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-600500 | PATCH | RHEL 10 must restrict the use of the 'su' command."
+  when: rhel10stig_600500
+  tags:
+    - RHEL-10-600500
+    - CAT2
+    - CCI-002038
+    - CCI-002165
+    - SRG-OS-000373-GPOS-00156
+    - SRG-OS-000312-GPOS-00123
+    - SV-258088r1155643_rule
+    - V-258088
+    - NIST800-53R4_AC-3
+    - NIST800-53R4_IA-11
+    - su
+    - privilege_escalation
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/su
+    regexp: ^(#?)(auth\s*required\s*)pam_wheel.so(.*)
+    line: auth    required    pam_wheel.so use_uid
+
+- name: "MEDIUM | RHEL-10-600510 | PATCH | RHEL 10 must be configured to not bypass password requirements for privilege escalation."
+  when:
+    - rhel10stig_600510
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600510
+    - CAT2
+    - CCI-002038
+    - SRG-OS-000373-GPOS-00156
+    - SRG-OS-000373-GPOS-00157
+    - SRG-OS-000373-GPOS-00158
+    - SV-281206r1166570_rule
+    - V-281206
+    - NIST800-53R4_IA-11
+    - sudo
+    - privilege_escalation
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/sudo
+    regexp: ^(.*)pam_succeed_if(.*)
+    line: \1\2
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-600520 | PATCH | RHEL 10 must restrict privilege elevation to authorized personnel."
+  when: rhel10stig_600520
+  tags:
+    - RHEL-10-600520
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281207r1166573_rule
+    - V-281207
+    - NIST800-53R4_SI-6
+    - sudo
+    - privilege_escalation
+  block:
+    - name: "MEDIUM | RHEL-10-600520 | AUDIT | RHEL 10 must restrict privilege elevation to authorized personnel."
+      ansible.builtin.find:
+        paths:
+          - /etc/sudoers.d
+        # Matched per line, so ^ and $ anchor to a line rather than the whole file.
+        # read_whole_file must stay off for that: with it on, contains is applied to the
+        # file as a single string and the leading (?!\s*#) is tested only against the
+        # first line, so a file whose first line is a comment never matches at all.
+        contains: '^(?!\s*#).*ALL\s*ALL=\(ALL(?::ALL|)\)\s*ALL.*$'
+        # sudoers.d entries carry no extension - sudo ignores files with a dot in the
+        # name. Excluding '*.*' and editor backups matches how prelim.yml enumerates
+        # them (find ... ! -name '*~' ! -name '*.*'); a '*.conf' pattern here matched
+        # nothing, so this AUDIT always reported 0 and the PATCH below never ran.
+        excludes:
+          - '*~'
+          - '*.*'
+      changed_when: false
+      register: discovered_unauthorized_sudoers_entries
+
+    - name: "MEDIUM | RHEL-10-600520 | PATCH | RHEL 10 must restrict privilege elevation to authorized personnel."
+      when:
+        - discovered_unauthorized_sudoers_entries.matched > 0
+        - rhel10stig_disruption_high
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        # The whole line is captured so '#\1' comments it out rather than replacing it.
+        # The inner alternation is non-capturing, otherwise \1 is ':ALL' or empty and the
+        # offending line is destroyed. The leading (?!\s*#) makes a re-run a no-op instead
+        # of prefixing another '#'.
+        regexp: '^(?!\s*#)(.*ALL\s*ALL=\(ALL(?::ALL|)\)\s*ALL.*)$'
+        line: '#\1'
+        backrefs: true
+      loop: "{{ discovered_unauthorized_sudoers_entries.files }}"
+
+    - name: "MEDIUM | RHEL-10-600520 | PATCH | RHEL 10 must restrict privilege elevation to authorized personnel."
+      when: not rhel10stig_disruption_high
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        regexp: '^(?!\s*#)(.*ALL\s*ALL=\(ALL(?::ALL|)\)\s*ALL.*)$'
+        line: '#\1'
+        backrefs: true
+
+    - name: "MEDIUM | RHEL-10-600520 | WARN | RHEL 10 must restrict privilege elevation to authorized personnel. | Warning"
+      when:
+        - discovered_unauthorized_sudoers_entries.matched > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.debug:
+        msg: "Warning!! The following sudoers entries are unauthorized: {{ discovered_unauthorized_sudoers_entries.files | map(attribute='path') | list }}"
+
+    - name: "MEDIUM | RHEL-10-600520 | WARN | RHEL 10 must restrict privilege elevation to authorized personnel. | Warning count"
+      when:
+        - discovered_unauthorized_sudoers_entries.matched > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: 'MEDIUM | RHEL-10-600520'
+
+- name: "MEDIUM | RHEL-10-600530 | PATCH |  RHEL 10 must require users to reauthenticate for privilege escalation."
+  when: rhel10stig_600530
+  tags:
+    - RHEL-10-600530
+    - CAT2
+    - CCI-002038
+    - SRG-OS-000373-GPOS-00156
+    - SV-281208r1166576_rule
+    - V-281208
+    - NIST800-53R4_IA-11
+    - sudo
+    - privilege_escalation
+  ansible.builtin.replace:
+    path: "{{ item }}"
+    regexp: '!authenticate'
+    replace: ''
+  loop: "{{ prelim_sudoers_files.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-600540 | PATCH | RHEL 10 must require reauthentication when using the 'sudo' command."
+  when: rhel10stig_600540
+  tags:
+    - RHEL-10-600540
+    - CAT2
+    - CCI-002038
+    - SRG-OS-000373-GPOS-00156
+    - SRG-OS-000373-GPOS-00157
+    - SRG-OS-000373-GPOS-00158
+    - SV-281209r1166579_rule
+    - V-281209
+    - NIST800-53R4_IA-11
+    - sudo
+    - privilege_escalation
+  block:
+    - name: "MEDIUM | RHEL-10-600540 | PATCH | RHEL 10 must require reauthentication when using the 'sudo' command."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -i 'timestamp_timeout' /etc/sudoers /etc/sudoers.d/*
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_sudoers_timestamp_timeout_conf_files.rc not in [ 0, 1, 2 ]
+      register: discovered_sudoers_timestamp_timeout_conf_files
+
+    - name: "MEDIUM | RHEL-10-600540 | PATCH | RHEL 10 must require reauthentication when using the 'sudo' command."
+      when: rhel10stig_disruption_high
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        regexp: ^Defaults timestamp_timeout\s*=\s*\d(.*)
+        line: Defaults timestamp_timeout=0
+        insertafter: '^# Defaults specification'
+        state: present
+        validate: '/usr/sbin/visudo -cf %s'
+
+- name: "MEDIUM | RHEL-10-600550 | PATCH | RHEL 10 must use the invoking user's password for privilege escalation when using 'sudo'."
+  when: rhel10stig_600550
+  tags:
+    - RHEL-10-600550
+    - CAT2
+    - CCI-002038
+    - SRG-OS-000373-GPOS-00156
+    - SV-281210r1166582_rule
+    - V-281210
+    - NIST800-53R4_IA-11
+    - sudo
+    - privilege_escalation
+  block:
+    - name: "MEDIUM | RHEL-10-600550 | AUDIT | RHEL 10 must use the invoking user's password for privilege escalation when using 'sudo'. | targetpw"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -Ei '(!targetpw|!rootpw|!runaspw)' /etc/sudoers /etc/sudoers.d/*
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_sudoers_defaults_config.rc not in [ 0, 1, 2 ]
+      register: discovered_sudoers_defaults_config
+
+    - name: "MEDIUM | RHEL-10-600550 | PATCH | RHEL 10 must use the invoking user's password for privilege escalation when using 'sudo'. | targetpw"
+      when:
+        - rhel10stig_disruption_high
+        - "item not in discovered_sudoers_defaults_config.stdout"
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        regexp: ^Defaults (.*){{ item }}(.*)
+        line: "Defaults {{ item }}"
+        insertafter: '^# Defaults specification'
+        validate: '/usr/sbin/visudo -cf %s'
+      loop:
+        - '!targetpw'
+        - '!rootpw'
+        - '!runaspw'
+
+- name: "MEDIUM | RHEL-10-600600 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file."
+  when:
+    - rhel10stig_600600
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600600
+    - CAT2
+    - CCI-000044
+    - SRG-OS-000021-GPOS-00005
+    - SV-258095r1045189_rule
+    - V-258095
+    - NIST800-53R4_AC-7
+    - pam
+  notify: Restart sssd
+  block:
+    - name: "MEDIUM | RHEL-10-600600 | AUDIT | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file."
+      when: rhel10stig_uses_authselect
+      ansible.builtin.shell: |
+        set -o pipefail
+        authselect current | grep with-faillock
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_enabled_authselect_faillock_state
+
+    - name: "MEDIUM | RHEL-10-600600 | AUDIT | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file."
+      when:
+        - rhel10stig_uses_authselect
+        - "'with-faillock' not in discovered_enabled_authselect_faillock_state.stdout"
+      ansible.builtin.command: authselect enable-feature with-faillock
+      changed_when: false
+      failed_when: false
+
+    - name: "MEDIUM | RHEL-10-600600 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file."
+      when: not rhel10stig_uses_authselect
+      block:
+        - name: "MEDIUM | RHEL-10-600600 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file. | Set preauth"
+          community.general.pamd:
+            name: system-auth
+            type: auth
+            control: required
+            module_path: pam_env.so
+            state: after
+            new_type: auth
+            new_control: required
+            new_module_path: pam_faillock.so
+            module_arguments: 'preauth'
+
+        - name: "MEDIUM | RHEL-10-600600 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file. | Set authfail"
+          community.general.pamd:
+            name: system-auth
+            type: auth
+            control: required
+            module_path: pam_deny.so
+            state: before
+            new_type: auth
+            new_control: required
+            new_module_path: pam_faillock.so
+            module_arguments: 'authfail'
+
+        - name: "MEDIUM | RHEL-10-600600 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/system-auth file. | Set account faillock"
+          community.general.pamd:
+            name: system-auth
+            type: account
+            control: required
+            module_path: pam_unix.so
+            state: before
+            new_type: account
+            new_control: required
+            new_module_path: pam_faillock.so
+
+- name: "MEDIUM | RHEL-10-600610 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file."
+  when:
+    - rhel10stig_600610
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600610
+    - CAT2
+    - CCI-000044
+    - SRG-OS-000021-GPOS-00005
+    - SV-281213r1166591_rule
+    - V-281213
+    - NIST800-53R4_AC-7
+    - pam
+  notify: Restart sssd
+  block:
+    - name: "MEDIUM | RHEL-10-600610 | AUDIT | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file."
+      when: rhel10stig_uses_authselect
+      ansible.builtin.shell: |
+        set -o pipefail
+        authselect current | grep with-faillock
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_passwd_auth_authselect_faillock_state
+
+    - name: "MEDIUM | RHEL-10-600610 | AUDIT | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file."
+      when:
+        - rhel10stig_uses_authselect
+        - "'with-faillock' not in discovered_passwd_auth_authselect_faillock_state.stdout"
+      ansible.builtin.command: authselect enable-feature with-faillock
+      changed_when: false
+      failed_when: false
+
+    - name: "MEDIUM | RHEL-10-600610 | AUDIT | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file."
+      when: not rhel10stig_uses_authselect
+      block:
+        - name: "MEDIUM | RHEL-10-600610 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file. | Set preauth"
+          community.general.pamd:
+            name: password-auth
+            type: auth
+            control: required
+            module_path: pam_env.so
+            state: after
+            new_type: auth
+            new_control: required
+            new_module_path: pam_faillock.so
+            module_arguments: 'preauth'
+
+        - name: "MEDIUM | RHEL-10-600610 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file. | Set authfail"
+          community.general.pamd:
+            name: password-auth
+            type: auth
+            control: required
+            module_path: pam_deny.so
+            state: before
+            new_type: auth
+            new_control: required
+            new_module_path: pam_faillock.so
+            module_arguments: 'authfail'
+
+        - name: "MEDIUM | RHEL-10-600610 | PATCH | RHEL 10 must configure the use of the pam_faillock.so module in the /etc/pam.d/password-auth file. | Set account faillock"
+          community.general.pamd:
+            name: password-auth
+            type: account
+            control: required
+            module_path: pam_unix.so
+            state: before
+            new_type: account
+            new_control: required
+            new_module_path: pam_faillock.so
+
+- name: "MEDIUM | RHEL-10-600620 | PATCH | RHEL 10 must ensure the password complexity module is enabled in the password-auth file."
+  when:
+    - rhel10stig_600620
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600620
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SRG-OS-000070-GPOS-00038
+    - SV-281214r1166594_rule
+    - V-281214
+    - NIST800-53R4_NA
+    - pam
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/password-auth
+    regexp: ^(password\s+)(required|requisite|sufficient)pam_pwquality.so(.*)
+    line: 'password required pam_pwquality.so'
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-600630 | PATCH | RHEL 10 must ensure the password complexity module is enabled in the system-auth file."
+  when:
+    - rhel10stig_600630
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600630
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000069-GPOS-00037
+    - SV-281215r1166597_rule
+    - V-281215
+    - NIST800-53R4_NA
+    - pam
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/system-auth
+    regexp: ^(password\s+)(required|requisite|sufficient)pam_pwquality.so(.*)
+    line: '\1required\2'
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-600650 | PATCH | RHEL 10 must ensure that the pam_unix.so module is configured in the password-auth file to use a FIPS 140-3-approved cryptographic hashing algorithm for system authentication."
+
+  when: rhel10stig_600650
+  tags:
+    - RHEL-10-600650
+    - CAT2
+    - CCI-000803
+    - SRG-OS-000073-GPOS-00041
+    - SRG-OS-000120-GPOS-00061
+    - SV-281217r1195450_rule
+    - V-281217
+    - NIST800-53R4_IA-7
+    - pam
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/password-auth
+    regexp: '^(password\s+)(required|requisite|sufficient)(\s+pam_pwquality.so.*)\ssha512\d(.*)'
+    line: '\1required\3 sha512"\4'
+    insertafter: '^password'
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-600700 | PATCH | RHEL 10 must be configured to use a sufficient number of hashing rounds for the shadow password suite."
+  when:
+    - rhel10stig_600700
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600700
+    - CAT2
+    - CCI-000803
+    - SRG-OS-000073-GPOS-00041
+    - SRG-OS-000120-GPOS-00061
+    - SV-281218r1166606_rule
+    - V-281218
+    - NIST800-53R4_IA-7
+    - pam
+    - users
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/password-auth
+    regexp: '^(password\s+)(required|requisite|sufficient)(\s+pam_unix.so.*)(sha512)rounds=(\d+)(.*)'
+    line: '\1\2\3\4 rounds=\5\6'
+    insertafter: '^password'
+    backrefs: true
+
+# This rule need to be investigated
+# default is yescrypt and must use custom profile in order to change the value
+# or select opt-out for authselect
+
+- name: "MEDIUM | RHEL-10-600710 | PATCH | RHEL 10 must be configured to use a FIPS 140-3-approved cryptographic hashing algorithm for system authentication by ensuring that the pam_unix.so module is configured in the system-auth file."
+  when: rhel10stig_600710
+  tags:
+    - RHEL-10-600710
+    - CAT2
+    - CCI-000803
+    - SRG-OS-000073-GPOS-00041
+    - SRG-OS-000120-GPOS-00061
+    - SV-281219r1166609_rule
+    - V-281219
+    - NIST800-53R4_IA-7
+    - fips
+    - users
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/system-auth
+    regexp: '^(password\s+)(required|requisite|sufficient)(\s+pam_unix.so.*)sha512(.*)'
+    line: '\1\2\3 sha512\4'
+    insertafter: '^password'
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-600720 | PATCH | RHEL 10 must be configured so that password-auth uses a sufficient number of hashing rounds."
+  when:
+    - rhel10stig_600720
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-600720
+    - CAT2
+    - CCI-000803
+    - SRG-OS-000073-GPOS-00041
+    - SRG-OS-000120-GPOS-00061
+    - SV-281220r1166612_rule
+    - V-281220
+    - NIST800-53R4_IA-7
+    - pam
+    - users
+  community.general.pamd:
+    name: password-auth
+    type: password
+    control: sufficient
+    module_path: pam_unix.so
+    module_arguments: 'sha512 rounds={{ rhel10stig_pam_rounds }}'
+    state: args_present

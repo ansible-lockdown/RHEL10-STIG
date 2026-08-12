@@ -1,0 +1,1484 @@
+---
+
+- name: "MEDIUM | RHEL-10-200000 | PATCH | RHEL 10 must remove all software components after updated versions have been installed."
+  when: rhel10stig_200000
+  notify: Reboot required
+  tags:
+    - RHEL-10-200000
+    - CAT2
+    - CCI-002617
+    - SRG-OS-000437-GPOS-00194
+    - SV-280942r1165181_rule
+    - V-280942
+    - NIST800-53R4_SI-2
+    - dnf
+  ansible.builtin.lineinfile:
+    path: /etc/dnf/dnf.conf
+    regexp: ^(#?)\s*clean_requirements_on_remove.*
+    line: clean_requirements_on_remove=True
+
+- name: "MEDIUM | RHEL-10-200010 | PATCH | RHEL 10 must not have the nfs-utils package installed."
+  when:
+    - rhel10stig_200010
+    - not rhel10stig_nfs_utils_required
+  tags:
+    - RHEL-10-200010
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280943r1165184_rule
+    - V-280943
+    - NIST800-53R4_CM-7
+    - nfs
+  ansible.builtin.package:
+    name: nfs-utils
+    state: absent
+
+- name: "MEDIUM | RHEL-10-200030 | PATCH | RHEL 10 must not have the gssproxy package installed."
+  when: rhel10stig_200030
+  tags:
+    - RHEL-10-200030
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280945r1184750_rule
+    - V-280945
+    - NIST800-53R4_CM-7
+    - gssproxy
+  ansible.builtin.package:
+    name: gssproxy
+    state: absent
+
+- name: "MEDIUM | RHEL-10-200040 | PATCH | RHEL 10 must not have the tuned package installed."
+  when: rhel10stig_200040
+  tags:
+    - RHEL-10-200040
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280946r1184751_rule
+    - V-280946
+    - NIST800-53R4_CM-7
+    - tuned
+  ansible.builtin.package:
+    name: tuned
+    state: absent
+
+- name: "MEDIUM | RHEL-10-200050 | PATCH | RHEL 10 must not have a Trivial File Transfer Protocol (TFTP) server package installed unless it is required by the mission, and if required, the TFTP daemon must be configured to operate in secure mode."
+  # When TFTP is required (rhel10stig_tftp_server_required), secure-mode (-s) enforcement is handled by RHEL-10-800310.
+  when:
+    - rhel10stig_200050
+    - not rhel10stig_tftp_server_required
+  ansible.builtin.package:
+    name: tftp-server
+    state: absent
+  tags:
+    - RHEL-10-200050
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280947r1165196_rule
+    - V-280947
+    - NIST800-53R4_CM-7
+    - tftp
+
+- name: "MEDIUM | RHEL-10-200060 | PATCH | RHEL 10 must not have the unbound package installed."
+  when: rhel10stig_200060
+  tags:
+    - RHEL-10-200060
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280948r1197218_rule
+    - V-280948
+    - NIST800-53R4_CM-7
+    - unbound
+    - dns
+  ansible.builtin.package:
+    name: unbound
+    state: absent
+
+- name: "MEDIUM | RHEL-10-200080 | PATCH | RHEL 10 must not have the gdm package installed."
+  when: rhel10stig_200080
+  tags:
+    - RHEL-10-200080
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280950r1165205_rule
+    - V-280950
+    - NIST800-53R4_CM-7
+    - gdm
+  ansible.builtin.package:
+    name: gdm
+    state: absent
+
+- name: "MEDIUM | RHEL-10-200500 | PATCH | RHEL 10 subscription-manager package must be installed."
+  when:
+    - rhel10stig_200500
+    - ansible_facts['distribution'] == 'RedHat'
+  tags:
+    - RHEL-10-200500
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000366-GPOS-00153
+    - SV-280952r1195340_rule
+    - V-280952
+    - NIST800-53R4_NA
+    - subscription-manager
+  ansible.builtin.package:
+    name: subscription-manager
+    state: present
+
+- name: "MEDIUM | RHEL-10-200510 | PATCH | RHEL 10 must have the nss-tools package installed."
+  when: rhel10stig_200510
+  tags:
+    - RHEL-10-200510
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280953r1195342_rule
+    - V-280953
+    - NIST800-53R4_CM-7
+    - nss-tools
+  ansible.builtin.package:
+    name: nss-tools
+    state: present
+
+- name: "MEDIUM | RHEL-10-200520 | PATCH | RHEL 10 must have the s-nail package installed."
+  when: rhel10stig_200520
+  tags:
+    - RHEL-10-200520
+    - CAT2
+    - CCI-001744
+    - SRG-OS-000363-GPOS-00150
+    - SV-280954r1195344_rule
+    - V-280954
+    - NIST800-53R4_CM-7
+    - s-nail
+  ansible.builtin.package:
+    name: s-nail
+    state: present
+
+- name: "MEDIUM | RHEL-10-200530 | PATCH | RHEL 10 must have the firewalld package installed."
+  when: rhel10stig_200530
+  tags:
+    - RHEL-10-200530
+    - CAT2
+    - CCI-000382
+    - CCI-002314
+    - CCI-002322
+    - SRG-OS-000096-GPOS-00050
+    - SRG-OS-000297-GPOS-00115
+    - SRG-OS-000298-GPOS-00116
+    - SRG-OS-000480-GPOS-00232
+    - SV-280955r1197220_rule
+    - V-280955
+    - NIST800-53R4_CM-7
+    - NIST800-53R4_AC-17
+    - firewalld
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+
+- name: "MEDIUM | RHEL-10-200531 | PATCH | RHEL 10 must have the firewalld service set to active."
+  when: rhel10stig_200531
+  tags:
+    - RHEL-10-200531
+    - CAT2
+    - CCI-000382
+    - CCI-002314
+    - SRG-OS-000096-GPOS-00050
+    - SRG-OS-000297-GPOS-00115
+    - SRG-OS-000480-GPOS-00227
+    - SRG-OS-000480-GPOS-00232
+    - SV-280956r1165223_rule
+    - V-280956
+    - NIST800-53R4_CM-7
+    - NIST800-53R4_AC-17
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems."
+  when: rhel10stig_200532
+  tags:
+    - RHEL-10-200532
+    - CAT2
+    - CCI-002314
+    - SRG-OS-000297-GPOS-00115
+    - SV-280957r1165226_rule
+    - V-280957
+    - NIST800-53R4_CM-7
+  notify: Reload firewalld
+  block:
+    - name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems. | Setup Connections"
+      ansible.posix.firewalld:
+        zone: "{{ rhel10stig_custom_firewall_zone }}"
+        permanent: true
+        state: enabled
+        service: "{{ item.name }}"
+        port: "{{ item.port | default(omit) }}"
+        protocol: "{{ item.protocol | default(omit) }}"
+      loop: "{{ rhel10stig_white_list_services }}"
+
+    - name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems."
+      ansible.posix.firewalld:
+        zone: "{{ rhel10stig_custom_firewall_zone }}"
+        permanent: true
+        state: enabled
+        target: DROP
+      register: discovered_firewalld_target
+
+    - name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems. | Reload zones"
+      when: discovered_firewalld_target.changed  # noqa no-handler
+      ansible.builtin.command: firewall-cmd --reload
+      changed_when: discovered_firewalld_reload.rc == 0
+      failed_when: discovered_firewalld_reload.rc >= 2
+      register: discovered_firewalld_reload
+
+    - name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems. | Setup Connections"
+      ansible.posix.firewalld:
+        zone: "{{ rhel10stig_custom_firewall_zone }}"
+        permanent: true
+        state: enabled
+        interface: "{{ rhel10stig_custom_firewall_interface | join(',') }}"
+
+    - name: "MEDIUM | RHEL-10-200532 | AUDIT | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems. | Get default zone"
+      ansible.builtin.command: "firewall-cmd --get-default-zone"
+      changed_when: false
+      failed_when: discovered_current_firewalld_zone.rc not in [ 0, 1 ]
+      register: discovered_current_firewalld_zone
+
+    - name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems. | Set zone if not current"
+      when: "(discovered_current_firewalld_zone.stdout | default([])) not in rhel10stig_custom_firewall_zone"
+      ansible.builtin.command: "firewall-cmd --set-default-zone={{ rhel10stig_custom_firewall_zone }}"
+      changed_when: true
+
+    - name: "MEDIUM | RHEL-10-200532 | PATCH | A RHEL 10 firewall must employ a deny-all, allow-by-exception policy for allowing connections to other systems. | Reload firewall"
+      when: "(discovered_current_firewalld_zone.stdout | default([])) not in rhel10stig_custom_firewall_zone"
+      ansible.builtin.command: firewall-cmd --reload
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-200540 | PATCH | RHEL 10 must have the chrony package installed."
+  when: rhel10stig_200540
+  tags:
+    - RHEL-10-200540
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000355-GPOS-00143
+    - SV-280958r1195348_rule
+    - V-280958
+    - NIST800-53R4_NA
+    - chrony
+  ansible.builtin.package:
+    name: chrony
+    state: present
+
+- name: "MEDIUM | RHEL-10-200541 | PATCH | RHEL 10 must enable the chronyd service."
+  when: rhel10stig_200541
+  tags:
+    - RHEL-10-200541
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000355-GPOS-00143
+    - SV-280959r1165232_rule
+    - V-280959
+    - NIST800-53R4_NA
+    - chrony
+  ansible.builtin.systemd:
+    name: chronyd
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200542 | PATCH | RHEL 10 must disable the chrony daemon from acting as a server."
+  when: rhel10stig_200542
+  tags:
+    - RHEL-10-200542
+    - CAT2
+    - CCI-000382
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280960r1165235_rule
+    - V-280960
+    - NIST800-53R4_CM-7
+    - chrony
+  notify: Restart chronyd
+  ansible.builtin.lineinfile:
+    path: /etc/chrony.conf
+    regexp: '^port 0$'
+    line: 'port 0'
+    state: present
+
+- name: "MEDIUM | RHEL-10-200543 | PATCH | RHEL 10 must disable network management of the chrony daemon."
+  when: rhel10stig_200543
+  tags:
+    - RHEL-10-200543
+    - CAT2
+    - CCI-000381
+    - CCI-000382
+    - SRG-OS-000095-GPOS-00049
+    - SRG-OS-000096-GPOS-00050
+    - SV-280961r1165238_rule
+    - V-280961
+    - NIST800-53R4_CM-7
+    - chrony
+  notify: Restart chronyd
+  ansible.builtin.lineinfile:
+    path: /etc/chrony.conf
+    regexp: '^cmdport 0$'
+    line: 'cmdport 0'
+    state: present
+
+- name: "MEDIUM | RHEL-10-200560 | PATCH | RHEL 10 must have the USBGuard package installed."
+  when: rhel10stig_200560
+  tags:
+    - RHEL-10-200560
+    - CAT2
+    - CCI-001958
+    - SRG-OS-000378-GPOS-00163
+    - SV-280962r1195350_rule
+    - V-280962
+    - NIST800-53R4_IA-3
+    - usbguard
+  ansible.builtin.package:
+    name: usbguard
+    state: present
+
+- name: "MEDIUM | RHEL-10-200561 | PATCH | RHEL 10 must have the USBGuard package enabled."
+  when: rhel10stig_200561
+  tags:
+    - RHEL-10-200561
+    - CAT2
+    - CCI-001958
+    - SRG-OS-000378-GPOS-00163
+    - SV-280963r1165244_rule
+    - V-280963
+    - NIST800-53R4_IA-3
+    - usbguard
+  ansible.builtin.systemd:
+    name: usbguard
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200562 | PATCH | RHEL 10 must block unauthorized peripherals before establishing a connection."
+  when:
+    - rhel10stig_200562
+    - rhel10stig_disruption_high  # If configuring locally could stop peripherals from working.
+  tags:
+    - RHEL-10-200562
+    - CAT2
+    - CCI-001958
+    - SRG-OS-000378-GPOS-00163
+    - SV-280964r1165247_rule
+    - V-280964
+    - NIST800-53R4_IA-3
+    - usbguard
+  block:
+    - name: "MEDIUM | RHEL-10-200562 | AUDIT | RHEL 10 must block unauthorized peripherals before establishing a connection."
+      ansible.builtin.shell: |
+        set -o pipefail
+        usbguard list-rules | wc -l
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_usbguard_rules.rc not in [ 0, 1 ]
+      register: discovered_usbguard_rules
+
+    - name: "MEDIUM | RHEL-10-200562 | PATCH | RHEL 10 must block unauthorized peripherals before establishing a connection."
+      when: discovered_usbguard_rules.stdout | int > 0
+      ansible.builtin.shell: |
+        set -o pipefail
+        usbguard generate-policy --no-hash > /etc/usbguard/rules.conf
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: true
+      notify: Restart usbguard
+
+- name: "MEDIUM | RHEL-10-200563 | PATCH | RHEL 10 must enable audit logging for the USBGuard daemon."
+  when:
+    - rhel10stig_200563
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-200563
+    - CAT2
+    - CCI-000169
+    - CCI-000172
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000471-GPOS-00215
+    - SV-280965r1165250_rule
+    - V-280965
+    - NIST800-53R4_AU-12
+    - usbguard
+  ansible.builtin.lineinfile:
+    path: /etc/usbguard/usbguard-daemon.conf
+    regexp: '^AuditBackend=LinuxAudit$'
+    line: 'AuditBackend=LinuxAudit'
+    state: present
+  notify: Restart usbguard
+
+- name: "MEDIUM | RHEL-10-200570 | PATCH | RHEL 10 must have policycoreutils package installed."
+  when: rhel10stig_200570
+  tags:
+    - RHEL-10-200570
+    - CAT2
+    - CCI-001084
+    - SRG-OS-000134-GPOS-00068
+    - SV-280966r1195352_rule
+    - V-280966
+    - NIST800-53R4_SC-3
+    - policycoreutils
+  ansible.builtin.package:
+    name: policycoreutils
+    state: present
+
+- name: "MEDIUM | RHEL-10-200580 | PATCH | RHEL 10 must have the policycoreutils-python-utils package installed."
+  when: rhel10stig_200580
+  tags:
+    - RHEL-10-200580
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280967r1195354_rule
+    - V-280967
+    - NIST800-53R4_CM-6
+    - policycoreutils
+  ansible.builtin.package:
+    name: policycoreutils-python-utils
+    state: present
+
+- name: "MEDIUM | RHEL-10-200590 | PATCH | RHEL 10 must have the sudo package installed."
+  when: rhel10stig_200590
+  tags:
+    - RHEL-10-200590
+    - CAT2
+    - CCI-002235
+    - SRG-OS-000324-GPOS-00125
+    - SV-280968r1195356_rule
+    - V-280968
+    - NIST800-53R4_AC-6
+    - sudo
+  ansible.builtin.package:
+    name: sudo
+    state: present
+
+- name: "MEDIUM | RHEL-10-200600 | PATCH | RHEL 10 fapolicy module must be installed."
+  when: rhel10stig_200600
+  tags:
+    - RHEL-10-200600
+    - CAT2
+    - CCI-01764
+    - CCI-01774
+    - SRG-OS-000370-GPOS-00155
+    - SRG-OS-000368-GPOS-00154
+    - SV-280969r1195358_rule
+    - V-280969
+    - NIST800-53R4_CM-7
+    - fapolicyd
+  ansible.builtin.package:
+    name: fapolicyd
+    state: present
+
+- name: "MEDIUM | RHEL-10-200601 | PATCH | RHEL 10 fapolicy module must be enabled."
+  when:
+    - rhel10stig_200601
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-200601
+    - CAT2
+    - CCI-01764
+    - CCI-01774
+    - SRG-OS-000370-GPOS-00155
+    - SRG-OS-000368-GPOS-00154
+    - SV-280970r1165265_rule
+    - V-280970
+    - NIST800-53R4_IA-11
+    - NIST800-53R4_AC-3
+  ansible.builtin.systemd:
+    name: fapolicyd
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200602 | PATCH | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs."
+  when:
+    - rhel10stig_200602
+    - rhel10stig_disruption_high
+    - rhel10stig_allow_fapolicy_updates
+  tags:
+    - RHEL-10-200602
+    - CAT2
+    - CCI-001764
+    - CCI-001774
+    - SRG-OS-000370-GPOS-00155
+    - SRG-OS-000368-GPOS-00154
+    - SV-280971r1184780_rule
+    - V-280971
+    - NIST800-53R4_CM-7
+    - fapolicyd
+  block:
+    - name: "MEDIUM | RHEL-10-200602 | AUDIT | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | capture fapolicy state"
+      ansible.builtin.shell: |
+        set -o pipefail
+        fapolicyd-cli --check-config && fagenrules --check
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_fapolicy_rules_state.rc not in [ 0, 1 ]
+      register: discovered_fapolicy_rules_state
+
+    - name: "MEDIUM | RHEL-10-200602 | WARN | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | Warning"
+      when: discovered_fapolicy_rules_state.rc != 0
+      ansible.builtin.debug:
+        msg: "Warning!! Fapolicy not clean please run: fapolicyd-cli --check-config && fagenrules --check"
+
+    - name: "MEDIUM | RHEL-10-600470 | WARN | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | Warning count"
+      when: discovered_fapolicy_rules_state.rc != 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-200602"
+
+    - name: "MEDIUM | RHEL-10-200602 | AUDIT | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs."
+      when:
+        - "'No change' in discovered_fapolicy_rules_state.stdout"
+        - rhel10stig_disruption_high
+        - rhel10stig_allow_fapolicy_updates
+      block:
+        - name: "MEDIUM | RHEL-10-200602 | AUDIT | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | capture fapolicy state"
+          ansible.builtin.template:
+            src: etc/fapolicyd/rules.d/99-stig-whitelist.rules.j2
+            dest: /etc/fapolicyd/rules.d/99-stig-whitelist.rules
+            mode: 'go-wx'
+            owner: root
+            group: fapolicyd
+
+        - name: "MEDIUM | RHEL-10-200602 | AUDIT | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | capture current permissive"
+          ansible.builtin.command: grep -E ^permissive /etc/fapolicyd/fapolicyd.conf
+          changed_when: false
+          register: discovered_fapolicy_permissive_state
+
+        - name: "MEDIUM | RHEL-10-200602 | PATCH | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | set permissive"
+          when: "'permissive = 1' in discovered_fapolicy_permissive_state.stdout"
+          ansible.builtin.replace:
+            path: /etc/fapolicyd/fapolicyd.conf
+            regexp: ^permissive\s*=\s*1
+            replace: permissive = 0
+          notify: Restart fapolicyd
+
+        - name: "MEDIUM | RHEL-10-200602 | PATCH | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | reload fapolicyd"
+          when: "'permissive = 1' in discovered_fapolicy_permissive_state.stdout"
+          ansible.builtin.systemd:
+            name: fapolicyd
+            state: restarted
+
+        - name: "MEDIUM | RHEL-10-200602 | AUDIT | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | capture rules"
+          ansible.builtin.shell: |
+            set -o pipefail
+            grep -E "^deny" /etc/fapolicyd/rules.d/*.rules
+          args:
+            executable: "{{ rhel10stig_shell_executable }}"
+          changed_when: false
+          failed_when: discovered_fapolicy_compiled_rules.rc not in [ 0, 1, 2 ]
+          register: discovered_fapolicy_compiled_rules
+
+        - name: "MEDIUM | RHEL-10-200602 | PATCH | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | Add deny rules"
+          when: "'99_stig_deny_all.rules:deny perm=any all : all' not in discovered_fapolicy_compiled_rules.stdout"
+          ansible.builtin.lineinfile:
+            path: /etc/fapolicyd/rules.d/99_stig_deny_all.rules
+            regexp: 'deny perm=any all : all'
+            line: 'deny perm=any all : all'
+            create: true
+            owner: root
+            group: fapolicyd
+            mode: 'go-wx'
+          register: discovered_deny_rule_added
+
+        - name: "MEDIUM | RHEL-10-200602 | PATCH | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | Reload rules"
+          when: discovered_deny_rule_added.changed  # noqa no-handler
+          ansible.builtin.command: fapolicyd-cli --reload-rules
+          changed_when: true
+          notify: Restart fapolicyd
+
+        - name: "MEDIUM | RHEL-10-200602 | AUDIT | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | Check rules ok"
+          ansible.builtin.shell: |
+            set -o pipefail
+            fagenrules --check && fapolicyd-cli --check-config
+          args:
+            executable: "{{ rhel10stig_shell_executable }}"
+          changed_when: false
+          failed_when:
+            - "'should be updated' in discovered_fapolicy_rule_addition_check.stdout"
+            - "'Daemon config is OK' not in discovered_fapolicy_rule_addition_check.stdout"
+          register: discovered_fapolicy_rule_addition_check
+
+        - name: "MEDIUM | RHEL-10-200602 | PATCH | The RHEL 10 fapolicy module must be configured to employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs. | Reload rules"
+          when:
+            - discovered_deny_rule_added is defined
+            - "'should be updated' in discovered_fapolicy_rule_addition_check.stdout"
+            - "'Daemon config is OK' in discovered_fapolicy_rule_addition_check.stdout"
+          ansible.builtin.debug:
+            msg: "RHEL-10-200602 fapolicy rules updated handler will restart fapolicy"
+          changed_when: true
+          notify: Restart fapolicyd
+
+- name: "MEDIUM | RHEL-10-200610 | PATCH | RHEL 10 must have the pcsc-lite package installed."
+  when:
+    - rhel10stig_200610
+    - rhel10stig_smartcard_reader
+  tags:
+    - RHEL-10-200610
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000375-GPOS-00160
+    - SV-280972r1195360_rule
+    - V-280972
+    - NIST800-53R4_NA
+  ansible.builtin.package:
+    name: pcsc-lite
+    state: present
+
+- name: "MEDIUM | RHEL-10-200611 | PATCH | RHEL 10 must have the pcscd service set to active."
+  when:
+    - rhel10stig_200611
+    - rhel10stig_smartcard_reader
+  tags:
+    - RHEL-10-200611
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000375-GPOS-00160
+    - SV-280973r1165274_rule
+    - V-280973
+    - NIST800-53R4_NA
+  ansible.builtin.systemd:
+    name: pcscd
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200612 | PATCH | RHEL 10 must have the pcsc-lite-ccid package installed."
+  when:
+    - rhel10stig_200612
+    - rhel10stig_smartcard_reader
+  tags:
+    - RHEL-10-200612
+    - CAT2
+    - CCI-NA
+    - SRG-OS-000375-GPOS-00160
+    - SV-280974r1195362_rule
+    - V-280974
+    - NIST800-53R4_NA
+  ansible.builtin.package:
+    name: pcsc-lite-ccid
+    state: present
+
+- name: "MEDIUM | RHEL-10-200620 | PATCH | RHEL 10 must have the opensc package installed."
+  when: rhel10stig_200620
+  tags:
+    - RHEL-10-200620
+    - CAT2
+    - CCI-001953
+    - SRG-OS-000375-GPOS-00160
+    - SRG-OS-000376-GPOS-00161
+    - SV-280975r1195364_rule
+    - V-280975
+    - NIST800-53R4_NA
+    - opensc
+  ansible.builtin.package:
+    name: opensc
+    state: present
+
+- name: "MEDIUM | RHEL-10-200621 | PATCH | RHEL 10 must use the common access card (CAC) smart card driver."
+  when:
+    - rhel10stig_200621
+    - rhel10stig_disruption_high
+    - rhel10stig_smartcard_reader
+  tags:
+    - RHEL-10-200621
+    - CAT2
+    - CCI-000764
+    - CCI-000765
+    - CCI-000766
+    - SRG-OS-000104-GPOS-00051
+    - SRG-OS-000106-GPOS-00053
+    - SRG-OS-000107-GPOS-00054
+    - SRG-OS-000109-GPOS-00056
+    - SRG-OS-000108-GPOS-00055
+    - SV-280976r1165283_rule
+    - V-280976
+    - NIST800-53R4_IA-2
+  block:
+    - name: "MEDIUM | RHEL-10-200621 | AUDIT | RHEL 10 must use the common access card (CAC) smart card driver. | get state"
+      ansible.builtin.command: opensc-tool --get-conf-entry app:default:card_drivers
+      changed_when: false
+      register: discovered_opensc_loaded_card_driver
+
+    - name: "MEDIUM | RHEL-10-200621 | AUDIT | RHEL 10 must use the common access card (CAC) smart card driver. | get state"
+      when: "'cac' not in discovered_opensc_loaded_card_driver.stdout"
+      ansible.builtin.command: opensc-tool --set-conf-entry app:default:card_drivers:cac
+      changed_when: true
+      notify: Restart pcscd
+
+- name: "MEDIUM | RHEL-10-200630 | PATCH | RHEL 10 must have the Advanced Intrusion Detection Environment (AIDE) package installed."
+  when:
+    - rhel10stig_200630
+    - rhel10stig_use_aide
+  tags:
+    - RHEL-10-200630
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-280977r1195366_rule
+    - V-280977
+    - NIST800-53R4_SI-6
+    - aide
+  notify: Build aide
+  ansible.builtin.package:
+    name: aide
+    state: present
+
+- name: "MEDIUM | RHEL-10-200632 | PATCH | RHEL 10 must use a file integrity tool that is configured to use FIPS 140-3-approved cryptographic hashes for validating file contents and directories."
+  when:
+    - rhel10stig_200632
+    - rhel10stig_use_aide
+  tags:
+    - RHEL-10-200632
+    - CAT2
+    - CCI-002475
+    - SRG-OS-000404-GPOS-00183
+    - SV-280979r1165292_rule
+    - V-280979
+    - NIST800-53R4_SC-28
+    - aide
+  ansible.builtin.template:
+    src: etc/aide.conf.j2
+    dest: /etc/aide.conf
+    mode: 'u-x,go-rwx'
+
+# RHEL-10-200700 is required for RHEL-10-200633
+- name: "MEDIUM | RHEL-10-200700 | PATCH | RHEL 10 must have the cronie package installed."
+  when: rhel10stig_200700
+  tags:
+    - RHEL-10-200700
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000480-GPOS-00227
+    - SRG-OS-000095-GPOS-00049
+    - SV-280999r1195389_rule
+    - V-280999
+    - NIST800-53R4_CM-7
+  ansible.builtin.package:
+    name: cronie
+    state: present
+
+- name: "MEDIUM | RHEL-10-200633 | PATCH | RHEL 10 must routinely check the baseline configuration for unauthorized changes and notify the system administrator when anomalies in the operation of any security functions are discovered."
+  when:
+    - rhel10stig_200633
+    - rhel10stig_use_aide
+  tags:
+    - RHEL-10-200633
+    - CAT2
+    - CCI-001744
+    - CCI-002699
+    - CCI-002702
+    - SRG-OS-000363-GPOS-00150
+    - SRG-OS-000446-GPOS-00200
+    - SRG-OS-000447-GPOS-00201
+    - SV-258135r1045267_rule
+    - V-258135
+    - NIST800-53R4_CM-3
+    - NIST800-53R4_SI-6
+    - aide
+  ansible.builtin.cron:
+    cron_file: "{{ rhel10stig_aide_cron_file }}"
+    day: "{{ rhel10stig_aide_cron_day }}"
+    hour: "{{ rhel10stig_aide_cron_hour }}"
+    job: "{{ rhel10stig_aide_cron_job }}"
+    minute: "{{ rhel10stig_aide_cron_minute }}"
+    name: "{{ rhel10stig_aide_cron_name }}"
+    state: present
+    user: root
+
+- name: "MEDIUM | RHEL-10-200634 | PATCH | RHEL 10 must be configured so that the file integrity tool verifies Access Control Lists (ACLs)."
+  when:
+    - rhel10stig_200634
+    - rhel10stig_use_aide
+  tags:
+    - RHEL-10-200634
+    - CAT2
+    - CCI-002475
+    - SRG-OS-000404-GPOS-00183
+    - SV-280981r1165298_rule
+    - V-280981
+    - NIST800-53R4_SC-28
+    - aide
+  ansible.builtin.template:
+    src: etc/aide.conf.j2
+    dest: /etc/aide.conf
+    mode: 'u-x,go-rwx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-200635 | PATCH | RHEL 10 must be configured so that the file integrity tool verifies extended attributes."
+  when:
+    - rhel10stig_200635
+    - rhel10stig_use_aide
+  tags:
+    - RHEL-10-200635
+    - CAT2
+    - CCI-002475
+    - SRG-OS-000404-GPOS-00183
+    - SV-280982r1165301_rule
+    - V-280982
+    - NIST800-53R4_SC-28
+    - aide
+  ansible.builtin.template:
+    src: etc/aide.conf.j2
+    dest: /etc/aide.conf
+    mode: 'u-x,go-rwx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-200640 | PATCH | RHEL 10 must have the rsyslog package installed."
+  when: rhel10stig_200640
+  tags:
+    - RHEL-10-200640
+    - CAT2
+    - CCI-000154
+    - CCI-001851
+    - SRG-OS-000479-GPOS-00224
+    - SRG-OS-000051-GPOS-00024
+    - SV-280983r1195368_rule
+    - V-280983
+    - NIST800-53R4_AU-4
+    - NIST800-53R4_AU-6
+    - rsyslog
+  ansible.builtin.package:
+    name: rsyslog
+    state: present
+
+- name: "MEDIUM | RHEL-10-200641 | PATCH | RHEL 10 must have the rsyslog service set to active."
+  when: rhel10stig_200641
+  tags:
+    - RHEL-10-200641
+    - CAT2
+    - CCI-000133
+    - SV-280984r1165307_rule
+    - V-280984
+    - NIST800-53R4_AU-3
+    - rsyslog
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: started
+    enabled: true
+
+- name: "MEDIUM | RHEL-10-200642 | PATCH | RHEL 10 must be configured to forward audit records via TCP to a different system or media from the system being audited via rsyslog."
+  when:
+    - rhel10stig_200642
+    - not rhel10stig_rsyslog_server
+  tags:
+    - RHEL-10-200642
+    - CAT2
+    - CCI-001851
+    - SRG-OS-000479-GPOS-00224
+    - SV-280985r1197221_rule
+    - V-280985
+    - NIST800-53R4_AU-4
+    - rsyslog
+  block:
+    - name: MEDIUM | RHEL-10-200642 | PATCH | RHEL 10 must be configured to forward audit records via TCP to a different system or media from the system being audited via rsyslog. | add remote log server
+      when: rhel10stig_rsyslog_legacy_offload
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '^.*\@\@'
+        line: "*.* {{ rhel10stig_rsyslog_remote_server_protocol }}{{ rhel10stig_rsyslog_remote_server_ip }}:{{ rhel10stig_rsyslog_remote_server_port }}"
+
+    - name: MEDIUM | RHEL-10-200642 | PATCH | RHEL 10 must be configured to forward audit records via TCP to a different system or media from the system being audited via rsyslog. | add remote log server
+      when: not rhel10stig_rsyslog_legacy_offload
+      ansible.builtin.template:
+        src: etc/rsyslog.d/99-forwarding.conf.j2
+        dest: /etc/rsyslog.d/99-forwarding.conf
+        mode: 'u-x,go-wx'
+        owner: root
+        group: root
+
+- name: "MEDIUM | RHEL-10-200643 | PATCH | RHEL 10 must be configured so that the rsyslog daemon does not accept log messages from other servers unless the server is being used for log aggregation."
+  when:
+    - rhel10stig_200643
+    - not rhel10stig_rsyslog_server
+  tags:
+    - RHEL-10-200643
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-280986r1184782_rule
+    - V-280986
+    - NIST800-53R4_SC-5
+    - rsyslog
+  notify: Restart rsyslog
+  block:
+    - name: "MEDIUM | RHEL-10-200643 | AUDIT | RHEL 10 must be configured so that the rsyslog daemon does not accept log messages from other servers unless the server is being used for log aggregation."
+      ansible.builtin.find:
+        paths: /etc/rsyslog.d/
+      register: discovered_rsyslog_conf
+
+    - name: "MEDIUM | RHEL-10-200643 | PATCH | RHEL 10 must be configured so that the rsyslog daemon does not accept log messages from other servers unless the server is being used for log aggregation."
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regex: ^(?!#)(InputTCPServerRun|UDPServerRun|RELPServerRun|imtcp|imudp|imrelp)(.*)
+        line: '#\1\2\3'
+        backrefs: true
+
+    - name: "MEDIUM | RHEL-10-200643 | PATCH | RHEL 10 must be configured so that the rsyslog daemon does not accept log messages from other servers unless the server is being used for log aggregation."
+      when: discovered_rsyslog_conf.matched > 1
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        regex: (?!#)(InputTCPServerRun|UDPServerRun|RELPServerRun|imtcp|imudp|imrelp)(.*)
+        line: '#\1\2\3'
+        backrefs: true
+      loop: "{{ discovered_rsyslog_conf.files }}"
+
+# RHEL-10-200650 is required for RHEL-10-200644, RHEL-10-200645 and RHEL-10-200646
+- name: "MEDIUM | RHEL-10-200650 | PATCH | RHEL 10 must have the packages required for encrypting offloaded audit logs installed."
+  when: rhel10stig_200650
+  tags:
+    - RHEL-10-200650
+    - CAT2
+    - CCI-000803
+    - SRG-OS-000480-GPOS-00227
+    - SRG-OS-000120-GPOS-00061
+    - SV-280992r1195379_rule
+    - V-280992
+    - NIST800-53R4_IA-7
+    - rsyslog
+  ansible.builtin.package:
+    name: rsyslog-gnutls
+    state: present
+
+- name: "MEDIUM | RHEL-10-200644 | AUDIT | RHEL 10 must authenticate the remote logging server for offloading audit logs via rsyslog."
+  when: rhel10stig_200644
+  tags:
+    - RHEL-10-200644
+    - CAT2
+    - CCI-001851
+    - SRG-OS-000342-GPOS-00133
+    - SRG-OS-000479-GPOS-00224
+    - SV-280987r1195371_rule
+    - V-280987
+    - NIST800-53R4_AU-4
+    - rsyslog
+  notify: Restart rsyslog
+  block:
+    - name: "MEDIUM | RHEL-10-200644 | AUDIT | RHEL 10 must authenticate the remote logging server for offloading audit logs via rsyslog."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -rE 'streamdriver.authmode|streamdriver.permittedpeer|tls.authmode|tls.permittedpeer' /etc/rsyslog.conf /etc/rsyslog.d/*.conf
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_rsyslog_remote_auth_x509.rc not in [ 0, 1, 2 ]
+      register: discovered_rsyslog_remote_auth_x509
+
+    - name: "MEDIUM | RHEL-10-200644 | PATCH | RHEL 10 must authenticate the remote logging server for offloading audit logs via rsyslog."
+      when:
+        - rhel10stig_disruption_high
+        - discovered_rsyslog_remote_auth_x509 is defined
+        - "'x509' not in discovered_rsyslog_remote_auth_x509.stdout"
+        - not rhel10stig_rsyslog_legacy_offload
+      ansible.builtin.template:
+        src: etc/rsyslog.d/99-forwarding.conf.j2
+        dest: /etc/rsyslog.d/99-forwarding.conf
+        mode: 'u-x,go-wx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-200644 | WARN | RHEL 10 must authenticate the remote logging server for offloading audit logs via rsyslog."
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_rsyslog_remote_auth_x509 is defined
+        - "'x509' not in discovered_rsyslog_remote_auth_x509.stdout"
+      ansible.builtin.debug:
+        msg: "Warning!! Please ensure rule RHEL-10-200644 remote syslog control requirements are met for your environment"
+
+    - name: "MEDIUM | RHEL-10-200644 | WARN | RHEL 10 must authenticate the remote logging server for offloading audit logs via rsyslog."
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_rsyslog_remote_auth_x509 is defined
+        - "'x509' not in discovered_rsyslog_remote_auth_x509.stdout"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-200644"
+
+- name: "MEDIUM | RHEL-10-200645 | AUDIT | RHEL 10 must encrypt the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+  when:
+    - rhel10stig_200645
+    - not rhel10stig_rsyslog_server
+  tags:
+    - RHEL-10-200645
+    - CAT2
+    - CCI-001851
+    - SRG-OS-000342-GPOS-00133
+    - SRG-OS-000479-GPOS-00224
+    - SV-280988r1195374_rule
+    - V-280988
+    - NIST800-53R4_AU-4
+    - rsyslog
+  block:
+    - name: "MEDIUM | RHEL-10-200645 | AUDIT | RHEL 10 must encrypt the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -rE 'tls="on"|StreamDriver.Mode' /etc/rsyslog.conf /etc/rsyslog.d/*.conf
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_rsyslog_remote_stream_driver.rc not in [ 0, 1, 2 ]
+      register: discovered_rsyslog_remote_stream_driver
+
+    - name: "MEDIUM | RHEL-10-200645 | PATCH | RHEL 10 must encrypt the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      when:
+        - rhel10stig_disruption_high
+        - discovered_rsyslog_remote_stream_driver is defined
+        - discovered_rsyslog_remote_stream_driver.rc == 2
+        - not rhel10stig_rsyslog_legacy_offload
+      ansible.builtin.template:
+        src: etc/rsyslog.d/99-forwarding.conf.j2
+        dest: /etc/rsyslog.d/99-forwarding.conf
+        mode: 'u-x,go-wx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-200645 | WARN | RHEL 10 must encrypt the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_rsyslog_remote_stream_driver is defined
+        - discovered_rsyslog_remote_stream_driver.rc == 2
+      ansible.builtin.debug:
+        msg: "Warning!! Please ensure rule RHEL-10-200645 remote syslog control requirements are met for your environment"
+
+    - name: "MEDIUM | RHEL-10-200645 | WARN | RHEL 10 must encrypt the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_rsyslog_remote_stream_driver is defined
+        - discovered_rsyslog_remote_stream_driver.rc == 2
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-200645"
+
+- name: "MEDIUM | RHEL-10-200646 | AUDIT | RHEL 10 must encrypt via the gtls driver the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+  when:
+    - rhel10stig_200646
+    - not rhel10stig_rsyslog_server
+  tags:
+    - RHEL-10-200646
+    - CAT2
+    - CCI-001851
+    - SRG-OS-000342-GPOS-00133
+    - SRG-OS-000479-GPOS-00224
+    - SV-280989r1197222_rule
+    - V-280989
+    - NIST800-53R4_AU-4
+    - rsyslog
+  block:
+    - name: "MEDIUM | RHEL-10-200646 | AUDIT | RHEL 10 must encrypt via the gtls driver the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      ansible.builtin.command: grep -rE 'StreamDriver\s*=\s*"(gtls|ossl)"' /etc/rsyslog.conf /etc/rsyslog.d/
+      changed_when: false
+      failed_when: discovered_rsyslog_remote_netstream_driver.rc not in [ 0, 1, 2 ]
+      register: discovered_rsyslog_remote_netstream_driver
+
+    - name: "MEDIUM | RHEL-10-200646 | PATCH | RHEL 10 must encrypt via the gtls driver the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      when:
+        - rhel10stig_disruption_high
+        - discovered_rsyslog_remote_netstream_driver is defined
+        - "'gtls' not in discovered_rsyslog_remote_netstream_driver.stdout or 'ossl' not in discovered_rsyslog_remote_netstream_driver.stdout"
+        - not rhel10stig_rsyslog_legacy_offload
+      ansible.builtin.template:
+        src: etc/rsyslog.d/99-forwarding.conf.j2
+        dest: /etc/rsyslog.d/99-forwarding.conf
+        mode: 'u-x,go-wx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-200646 | WARN | RHEL 10 must encrypt via the gtls driver the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_rsyslog_remote_netstream_driver is defined
+        - "'gtls' not in discovered_rsyslog_remote_netstream_driver.stdout or 'ossl' not in discovered_rsyslog_remote_netstream_driver.stdout"
+      ansible.builtin.debug:
+        msg: "Warning!! Please ensure rule RHEL-10-200646 remote syslog control requirements are met for your environment"
+
+    - name: "MEDIUM | RHEL-10-200646 | WARN | RHEL 10 must encrypt via the gtls driver the transfer of audit records offloaded onto a different system or media from the system being audited via rsyslog."
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_rsyslog_remote_netstream_driver is defined
+        - "'gtls' not in discovered_rsyslog_remote_netstream_driver.stdout or 'ossl' not in discovered_rsyslog_remote_netstream_driver.stdout"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-200646"
+
+- name: "MEDIUM | RHEL-10-200647 | PATCH | All RHEL 10 remote access methods must be monitored."
+  when: rhel10stig_200647
+  tags:
+    - RHEL-10-200647
+    - CAT2
+    - CCI-000067
+    - SRG-OS-000032-GPOS-00013
+    - SV-280990r1165325_rule
+    - V-280990
+    - NIST800-53R4_AC-17
+    - rsyslog
+  notify: Restart rsyslog
+  ansible.builtin.lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: 'auth\.\*(\s+)'
+    line: 'auth.*;authpriv.*;daemon.* /var/log/secure'
+    insertafter: "# The authpriv file has restricted access"
+
+- name: "MEDIUM | RHEL-10-200648 | PATCH | RHEL 10 must use cron logging."
+  when: rhel10stig_200648
+  tags:
+    - RHEL-10-200648
+    - CAT2
+    - CCI-000366
+    - SRG-OS-000480-GPOS-00227
+    - SV-280991r1165328_rule
+    - V-280991
+    - NIST800-53R4_CM-6
+    - rsyslog
+  notify: Restart rsyslog
+  ansible.builtin.lineinfile:
+    path: /etc/rsyslog.conf
+    regexp: 'cron\.\*(\s+)'
+    line: 'cron.*\1/var/log/cron'
+    backrefs: true
+    insertafter: "# Log cron stuff"
+
+- name: "MEDIUM | RHEL-10-200660 | PATCH | RHEL 10 must have the audit package installed."
+  when: rhel10stig_200660
+  tags:
+    - RHEL-10-200660
+    - CAT2
+    - CCI-000169
+    - CCI-000130
+    - CCI-000131
+    - CCI-000132
+    - CCI-000133
+    - CCI-000134
+    - CCI-000135
+    - CCI-000154
+    - CCI-000158
+    - CCI-001876
+    - CCI-001464
+    - CCI-001487
+    - CCI-001914
+    - CCI-001875
+    - CCI-001877
+    - CCI-001878
+    - CCI-001879
+    - CCI-001880
+    - CCI-001881
+    - CCI-001882
+    - CCI-001889
+    - CCI-003938
+    - CCI-002884
+    - CCI-000172
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000038-GPOS-00016
+    - SRG-OS-000039-GPOS-00017
+    - SRG-OS-000040-GPOS-00018
+    - SRG-OS-000041-GPOS-00019
+    - SRG-OS-000042-GPOS-00021
+    - SRG-OS-000051-GPOS-00024
+    - SRG-OS-000054-GPOS-00025
+    - SRG-OS-000122-GPOS-00063
+    - SRG-OS-000254-GPOS-00095
+    - SRG-OS-000255-GPOS-00096
+    - SRG-OS-000337-GPOS-00129
+    - SRG-OS-000348-GPOS-00136
+    - SRG-OS-000349-GPOS-00137
+    - SRG-OS-000350-GPOS-00138
+    - SRG-OS-000351-GPOS-00139
+    - SRG-OS-000352-GPOS-00140
+    - SRG-OS-000353-GPOS-00141
+    - SRG-OS-000354-GPOS-00142
+    - SRG-OS-000358-GPOS-00145
+    - SRG-OS-000365-GPOS-00152
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000475-GPOS-00220
+    - SV-280993r1165381_rule
+    - V-280993
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-6
+    - NIST800-53R4_AU-7
+    - NIST800-53R4_AU-8
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_AU-14
+    - NIST800-53R4_CM-5
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.package:
+    name: audit
+    state: present
+
+- name: "MEDIUM | RHEL-10-200661 | PATCH | RHEL 10 must enable the audit service."
+  when:
+    - rhel10stig_200661
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-200661
+    - CAT2
+    - CCI-000130
+    - CCI-000131
+    - CCI-000132
+    - CCI-000133
+    - CCI-000134
+    - CCI-000135
+    - CCI-000154
+    - CCI-000158
+    - CCI-000169
+    - CCI-000172
+    - CCI-001464
+    - CCI-001487
+    - CCI-001814
+    - CCI-001875
+    - CCI-001876
+    - CCI-001877
+    - CCI-001878
+    - CCI-001879
+    - CCI-001880
+    - CCI-001881
+    - CCI-001882
+    - CCI-001889
+    - CCI-001914
+    - CCI-002884
+    - SRG-OS-000062-GPOS-00031
+    - SRG-OS-000037-GPOS-00015
+    - SRG-OS-000038-GPOS-00016
+    - SRG-OS-000039-GPOS-00017
+    - SRG-OS-000040-GPOS-00018
+    - SRG-OS-000041-GPOS-00019
+    - SRG-OS-000042-GPOS-00021
+    - SRG-OS-000051-GPOS-00024
+    - SRG-OS-000054-GPOS-00025
+    - SRG-OS-000122-GPOS-00063
+    - SRG-OS-000254-GPOS-00095
+    - SRG-OS-000255-GPOS-00096
+    - SRG-OS-000337-GPOS-00129
+    - SRG-OS-000348-GPOS-00136
+    - SRG-OS-000349-GPOS-00137
+    - SRG-OS-000350-GPOS-00138
+    - SRG-OS-000351-GPOS-00139
+    - SRG-OS-000352-GPOS-00140
+    - SRG-OS-000353-GPOS-00141
+    - SRG-OS-000354-GPOS-00142
+    - SRG-OS-000358-GPOS-00145
+    - SRG-OS-000365-GPOS-00152
+    - SRG-OS-000392-GPOS-00172
+    - SRG-OS-000475-GPOS-00220
+    - SRG-OS-000055-GPOS-00026
+    - SV-280994r1165337_rule
+    - V-280994
+    - NIST800-53R4_AU-3
+    - NIST800-53R4_AU-6
+    - NIST800-53R4_AU-7
+    - NIST800-53R4_AU-8
+    - NIST800-53R4_AU-12
+    - NIST800-53R4_AU-14
+    - NIST800-53R4_CM-5
+    - NIST800-53R4_MA-4
+    - auditd
+  ansible.builtin.systemd:
+    name: auditd
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200680 | PATCH | RHEL 10 must have the libreswan package installed."
+  when: rhel10stig_200680
+  tags:
+    - RHEL-10-200680
+    - CAT2
+    - CCI-000803
+    - SRG-OS-000120-GPOS-00061
+    - SV-280996r1195385_rule
+    - V-280996
+    - NIST800-53R4_IA-7
+  ansible.builtin.package:
+    name: libreswan
+    state: present
+
+- name: "MEDIUM | RHEL-10-200690 | PATCH | RHEL 10 must notify designated personnel if baseline configurations are changed in an unauthorized manner."
+  when: rhel10stig_200690
+  tags:
+    - RHEL-10-200690
+    - CAT2
+    - CCI-000139
+    - SRG-OS-000046-GPOS-00022
+    - SV-280997r1195387_rule
+    - V-280997
+    - NIST800-53R4_AU-5
+    - postfix
+  ansible.builtin.package:
+    name: postfix
+    state: present
+
+- name: "MEDIUM | RHEL-10-200691 | PATCH | RHEL 10 must have mail aliases to notify the information system security officer (ISSO) and system administrator (SA) (at a minimum) in the event of an audit processing failure."
+  when:
+    - rhel10stig_200691
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-200691
+    - CAT2
+    - CCI-000139
+    - SRG-OS-000046-GPOS-00022
+    - SV-280998r1165349_rule
+    - V-280998
+    - NIST800-53R4_AU-5
+    - postfix
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: "^root:\\s.*"
+    line: "root: ISSO"
+  notify: Update aliases
+
+- name: "MEDIUM | RHEL-10-200692 | PATCH | RHEL 10 must be configured to prevent unrestricted mail relaying."
+  when:
+    - rhel10stig_200692
+    - "'postfix' in ansible_facts['packages']"
+  tags:
+    - RHEL-10-200692
+    - CAT2
+    - CCI-000366
+    - SRG-OS-000480-GPOS-00227
+    - SV-257951r1014843_rule
+    - V-257951
+    - NIST800-53R4_CM-6
+  block:
+    - name: "MEDIUM | RHEL-10-200692 | AUDIT | RHEL 10 must be configured to prevent unrestricted mail relaying."
+      ansible.builtin.shell: |
+        set -o pipefail
+        postconf -n smtpd_client_restrictions | awk -F ' ' '{print $3}'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_postfix_client_restrict.rc not in [ 0, 1 ]
+      register: discovered_postfix_client_restrict
+
+    - name: "MEDIUM | RHEL-10-200692 | PATCH | RHEL 10 must be configured to prevent unrestricted mail relaying. | configure postfix"
+      when:
+        - rhel10stig_disruption_high
+        - (discovered_postfix_client_restrict.stdout | length == 0 or
+          rhel10stig_postfix_client_conf not in discovered_postfix_client_restrict.stdout)
+      ansible.builtin.command: "postconf -e 'smtpd_client_restrictions = {{ rhel10stig_postfix_client_conf }}'"
+      changed_when: true
+
+    - name: "MEDIUM | RHEL-10-200692 | PATCH | RHEL 10 must be configured to prevent unrestricted mail relaying. | Alert Warning"
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_postfix_client_restrict.stdout | length == 0
+      ansible.builtin.debug:
+        msg: "Warning!! Please check postfix client restriction configurations"
+
+    - name: "MEDIUM | RHEL-10-200692 | PATCH | RHEL 10 must be configured to prevent unrestricted mail relaying. | Warning Count"
+      when:
+        - not rhel10stig_disruption_high
+        - discovered_postfix_client_restrict.stdout | length == 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-200692"
+
+########################################################
+
+- name: "MEDIUM | RHEL-10-200720 | PATCH | RHEL 10 must have the Secure Shell (SSH) server installed for all networked systems."
+  when:
+    - rhel10stig_200720
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-200720
+    - CAT2
+    - CCI-002418
+    - CCI-002420
+    - CCI-002421
+    - CCI-002422
+    - SRG-OS-000423-GPOS-00187
+    - SRG-OS-000424-GPOS-00188
+    - SRG-OS-000425-GPOS-00189
+    - SRG-OS-000426-GPOS-00190
+    - SV-281001r1195391_rule
+    - V-281001
+    - NIST800-53R4_SC-8
+  ansible.builtin.package:
+    name: openssh-server
+    state: present
+
+- name: "MEDIUM | RHEL-10-200721 | PATCH | RHEL 10 must, for all networked systems, have and implement Secure Shell (SSH) to protect the confidentiality and integrity of transmitted and received information, as well as information during preparation for transmission."
+  when:
+    - rhel10stig_200721
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-200721
+    - CAT2
+    - CCI-002418
+    - CCI-002420
+    - CCI-002421
+    - CCI-002422
+    - SRG-OS-000423-GPOS-00187
+    - SRG-OS-000424-GPOS-00188
+    - SRG-OS-000425-GPOS-00189
+    - SRG-OS-000426-GPOS-00190
+    - SV-281002r1184641_rule
+    - V-281002
+    - NIST800-53R4_SC-8
+  ansible.builtin.systemd:
+    name: sshd
+    enabled: true
+    state: started
+
+- name: "MEDIUM | RHEL-10-200722 | PATCH | RHEL 10 must have the openssh-clients package installed"
+  when:
+    - rhel10stig_200722
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-200722
+    - CAT2
+    - CCI-000366
+    - SRG-OS-000480-GPOS-00227
+    - SV-281003r1195393_rule
+    - V-281003
+    - NIST800-53R4_SC-8
+  ansible.builtin.package:
+    name: openssh-clients
+    state: present
+
+- name: "MEDIUM | RHEL-10-200730 | PATCH | RHEL 10 must have the pkcs11-provider package installed."
+  when: rhel10stig_200730
+  tags:
+    - RHEL-10-200730
+    - CAT2
+    - CCI-000765
+    - CCI-001954
+    - SRG-OS-000105-GPOS-00052
+    - SRG-OS-000375-GPOS-00160
+    - SRG-OS-000377-GPOS-00162
+    - SV-281005r1195395_rule
+    - V-281005
+    - NIST800-53R4_IA-2
+  ansible.builtin.package:
+    name: pkcs11-provider
+    state: present
+
+- name: "MEDIUM | RHEL-10-200740 | PATCH | RHEL 10 must have the gnutls-utils package installed."
+  when: rhel10stig_200740
+  tags:
+    - RHEL-10-200740
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281006r1195397_rule
+    - V-281006
+    - NIST800-53R4_CM-7
+  ansible.builtin.package:
+    name: gnutls-utils
+    state: present

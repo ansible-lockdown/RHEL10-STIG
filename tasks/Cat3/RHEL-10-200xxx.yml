@@ -1,0 +1,19 @@
+---
+
+- name: "MEDIUM | RHEL-10-200662 | PATCH | RHEL 10 audispd-plugins package must be installed"
+  when:
+    - rhel10stig_200662
+    - rhel10stig_auditd_required
+  tags:
+    - RHEL-10-200662
+    - CAT3
+    - CCI-001851
+    - SRG-OS-000342-GPOS-00133
+    - SV-280995r1195383_rule
+    - V-258175
+    - NIST800-53R4_AU-4
+    - rsyslog
+    - auditd
+  ansible.builtin.package:
+    name: audispd-plugins
+    state: present

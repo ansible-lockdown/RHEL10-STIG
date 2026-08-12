@@ -1,0 +1,77 @@
+---
+
+- name: Prepare RHEL 10 STIG molecule host (UBI 10)
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Bootstrap python, sudo, iproute, openssh via raw (idempotent - skips if already installed)
+      ansible.builtin.raw: |
+        dnf install -y python3 sudo iproute openssh-server openssh-clients procps-ng
+      changed_when: false
+
+    - name: Gather facts now that python is present
+      ansible.builtin.setup:
+
+    - name: Install RHEL 10 STIG supporting packages (UBI subset - some packages unavailable)
+      ansible.builtin.dnf:
+        name:
+          - audit
+          - aide
+          - crypto-policies
+          - crypto-policies-scripts
+          - firewalld
+          - policycoreutils
+          - policycoreutils-python-utils
+          - selinux-policy-targeted
+          - chrony
+          - rsyslog
+          - logrotate
+          - cronie
+          - acl
+          - kmod
+          - dnf-plugins-core
+          - python3-libselinux
+          - python3-policycoreutils
+          - tmux
+          - git
+        state: present
+      # UBI repos do not carry every package in this list (several are subscription-gated), so a
+      # partial install is the expected outcome here, not an error to swallow. failed_when: false
+      # states that directly; ignore_errors: true would mark the task failed and then continue,
+      # which is what ansible-lint's ignore-errors rule flags.
+      failed_when: false
+
+    - name: Create directories that minimal images lack (UBI also stubs audit/aide dirs since those packages are subscription-gated)
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - /etc/sysctl.d
+        - /etc/modprobe.d
+        - /etc/ssh/sshd_config.d
+        - /run/sshd
+        - /var/log/audit
+        - /etc/audit
+        - /etc/audit/rules.d
+        - /etc/aide
+        - /etc/aide/aide.conf.d
+
+    - name: Generate SSH host keys so sshd -t config validation passes
+      ansible.builtin.command: ssh-keygen -A
+      args:
+        creates: /etc/ssh/ssh_host_ed25519_key
+
+    - name: Stub /etc/default/grub so GRUB-tag tasks do not fail in container
+      ansible.builtin.copy:
+        dest: /etc/default/grub
+        content: |
+          GRUB_TIMEOUT=5
+          GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+          GRUB_DEFAULT=saved
+          GRUB_DISABLE_SUBMENU=true
+          GRUB_TERMINAL_OUTPUT="console"
+          GRUB_CMDLINE_LINUX=""
+          GRUB_DISABLE_RECOVERY="true"
+          GRUB_ENABLE_BLSCFG=true
+        mode: '0644'

@@ -1,0 +1,838 @@
+---
+
+- name: "MEDIUM | RHEL-10-800000 | AUDIT | RHEL 10 must control remote access methods."
+  when: rhel10stig_800000
+  tags:
+    - RHEL-10-800000
+    - CAT2
+    - CCI-000382
+    - CCI-002314
+    - SRG-OS-000096-GPOS-00050
+    - SRG-OS-000297-GPOS-00115
+    - SV-281332r1167146_rule
+    - V-281332
+    - NIST800-53R4_CM-7
+    - firewalld
+  block:
+    - name: "MEDIUM | RHEL-10-800000 | AUDIT | RHEL 10 must control remote access methods. | Add firewall rules"
+      ansible.posix.firewalld:
+        zone: "{{ rhel10stig_custom_firewall_zone }}"
+        permanent: true
+        state: enabled
+        service: "{{ item.name }}"
+        port: "{{ item.port | default(omit) }}"
+        protocol: "{{ item.protocol | default(omit) }}"
+      loop: "{{ rhel10stig_white_list_services }}"
+      notify: Reload firewalld
+
+    - name: "MEDIUM | RHEL-10-800000 | AUDIT | RHEL 10 must control remote access methods. | List firewalld configuration"
+      ansible.builtin.command: firewall-cmd --list-all
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      register: discovered_rhel10stig_firewalld_list_all
+
+    - name: "MEDIUM | RHEL-10-800000 | AUDIT | RHEL 10 must control remote access methods. | Display configuration for ISSO PPSM CLSA validation"
+      when: discovered_rhel10stig_firewalld_list_all.stdout_lines is defined
+      ansible.builtin.debug:
+        msg:
+          - "Review the following firewalld configuration against the site PPSM CLSA. Unapproved ports, protocols, or services are a finding."
+          - "{{ discovered_rhel10stig_firewalld_list_all.stdout_lines }}"
+      changed_when: false
+
+    - name: "MEDIUM | RHEL-10-800000 | PATCH | RHEL 10 must control remote access methods. | Include warning tasks"
+      when: discovered_rhel10stig_firewalld_list_all.stdout_lines is defined
+      ansible.builtin.include_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-800000"
+
+- name: "MEDIUM | RHEL-10-800010 | PATCH | RHEL 10 must be configured to prohibit or restrict the use of functions, ports, protocols, and/or services, as defined in the Ports, Protocols, and Services Management (PPSM) Category Assignments List (CAL) and vulnerability assessments."
+  when: rhel10stig_800010
+  tags:
+    - RHEL-10-800010
+    - CAT2
+    - CCI-000382
+    - SRG-OS-000096-GPOS-00050
+    - SV-281333r1167149_rule
+    - V-281333
+    - NIST800-53R4_CM-7
+    - firewalld
+  block:
+    - name: "MEDIUM | RHEL-10-800010 | AUDIT | RHEL 10 must be configured to prohibit or restrict the use of functions, ports, protocols, and/or services, as defined in the Ports, Protocols, and Services Management (PPSM) Category Assignments List (CAL) and vulnerability assessments. | List firewalld configuration"
+      ansible.builtin.command: firewall-cmd --list-all-zones
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      register: discovered_rhel10stig_firewalld_list_all_zones
+
+    - name: "MEDIUM | RHEL-10-800010 | AUDIT | RHEL 10 must be configured to prohibit or restrict the use of functions, ports, protocols, and/or services, as defined in the Ports, Protocols, and Services Management (PPSM) Category Assignments List (CAL) and vulnerability assessments. | Display configuration for ISSO PPSM CLSA validation"
+      when: discovered_rhel10stig_firewalld_list_all_zones.stdout_lines is defined
+      ansible.builtin.debug:
+        msg:
+          - "Review the following firewalld configuration against the site PPSM CLSA. Unapproved ports, protocols, or services are a finding."
+          - "{{ discovered_rhel10stig_firewalld_list_all_zones.stdout_lines }}"
+      changed_when: false
+
+    - name: "MEDIUM | RHEL-10-800010 | PATCH | RHEL 10 must be configured to prohibit or restrict the use of functions, ports, protocols, and/or services, as defined in the Ports, Protocols, and Services Management (PPSM) Category Assignments List (CAL) and vulnerability assessments. | Add firewall rules"
+      when: discovered_rhel10stig_firewalld_list_all_zones.stdout_lines is defined
+      ansible.builtin.include_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-800010"
+
+- name: "MEDIUM | RHEL-10-800020 | AUDIT | RHEL 10 must enforce that network interfaces not be in promiscuous mode."
+  when: rhel10stig_800020
+  tags:
+    - RHEL-10-800020
+    - CAT2
+    - CCI-002418
+    - SRG-OS-000423-GPOS-00187
+    - SV-281334r1167152_rule
+    - V-281334
+    - NIST800-53R4_CM-5
+    - network
+  block:
+    - name: "MEDIUM | RHEL-10-800020 | PATCH | RHEL 10 must enforce that network interfaces not be in promiscuous mode."
+      ansible.builtin.shell: |
+        set -o pipefail
+        ip link | grep -Ei '^[0-9]*promisc' | cut -d ':' -f2
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_ip_link_promisc
+
+    - name: "MEDIUM | RHEL-10-800020 | PATCH | RHEL 10 must enforce that network interfaces not be in promiscuous mode. | Set interface to promiscuous mode"
+      when:
+        - discovered_ip_link_promisc is defined and discovered_ip_link_promisc.stdout | length > 0
+        - "item not in rhel10stig_promisc_if"
+        - rhel10stig_disruption_high
+      ansible.builtin.command: ip link set dev {{ item }} promisc off
+      changed_when: true
+      loop: "{{ discovered_ip_link_promisc.stdout_lines }}"
+      notify: Restart NetworkManager
+
+    - name: "MEDIUM | RHEL-10-800020 | PATCH | RHEL 10 must enforce that network interfaces not be in promiscuous mode. | Alert Warning"
+      when:
+        - discovered_ip_link_promisc is defined and discovered_ip_link_promisc.stdout | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.debug:
+        msg: "Warning!! You have interfaces set to promiscuous mode {{ discovered_ip_link_promisc.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-800020 | PATCH | RHEL 10 must enforce that network interfaces not be in promiscuous mode. | Include warning tasks"
+      when:
+        - discovered_ip_link_promisc is defined and discovered_ip_link_promisc.stdout | length > 0
+        - not rhel10stig_disruption_high
+      ansible.builtin.include_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-800020"
+
+- name: "MEDIUM | RHEL-10-800030 | PATCH | RHEL 10 must disable access to the network bpf system call from nonprivileged processes."
+  when: rhel10stig_800030
+  tags:
+    - RHEL-10-800030
+    - CAT2
+    - CCI-001082
+    - SRG-OS-000132-GPOS-00067
+    - SV-281335r1167155_rule
+    - V-281335
+    - NIST800-53R4_SC-2
+    - sysctl
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_unprivileged_bpf_disabled.conf"
+    src: etc/sysctl.d/99-kernel_unprivileged_bpf_disabled.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800040 | PATCH | RHEL 10 must securely compare internal information system clocks at least every 24 hours."
+  when: rhel10stig_800040
+  tags:
+    - RHEL-10-800040
+    - CAT2
+    - CCI-001890
+    - SRG-OS-000355-GPOS-00143
+    - SRG-OS-000356-GPOS-00144
+    - SRG-OS-000359-GPOS-00146
+    - SRG-OS-000785-GPOS-00250
+    - SV-281336r1167158_rule
+    - V-281336
+    - NIST800-53R4_AU-8
+    - chrony
+  notify: Restart chronyd
+  ansible.builtin.template:
+    src: etc/chrony.conf.j2
+    dest: /etc/chrony.conf
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-800050 | PATCH | RHEL 10 must enable hardening for the Berkeley Packet Filter (BPF) just-in-time compiler."
+  when: rhel10stig_800050
+  tags:
+    - RHEL-10-800050
+    - CAT2
+    - CCI-002824
+    - SRG-OS-000433-GPOS-00192
+    - SV-281337r1167161_rule
+    - V-281337
+    - NIST800-53R4_SI-16
+    - sysctl
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_core_bpf_jit_harden.conf"
+    src: etc/sysctl.d/99-net_core_bpf_jit_harden.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800060 | PATCH | RHEL 10 must have at least two name servers configured for systems using Domain Name Server (DNS) resolution."
+  when: rhel10stig_800060
+  tags:
+    - RHEL-10-800060
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-281338r1167164_rule
+    - V-281338
+    - NIST800-53R4_SC-5
+    - network
+    - dns
+  block:
+    - name: "MEDIUM | RHEL-10-800060 | AUDIT | RHEL 10 must have at least two name servers configured for systems using Domain Name Server (DNS) resolution. | Count number of name servers in resolv.conf"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -Ei '^nameserver[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' /etc/resolv.conf | wc -l
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_resolv_conf_nameservers_count
+
+    - name: "MEDIUM | RHEL-10-800060 | PATCH | RHEL 10 must have at least two name servers configured for systems using Domain Name Server (DNS) resolution. | Alert Warning"
+      when: discovered_resolv_conf_nameservers_count.stdout | int < 2
+      ansible.builtin.debug:
+        msg: "Warning!! You have less than two name servers configured in resolv.conf"
+
+    - name: "MEDIUM | RHEL-10-800060 | PATCH | RHEL 10 must have at least two name servers configured for systems using Domain Name Server (DNS) resolution. | Include warning tasks"
+      when: discovered_resolv_conf_nameservers_count.stdout | int < 2
+      ansible.builtin.include_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-800060"
+
+- name: "MEDIUM | RHEL-10-800070 | AUDIT | RHEL 10 must not have unauthorized IP tunnels configured."
+  when:
+    - rhel10stig_800070
+    - "'ipsec' in ansible_facts['packages']"
+  tags:
+    - RHEL-10-800070
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281339r1167167_rule
+    - V-281339
+    - NIST800-53R4_AC-3
+    - ipsec
+    - network
+  block:
+    - name: "MEDIUM | RHEL-10-800070 | AUDIT | RHEL 10 must not have unauthorized IP tunnels configured. | check ipsec connections"
+      ansible.builtin.shell: |
+        set -o pipefail
+        systemctl status ipsec | grep ": active" > /dev/null && grep -rni conn /etc/ipsec.conf /etc/ipsec.d/
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_ipsec_connections.rc not in [ 0, 1, 2]
+      register: discovered_ipsec_connections
+
+    - name: "MEDIUM | RHEL-10-800070 | WARN | RHEL 10 must not have unauthorized IP tunnels configured. | Alert Warning"
+      when: discovered_ipsec_connections.stdout | length > 0
+      ansible.builtin.debug:
+        msg: |
+          "Warning!! The following Ipsec tunnels have been discovered please confirm with ISSO these are accepted and documented
+          {{ discovered_ipsec_connections.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-800070 | WARN | RHEL 10 must not have unauthorized IP tunnels configured. | Warning Count"
+      when: discovered_ipsec_connections.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-800070"
+
+- name: "MEDIUM | RHEL-10-800080 | PATCH | RHEL 10 must be configured to use Transmission Control Protocol (TCP) syncookies."
+  when: rhel10stig_800080
+  tags:
+    - RHEL-10-800080
+    - CAT2
+    - CCI-002385
+    - CCI-001095
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00071
+    - SV-281340r1167170_rule
+    - V-281340
+    - NIST800-53R4_SC-5
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_tcp_syncookies.conf"
+    src: etc/sysctl.d/99-net_ipv4_tcp_syncookies.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800090 | PATCH | RHEL 10 must ignore Internet Protocol version 4 (IPv4) Internet Control Message Protocol (ICMP) redirect messages."
+  when: rhel10stig_800090
+  tags:
+    - RHEL-10-800090
+    - CAT2
+    - CCI-002385
+    - CCI-001096
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00072
+    - SV-281341r1167173_rule
+    - V-281341
+    - NIST800-53R4_SC-5
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_all_accept_redirects.conf"
+    src: etc/sysctl.d/99-net_ipv4_all_accept_redirects.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800100 | PATCH | RHEL 10 must not forward Internet Protocol version 4 (IPv4) source-routed packets."
+  when: rhel10stig_800100
+  tags:
+    - RHEL-10-800100
+    - CAT2
+    - CCI-002385
+    - CCI-001097
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00073
+    - SV-281342r1167176_rule
+    - V-281342
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_all_accept_source_route.conf"
+    src: etc/sysctl.d/99-net_ipv4_all_accept_source_route.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800110 | PATCH | RHEL 10 must log Internet Protocol version 4 (IPv4) packets with impossible addresses."
+  when: rhel10stig_800110
+  tags:
+    - RHEL-10-800110
+    - CAT2
+    - CCI-002385
+    - CCI-001098
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00074
+    - SV-281343r1167179_rule
+    - V-281343
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_all_log_martians.conf"
+    src: etc/sysctl.d/99-net_ipv4_all_log_martians.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800120 | PATCH | RHEL 10 must log Internet Protocol version 4 (IPv4) packets with impossible addresses by default."
+  when: rhel10stig_800120
+  tags:
+    - RHEL-10-800120
+    - CAT2
+    - CCI-002385
+    - CCI-001099
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00075
+    - SV-281344r1167182_rule
+    - V-281344
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_default_log_martians.conf"
+    src: etc/sysctl.d/99-net_ipv4_default_log_martians.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800130 | PATCH | RHEL 10 must use reverse path filtering on all Internet Protocol version 4 (IPv4) interfaces."
+  when: rhel10stig_800130
+  tags:
+    - RHEL-10-800130
+    - CAT2
+    - CCI-002385
+    - CCI-001100
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00076
+    - SV-281345r1167185_rule
+    - V-281345
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_all_rp_filter.conf"
+    src: etc/sysctl.d/99-net_ipv4_all_rp_filter.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800140 | PATCH | RHEL 10 must prevent Internet Protocol version 4 (IPv4) Internet Control Message Protocol (ICMP) redirect messages from being accepted."
+  when: rhel10stig_800140
+  tags:
+    - RHEL-10-800140
+    - CAT2
+    - CCI-002385
+    - CCI-001101
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00077
+    - SV-281346r1197251_rule
+    - V-281346
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_default_accept_redirects.conf"
+    src: etc/sysctl.d/99-net_ipv4_default_accept_redirects.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800150 | PATCH | RHEL 10 must not forward Internet Protocol version 4 (IPv4) source-routed packets by default."
+  when: rhel10stig_800150
+  tags:
+    - RHEL-10-800150
+    - CAT2
+    - CCI-002385
+    - CCI-001102
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00078
+    - SV-281347r1167191_rule
+    - V-281347
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_default_accept_source_route.conf"
+    src: etc/sysctl.d/99-net_ipv4_default_accept_source_route.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800160 | PATCH | RHEL 10 must use a reverse-path filter for Internet Protocol version 4 (IPv4) network traffic when possible by default."
+  when: rhel10stig_800160
+  tags:
+    - RHEL-10-800160
+    - CAT2
+    - CCI-002385
+    - CCI-001103
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00079
+    - SV-281348r1167194_rule
+    - V-281348
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_default_rp_filter.conf"
+    src: etc/sysctl.d/99-net_ipv4_default_rp_filter.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800170 | PATCH | RHEL 10 must not respond to Internet Control Message Protocol (ICMP) echoes sent to a broadcast address."
+  when: rhel10stig_800170
+  tags:
+    - RHEL-10-800170
+    - CAT2
+    - CCI-002385
+    - CCI-001104
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00080
+    - SV-281349r1167197_rule
+    - V-281349
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_icmp_echo_ignore_broadcasts.conf"
+    src: etc/sysctl.d/99-net_ipv4_icmp_echo_ignore_broadcasts.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800180 | PATCH | RHEL 10 must limit the number of bogus Internet Control Message Protocol (ICMP) response errors logs."
+  when: rhel10stig_800180
+  tags:
+    - RHEL-10-800180
+    - CAT2
+    - CCI-002385
+    - CCI-001105
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00081
+    - SV-281350r1167200_rule
+    - V-281350
+    - NIST800-53R4_CM-6
+    - sysctl
+    - network
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_icmp_ignore_bogus_error_responses.conf"
+    src: etc/sysctl.d/99-net_ipv4_icmp_ignore_bogus_error_responses.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-800190 | PATCH | RHEL 10 must not send Internet Control Message Protocol (ICMP) redirects."
+  when: rhel10stig_800190
+  tags:
+    - RHEL-10-800190
+    - CAT2
+    - CCI-002385
+    - CCI-001106
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00082
+    - SV-281351r1184698_rule
+    - V-281351
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_all_send_redirects.conf"
+    src: etc/sysctl.d/99-net_ipv4_all_send_redirects.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800200 | PATCH | RHEL 10 must not allow interfaces to perform Internet Control Message Protocol (ICMP) redirects by default."
+  when: rhel10stig_800200
+  tags:
+    - RHEL-10-800200
+    - CAT2
+    - CCI-002385
+    - CCI-001107
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00083
+    - SV-281352r1184706_rule
+    - V-281352
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_default_send_redirects.conf"
+    src: etc/sysctl.d/99-net_ipv4_default_send_redirects.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800210 | PATCH | RHEL 10 must not enable Internet Protocol version 4 (IPv4) packet forwarding unless the system is a router."
+  when:
+    - rhel10stig_800210
+    - not rhel10stig_system_is_router
+  tags:
+    - RHEL-10-800210
+    - CAT2
+    - CCI-002385
+    - CCI-001108
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00084
+    - SV-281353r1167209_rule
+    - V-281353
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv4_all_forwarding.conf"
+    src: etc/sysctl.d/99-net_ipv4_all_forwarding.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800220 | PATCH | RHEL 10 must not accept router advertisements on all Internet Protocol version 6 (IPv6) interfaces."
+  when: rhel10stig_800220
+  tags:
+    - RHEL-10-800220
+    - CAT2
+    - CCI-002385
+    - CCI-001109
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00085
+    - SV-281354r1167212_rule
+    - V-281354
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_all_accept_ra.conf"
+    src: etc/sysctl.d/99-net_ipv6_all_accept_ra.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800230 | PATCH | RHEL 10 must ignore IPv6 Internet Control Message Protocol (ICMP) redirect messages."
+  when:
+    - rhel10stig_800230
+    - rhel10stig_system_uses_ipv6
+  tags:
+    - RHEL-10-800230
+    - CAT2
+    - CCI-002385
+    - CCI-001110
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00086
+    - SV-281355r1167215_rule
+    - V-281355
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_all_accept_redirects.conf"
+    src: etc/sysctl.d/99-net_ipv6_all_accept_redirects.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800240 | PATCH | RHEL 10 must not forward Internet Protocol version 6 (IPv6) source-routed packets."
+  when:
+    - rhel10stig_800240
+    - rhel10stig_system_uses_ipv6
+  tags:
+    - RHEL-10-800240
+    - CAT2
+    - CCI-002385
+    - CCI-001111
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00087
+    - SV-281356r1167218_rule
+    - V-281356
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_all_accept_source_route.conf"
+    src: etc/sysctl.d/99-net_ipv6_all_accept_source_route.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800250 | PATCH | RHEL 10 must not enable Internet Protocol version 6 (IPv6) packet forwarding unless the system is a router."
+  when:
+    - rhel10stig_800250
+    - not rhel10stig_system_is_router
+    - rhel10stig_system_uses_ipv6
+  tags:
+    - RHEL-10-800250
+    - CAT2
+    - CCI-002385
+    - CCI-001112
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00088
+    - SV-281357r1167221_rule
+    - V-281357
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_all_forwarding.conf"
+    src: etc/sysctl.d/99-net_ipv6_all_forwarding.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800260 | PATCH | RHEL 10 must not accept router advertisements on all Internet Protocol version 6 (IPv6) interfaces by default."
+  when:
+    - rhel10stig_800260
+    - rhel10stig_system_uses_ipv6
+  tags:
+    - RHEL-10-800260
+    - CAT2
+    - CCI-002385
+    - CCI-001113
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00089
+    - SV-281358r1167224_rule
+    - V-281358
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_default_accept_ra.conf"
+    src: etc/sysctl.d/99-net_ipv6_default_accept_ra.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800270 | PATCH | RHEL 10 must prevent Internet Protocol version 6 (IPv6) Internet Control Message Protocol (ICMP) redirect messages from being accepted."
+  when:
+    - rhel10stig_800270
+    - rhel10stig_system_uses_ipv6
+  tags:
+    - RHEL-10-800270
+    - CAT2
+    - CCI-002385
+    - CCI-001114
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00090
+    - SV-281359r1167227_rule
+    - V-281359
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_default_accept_redirects.conf"
+    src: etc/sysctl.d/99-net_ipv6_default_accept_redirects.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800280 | PATCH | RHEL 10 must not forward Internet Protocol version 6 (IPv6) source-routed packets by default."
+  when:
+    - rhel10stig_800280
+    - rhel10stig_system_uses_ipv6
+  tags:
+    - RHEL-10-800280
+    - CAT2
+    - CCI-002385
+    - CCI-001115
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00091
+    - SV-281360r1167230_rule
+    - V-281360
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - sysctl
+    - network
+  notify: Reload sysctl
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-net_ipv6_default_accept_source_route.conf"
+    src: etc/sysctl.d/99-net_ipv6_default_accept_source_route.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-800290 | PATCH | RHEL 10 must protect against or limit the effects of denial-of-service (DoS) attacks by ensuring that rate-limiting measures on impacted network interfaces are implemented."
+  when: rhel10stig_800290
+  tags:
+    - RHEL-10-800290
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-281361r1167233_rule
+    - V-281361
+    - NIST800-53R4_SC-5
+    - firewalld
+  notify: Reload firewalld
+  ansible.builtin.lineinfile:
+    path: /etc/firewalld/firewalld.conf
+    regexp: ^(#?)FirewallBackend=.*
+    line: FirewallBackend=nftables
+
+- name: "MEDIUM | RHEL-10-800300 | PATCH | RHEL 10 must configure a DNS processing mode in Network Manager to avoid conflicts with other Domain Name Server (DNS) managers and to not leak DNS queries to untrusted networks."
+  when: rhel10stig_800300
+  tags:
+    - RHEL-10-800300
+    - CAT2
+    - CCI-002385
+    - CCI-001115
+    - SRG-OS-000420-GPOS-00186
+    - SRG-OS-000142-GPOS-00091
+    - SV-281362r1167236_rule
+    - V-281362
+    - NIST800-53R4_SC-5
+    - NIST800-53R4_SC-7
+    - network
+  notify: Restart NetworkManager
+  community.general.ini_file:
+    path: /etc/NetworkManager/NetworkManager.conf
+    option: dns
+    section: main
+    state: present
+    value: "{{ rhel10stig_dns_processing_mode }}"
+    no_extra_spaces: true
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-800310 | PATCH | RHEL 10 must be configured to operate in secure mode if the Trivial File Transfer Protocol (TFTP) server service is required."
+  when:
+    - rhel10stig_800310
+    - "'tftp' in ansible_facts['packages']"
+  tags:
+    - RHEL-10-800310
+    - CAT2
+    - CCI-000197
+    - SRG-OS-000074-GPOS-00042
+    - SV-281363r1195454_rule
+    - V-281363
+    - NIST800-53R4_IA-5
+    - tftp
+  block:
+    - name: "MEDIUM | RHEL-10-800310 | PATCH | RHEL 10 must be configured to operate in secure mode if the Trivial File Transfer Protocol (TFTP) server service is required. | systemd drop-in directory"
+      ansible.builtin.file:
+        path: /etc/systemd/system/tftp.service.d
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-800310 | PATCH | RHEL 10 must be configured to operate in secure mode if the Trivial File Transfer Protocol (TFTP) server service is required. | systemd override for secure tftpd"
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/tftp.service.d/secure.conf
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=/usr/sbin/in.tftpd -s /var/lib/tftpboot
+        mode: '0644'
+        owner: root
+        group: root
+      register: discovered_tftp_secure_override
+
+    - name: "MEDIUM | RHEL-10-800310 | PATCH | RHEL 10 must be configured to operate in secure mode if the Trivial File Transfer Protocol (TFTP) server service is required. | Reload systemd and restart tftpd"
+      when: discovered_tftp_secure_override.changed  # noqa: no-handler
+      ansible.builtin.systemd:
+        name: tftp.service
+        state: restarted

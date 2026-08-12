@@ -1,0 +1,9 @@
+---
+# OS Specific Settings
+rhel10stig_min_supported_os_ver: "10.0"
+
+os_gpg_key_pubkey_name: gpg-pubkey-fd431d51-4ae0493b  # pragma: allowlist secret
+os_gpg_key_pubkey_content: "Red Hat, Inc. (release key 2) <security@redhat.com> fd431d51"
+
+# disable repo_gpgcheck due to OS default repos
+rhel10stig_rule_enable_repogpg: false

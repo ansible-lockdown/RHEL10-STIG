@@ -1,0 +1,71 @@
+---
+
+- name: HIGH | RHEL-10-000500 | PATCH | RHEL 10 must enable FIPS mode.
+  when:
+    - rhel10stig_000500
+    - not skip_fips_mode
+  tags:
+    - RHEL-10-000500
+    - CAT1
+    - CCI-00068
+    - CCI-00877
+    - CCI-001453
+    - CCI-002890
+    - CCI-003123
+    - CCI-002418
+    - CCI-002450
+    - SRG-OS-000033-GPOS-00014
+    - SRG-OS-000125-GPOS-00065
+    - SRG-OS-000250-GPOS-00093
+    - SRG-OS-000393-GPOS-00173
+    - SRG-OS-000394-GPOS-00174
+    - SRG-OS-000396-GPOS-00176
+    - SRG-OS-000423-GPOS-00187
+    - SRG-OS-000478-GPOS-00223
+    - SV-281009r1184724_rule
+    - V-281009
+    - NIST800-53R4_AC-17
+    - NIST800-53R4_MA-4
+    - NIST800-53R4_SC-8
+    - NIST800-53R4_SC-13
+    - fips
+  ansible.builtin.assert:
+    that: prelim_current_fips_enabled.stdout == '1'
+    fail_msg: FIPS mode is not enabled. A new installation is required to enable FIPS mode.
+    success_msg: FIPS mode was enabled at installation time.
+
+- name: HIGH | RHEL-10-000510 | AUDIT | RHEL 10 must implement cryptographic mechanisms to prevent unauthorized disclosure or modification of all information on local disk partitions that requires at-rest protection.
+  when: rhel10stig_000510
+  tags:
+    - RHEL-10-000510
+    - CAT1
+    - CCI-001199
+    - CCI-002475
+    - CCI-002476
+    - SRG-OS-000405-GPOS-00184
+    - SRG-OS-000185-GPOS-00079
+    - SRG-OS-000404-GPOS-00183
+    - SV-280935r1184775_rule
+    - V-280935
+    - NIST800-53R4_SC-28
+    - encrypt
+    - filesystem
+  block:
+    - name: HIGH | RHEL-10-000510 | AUDIT | RHEL 10 must implement cryptographic mechanisms to prevent unauthorized disclosure or modification of all information on local disk partitions that requires at-rest protection. | Get partition layout
+      ansible.builtin.command: blkid
+      changed_when: false
+      failed_when: false
+      register: discovered_partition_layout
+
+    - name: HIGH | RHEL-10-000510 | WARN | RHEL 10 must implement cryptographic mechanisms to prevent unauthorized disclosure or modification of all information on local disk partitions that requires at-rest protection. | Message out warning
+      ansible.builtin.debug:
+        msg:
+          - WARNING!! Below is the partition layout. Please run the "blkid" command to confirm every persistent disk partition has an entry for TYPE=crypto_LUKS.
+          - If partitions other than pseudo file systems (such as /proc or /sys or tmpfs) this is a finding
+          - "{{ discovered_partition_layout.stdout_lines }}"
+
+    - name: HIGH | RHEL-10-000510 | WARN | RHEL 10 must implement cryptographic mechanisms to prevent unauthorized disclosure or modification of all information on local disk partitions that requires at-rest protection. | Message out warning
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-000510"

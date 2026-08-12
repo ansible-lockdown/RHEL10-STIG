@@ -1,0 +1,4 @@
+{{ file_managed_by_ansible }}
+
+# 800210 | RHEL 10 must not enable Internet Protocol version 4 (IPv4) packet forwarding unless the system is a router.
+net.ipv4.conf.all.forwarding = 0

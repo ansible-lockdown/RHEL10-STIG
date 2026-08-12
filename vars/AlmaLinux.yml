@@ -1,0 +1,7 @@
+---
+# OS Specific Settings
+
+os_gpg_key_pubkey_name: gpg-pubkey-c2a1e572-668fe8ef  # pragma: allowlist secret
+os_gpg_key_pubkey_content: "AlmaLinux OS 10 <packager@almalinux.org>"  # pragma: allowlist secret
+# disable repo_gpgcheck due to OS default repos
+rhel10stig_rule_enable_repogpg: false

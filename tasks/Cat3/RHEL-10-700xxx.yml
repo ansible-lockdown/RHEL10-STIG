@@ -1,0 +1,20 @@
+---
+
+- name: "MEDIUM | RHEL-10-700890 | PATCH | RHEL 10 must disable the graphical user interface autorunner unless required."
+  when: rhel10stig_700890
+  tags:
+    - RHEL-10-700890
+    - CAT3
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281292r1166828_rule
+    - V-281292
+    - NIST800-53R4_CM-6
+  notify: Update dconf
+  community.general.ini_file:
+    path: "/etc/dconf/db/local.d/00-security-settings"
+    section: 'org/gnome/desktop/media-handling'
+    option: autorun-never
+    value: 'true'
+    create: true
+    mode: 'go-wx'

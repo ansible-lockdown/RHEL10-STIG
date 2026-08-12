@@ -1,0 +1,17 @@
+---
+
+- name: "LOW | RHEL-10-600475 | PATCH | RHEL 10 must limit the number of concurrent sessions to ten for all accounts and/or account types."
+  when: rhel10stig_600475
+  tags:
+    - RHEL-10-600475
+    - CAT3
+    - CCI-000054
+    - SRG-OS-000027-GPOS-00008
+    - SV-281203r1166561_rule
+    - V-281203
+    - NIST800-53R4_AC-10
+    - limits
+  ansible.builtin.lineinfile:
+    path: /etc/security/limits.conf
+    regexp: '^\s*\*\s+hard\s+maxlogins\s+\d{1,}'
+    line: "* hard maxlogins {{ rhel10stig_sshd_config_maxlogins }}"

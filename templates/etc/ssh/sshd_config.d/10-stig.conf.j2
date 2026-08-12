@@ -1,0 +1,7 @@
+{{ file_managed_by_ansible }}
+
+# RHEL 10 STIG SSHD Config for STIG
+{% if rhel10stig_700010 %}
+# RHEL-10-700010 | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a Secure Shell (SSH) login.
+Banner /etc/issue
+{% endif %}

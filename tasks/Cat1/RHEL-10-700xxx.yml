@@ -1,0 +1,158 @@
+---
+
+- name: "HIGH | RHEL-10-700640 | PATCH | RHEL 10 must not allow users to override Secure Shell (SSH) environment variables."
+  when:
+    - rhel10stig_700640
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700640
+    - CAT1
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281267r1184767_rule
+    - V-281267
+    - NIST800-53R4_CM-7
+    - ssh
+  block:
+    - name: "HIGH | RHEL-10-700640 | PATCH | RHEL 10 must not allow users to override Secure Shell (SSH) environment variables. | Replace with commented out line"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(PermitUserEnvironment.*)
+        replace: '#\1'
+      failed_when: discovered_sshd_userenv_exists.rc != 257
+      register: discovered_sshd_userenv_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+      notify: Restart sshd service
+
+    - name: "HIGH | RHEL-10-700640 | PATCH | RHEL 10 must not allow users to override SSH environment variables. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#?)\s*PermitUserEnvironment\s*(yes|no)
+        line: "PermitUserEnvironment {{ rhel10stig_sshd_config_userenv }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+      notify: Restart sshd service
+
+- name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for SSH connections to the server."
+  when:
+    - rhel10stig_700650
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700650
+    - CAT1
+    - CCI-000068
+    - CCI-002418
+    - CCI-002421
+    - SRG-OS-000423-GPOS-00187
+    - SRG-OS-000033-GPOS-00014
+    - SRG-OS-000424-GPOS-00188
+    - SV-281268r1184768_rule
+    - V-281268
+    - NIST800-53R4_AC-17
+    - NIST800-53R4_SC-8
+    - ssh
+  block:
+    - name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for SSH connections to the server. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)(^RekeyLimit.*)
+        replace: '#\1'
+      failed_when: discovered_rekey_exists.rc != 257
+      register: discovered_rekey_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+      notify: Restart sshd service
+
+    - name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for SSH connections to the server. | Exists"
+      ansible.builtin.lineinfile:
+        path: "/etc/ssh/sshd_config.d/49-stig-rekeylimit.conf"
+        regexp: (?i)^(#?)\s*RekeyLimit.*
+        line: "RekeyLimit {{ rhel10stig_sshd_config_rekeylimit }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+      notify: Restart sshd service
+
+- name: HIGH | RHEL-10-700720 | PATCH | RHEL 10 must not allow unattended or automatic logon via the graphical user interface.
+  when: rhel10stig_700720
+  tags:
+    - RHEL-10-700720
+    - CAT1
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281275r1166777_rule
+    - V-281275
+    - NIST800-53R4_AC-3
+    - gui
+  ansible.builtin.lineinfile:
+    path: /etc/gdm/custom.conf
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertafter: "{{ item.after | default(omit) }}"
+    create: true
+    mode: 'go-wx'
+  loop:
+    - { regexp: "\\[daemon\\]", line: '[daemon]' }
+    - { regexp: "(?i)^AutomaticLoginEnable=false", line: AutomaticLoginEnable=false, after: '[daemon]' }
+
+- name: HIGH | RHEL-10-700950 | PATCH | The systemd Ctrl-Alt-Delete burst key sequence in RHEL 10 must be disabled
+  when: rhel10stig_700950
+  tags:
+    - RHEL-10-700950
+    - CAT1
+    - CCI-002235
+    - SRG-OS-000324-GPOS-00125
+    - SV-281298r1184808_rule
+    - V-281298
+    - NIST800-53R4_AC-6
+  block:
+    - name: HIGH | RHEL-10-700950 | PATCH | The systemd Ctrl-Alt-Delete burst key sequence in RHEL 10 must be disabled | ansible.builtin.systemd
+      ansible.builtin.file:
+        path: /etc/systemd/system.conf.d/
+        state: directory
+        mode: 'go-w'
+        owner: root
+        group: root
+
+    - name: HIGH | RHEL-10-700950 | PATCH | The systemd Ctrl-Alt-Delete burst key sequence in RHEL 10 must be disabled | ansible.builtin.lineinfile
+      ansible.builtin.template:
+        src: etc/systemd/system.conf.d/55-CtrlAltDel-BurstAction.j2
+        dest: /etc/systemd/system.conf.d/55-CtrlAltDel-BurstAction
+        mode: 'go-wx'
+        owner: root
+        group: root
+      notify: Systemd daemon reload
+
+    - name: HIGH | RHEL-10-700950 | PATCH | The systemd Ctrl-Alt-Delete burst key sequence in RHEL 10 must be disabled | ansible.builtin.lineinfile
+      ansible.builtin.lineinfile:
+        path: /etc/systemd/system.conf.d/55-CtrlAltDel-BurstAction
+        regexp: ^CtrlAltDelBurstAction=none
+        line: CtrlAltDelBurstAction=none
+        mode: 'go-wx'
+      notify: Systemd daemon reload
+
+- name: HIGH | RHEL-10-700960 | PATCH | The x86 Ctrl-Alt-Delete key sequence must be disabled on RHEL 10
+  when: rhel10stig_700960
+  tags:
+    - RHEL-10-700960
+    - CAT1
+    - CCI-002235
+    - SRG-OS-000324-GPOS-00125
+    - SV-281299r1184849_rule
+    - V-281299
+    - NIST800-53R4_AC-6
+  block:
+    - name: HIGH | RHEL-10-700960 | PATCH | The systemd Ctrl-Alt-Delete burst key sequence in RHEL 10 must be disabled | Create symlink to /dev/null
+      ansible.builtin.file:
+        src: /dev/null
+        dest: /etc/systemd/system/ctrl-alt-del.target
+        state: link
+      notify: Systemd daemon reload
+
+    - name: HIGH | RHEL-10-700960 | PATCH | The systemd Ctrl-Alt-Delete burst key sequence in RHEL 10 must be disabled | systemctl disable
+      ansible.builtin.systemd:
+        name: ctrl-alt-del.target
+        masked: true
+        state: stopped

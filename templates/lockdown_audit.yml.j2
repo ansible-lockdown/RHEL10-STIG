@@ -1,0 +1,560 @@
+{{ file_managed_by_ansible }}
+
+## metadata for Audit benchmark
+benchmark_version: 'v1r1'
+benchmark: RHEL10-STIG
+{% if ansible_facts['distribution'] == "RedHat" %}
+rhel10stig_os_distribution: redhat
+rpm_key_file: redhat-release
+gpg_key:
+  - name: 'release key 2'
+    fingerprint: '567E 347A D004 4ADE 55BA  8A5F 199E 2F91 FD43 1D51'
+  - name: 'auxiliary key'
+    fingerprint: '6A6A A7C9 7C88 90AE C6AE  BFE2 F76F 66C3 D409 2792'
+{% elif ansible_facts['distribution'] == "AlmaLinux" %}
+rhel10stig_os_distribution: AlmaLinux
+rpm_key_file: AlmaLinux-10
+gpg_key:
+  - name: 'AlmaLinux OS 10'
+    fingerprint: 'EE6D B7B9 8F5B F5ED D9DA  0DE5 DEE5 C11C C2A1 E572'
+{% elif ansible_facts['distribution'] == "OracleLinux" %}
+rhel10stig_os_distribution: OracleLinux
+rpm_key_file: oracle
+gpg_key:
+  - name: 'Oracle Linux (release key 1)'
+    fingerprint: '3E6D 826D 3FBA B389 C2F3  8E34 BC4D 06A0 8D8B 756F'
+  - name: 'Oracle Linux (backup key 1)'
+    fingerprint: '9822 3175 9C74 6706 5D0C  E9B2 A7DD 0708 8B4E FBE6'
+{% elif ansible_facts['distribution'] == "Rocky" %}
+rhel10stig_os_distribution: Rocky
+rpm_key_file: Rocky-10
+gpg_key:
+  - name: 'Release Engineering (Rocky Linux 10)'
+    fingerprint: 'FC22 6859 C086 0BF0 DDB9  5B08 5B10 6C73 6FED FC85'
+{% endif %}
+
+rhel10stig_cat1: {{ rhel10stig_cat1 }}
+rhel10stig_cat2: {{ rhel10stig_cat2 }}
+rhel10stig_cat3: {{ rhel10stig_cat3 }}
+
+run_heavy_tests: {{ audit_run_heavy_tests }}
+timeout_ms: {{ audit_cmd_timeout }}
+
+rhel10stig_gui: {{ rhel10stig_gui }}
+rhel10stig_uses_sssd: {{ prelim_sssd_installed }}
+rhel10stig_system_is_router: {{ rhel10stig_system_is_router }}
+rhel10stig_legacy_boot: {{ rhel10stig_legacy_boot }}
+
+
+# Cat 1 rules
+#### CAT 1
+rhel10stig_000500: {{ rhel10stig_000500 }}
+rhel10stig_000510: {{ rhel10stig_000510 }}
+rhel10stig_001000: {{ rhel10stig_001000 }}
+rhel10stig_001030: {{ rhel10stig_001030 }}
+rhel10stig_001040: {{ rhel10stig_001040 }}
+rhel10stig_001050: {{ rhel10stig_001050 }}
+rhel10stig_200020: {{ rhel10stig_200020 }}
+rhel10stig_200070: {{ rhel10stig_200070 }}
+rhel10stig_200090: {{ rhel10stig_200090 }}
+rhel10stig_200631: {{ rhel10stig_200631 }}
+rhel10stig_300000: {{ rhel10stig_300000 }}
+rhel10stig_300010: {{ rhel10stig_300010 }}
+rhel10stig_300030: {{ rhel10stig_300030 }}
+rhel10stig_300040: {{ rhel10stig_300040 }}
+rhel10stig_300050: {{ rhel10stig_300050 }}
+rhel10stig_300060: {{ rhel10stig_300060 }}
+rhel10stig_300070: {{ rhel10stig_300070 }}
+rhel10stig_300080: {{ rhel10stig_300080 }}
+rhel10stig_300090: {{ rhel10stig_300090 }}
+rhel10stig_600560: {{ rhel10stig_600560 }}
+rhel10stig_600640: {{ rhel10stig_600640 }}
+rhel10stig_600730: {{ rhel10stig_600730 }}
+rhel10stig_600740: {{ rhel10stig_600740 }}
+rhel10stig_600750: {{ rhel10stig_600750 }}
+rhel10stig_700640: {{ rhel10stig_700640 }}
+rhel10stig_700650: {{ rhel10stig_700650 }}
+rhel10stig_700720: {{ rhel10stig_700720 }}
+rhel10stig_700950: {{ rhel10stig_700950 }}
+rhel10stig_700960: {{ rhel10stig_700960 }}
+rhel10stig_701050: {{ rhel10stig_701050 }}
+
+# Cat 2 rules
+#### CAT 2
+rhel10stig_000530: {{ rhel10stig_000530 }}
+rhel10stig_000540: {{ rhel10stig_000540 }}
+rhel10stig_000550: {{ rhel10stig_000550 }}
+rhel10stig_000560: {{ rhel10stig_000560 }}
+rhel10stig_000570: {{ rhel10stig_000570 }}
+rhel10stig_001020: {{ rhel10stig_001020 }}
+rhel10stig_200000: {{ rhel10stig_200000 }}
+rhel10stig_200010: {{ rhel10stig_200010 }}
+rhel10stig_200030: {{ rhel10stig_200030 }}
+rhel10stig_200040: {{ rhel10stig_200040 }}
+rhel10stig_200050: {{ rhel10stig_200050 }}
+rhel10stig_200060: {{ rhel10stig_200060 }}
+rhel10stig_200080: {{ rhel10stig_200080 }}
+rhel10stig_200500: {{ rhel10stig_200500 }}
+rhel10stig_200510: {{ rhel10stig_200510 }}
+rhel10stig_200520: {{ rhel10stig_200520 }}
+rhel10stig_200530: {{ rhel10stig_200530 }}
+rhel10stig_200531: {{ rhel10stig_200531 }}
+rhel10stig_200532: {{ rhel10stig_200532 }}
+rhel10stig_200540: {{ rhel10stig_200540 }}
+rhel10stig_200541: {{ rhel10stig_200541 }}
+rhel10stig_200542: {{ rhel10stig_200542 }}
+rhel10stig_200543: {{ rhel10stig_200543 }}
+rhel10stig_200560: {{ rhel10stig_200560 }}
+rhel10stig_200561: {{ rhel10stig_200561 }}
+rhel10stig_200562: {{ rhel10stig_200562 }}
+rhel10stig_200563: {{ rhel10stig_200563 }}
+rhel10stig_200570: {{ rhel10stig_200570 }}
+rhel10stig_200580: {{ rhel10stig_200580 }}
+rhel10stig_200590: {{ rhel10stig_200590 }}
+rhel10stig_200600: {{ rhel10stig_200600 }}
+rhel10stig_200601: {{ rhel10stig_200601 }}
+rhel10stig_200602: {{ rhel10stig_200602 }}
+rhel10stig_200610: {{ rhel10stig_200610 }}
+rhel10stig_200611: {{ rhel10stig_200611 }}
+rhel10stig_200612: {{ rhel10stig_200612 }}
+rhel10stig_200620: {{ rhel10stig_200620 }}
+rhel10stig_200621: {{ rhel10stig_200621 }}
+rhel10stig_200630: {{ rhel10stig_200630 }}
+rhel10stig_200632: {{ rhel10stig_200632 }}
+rhel10stig_200633: {{ rhel10stig_200633 }}
+rhel10stig_200634: {{ rhel10stig_200634 }}
+rhel10stig_200635: {{ rhel10stig_200635 }}
+rhel10stig_200640: {{ rhel10stig_200640 }}
+rhel10stig_200641: {{ rhel10stig_200641 }}
+rhel10stig_200642: {{ rhel10stig_200642 }}
+rhel10stig_200643: {{ rhel10stig_200643 }}
+rhel10stig_200644: {{ rhel10stig_200644 }}
+rhel10stig_200645: {{ rhel10stig_200645 }}
+rhel10stig_200646: {{ rhel10stig_200646 }}
+rhel10stig_200647: {{ rhel10stig_200647 }}
+rhel10stig_200648: {{ rhel10stig_200648 }}
+rhel10stig_200650: {{ rhel10stig_200650 }}
+rhel10stig_200660: {{ rhel10stig_200660 }}
+rhel10stig_200661: {{ rhel10stig_200661 }}
+rhel10stig_200680: {{ rhel10stig_200680 }}
+rhel10stig_200690: {{ rhel10stig_200690 }}
+rhel10stig_200691: {{ rhel10stig_200691 }}
+rhel10stig_200692: {{ rhel10stig_200692 }}
+rhel10stig_200700: {{ rhel10stig_200700 }}
+rhel10stig_200720: {{ rhel10stig_200720 }}
+rhel10stig_200721: {{ rhel10stig_200721 }}
+rhel10stig_200722: {{ rhel10stig_200722 }}
+rhel10stig_200730: {{ rhel10stig_200730 }}
+rhel10stig_200740: {{ rhel10stig_200740 }}
+rhel10stig_400000: {{ rhel10stig_400000 }}
+rhel10stig_400005: {{ rhel10stig_400005 }}
+rhel10stig_400010: {{ rhel10stig_400010 }}
+rhel10stig_400015: {{ rhel10stig_400015 }}
+rhel10stig_400020: {{ rhel10stig_400020 }}
+rhel10stig_400025: {{ rhel10stig_400025 }}
+rhel10stig_400030: {{ rhel10stig_400030 }}
+rhel10stig_400035: {{ rhel10stig_400035 }}
+rhel10stig_400040: {{ rhel10stig_400040 }}
+rhel10stig_400045: {{ rhel10stig_400045 }}
+rhel10stig_400050: {{ rhel10stig_400050 }}
+rhel10stig_400055: {{ rhel10stig_400055 }}
+rhel10stig_400060: {{ rhel10stig_400060 }}
+rhel10stig_400065: {{ rhel10stig_400065 }}
+rhel10stig_400070: {{ rhel10stig_400070 }}
+rhel10stig_400075: {{ rhel10stig_400075 }}
+rhel10stig_400080: {{ rhel10stig_400080 }}
+rhel10stig_400085: {{ rhel10stig_400085 }}
+rhel10stig_400090: {{ rhel10stig_400090 }}
+rhel10stig_400095: {{ rhel10stig_400095 }}
+rhel10stig_400100: {{ rhel10stig_400100 }}
+rhel10stig_400105: {{ rhel10stig_400105 }}
+rhel10stig_400110: {{ rhel10stig_400110 }}
+rhel10stig_400115: {{ rhel10stig_400115 }}
+rhel10stig_400120: {{ rhel10stig_400120 }}
+rhel10stig_400125: {{ rhel10stig_400125 }}
+rhel10stig_400130: {{ rhel10stig_400130 }}
+rhel10stig_400135: {{ rhel10stig_400135 }}
+rhel10stig_400140: {{ rhel10stig_400140 }}
+rhel10stig_400145: {{ rhel10stig_400145 }}
+rhel10stig_400150: {{ rhel10stig_400150 }}
+rhel10stig_400155: {{ rhel10stig_400155 }}
+rhel10stig_400160: {{ rhel10stig_400160 }}
+rhel10stig_400165: {{ rhel10stig_400165 }}
+rhel10stig_400170: {{ rhel10stig_400170 }}
+rhel10stig_400175: {{ rhel10stig_400175 }}
+rhel10stig_400180: {{ rhel10stig_400180 }}
+rhel10stig_400185: {{ rhel10stig_400185 }}
+rhel10stig_400190: {{ rhel10stig_400190 }}
+rhel10stig_400195: {{ rhel10stig_400195 }}
+rhel10stig_400200: {{ rhel10stig_400200 }}
+rhel10stig_400205: {{ rhel10stig_400205 }}
+rhel10stig_400210: {{ rhel10stig_400210 }}
+rhel10stig_400215: {{ rhel10stig_400215 }}
+rhel10stig_400220: {{ rhel10stig_400220 }}
+rhel10stig_400225: {{ rhel10stig_400225 }}
+rhel10stig_400230: {{ rhel10stig_400230 }}
+rhel10stig_400235: {{ rhel10stig_400235 }}
+rhel10stig_400240: {{ rhel10stig_400240 }}
+rhel10stig_400245: {{ rhel10stig_400245 }}
+rhel10stig_400250: {{ rhel10stig_400250 }}
+rhel10stig_400255: {{ rhel10stig_400255 }}
+rhel10stig_400260: {{ rhel10stig_400260 }}
+rhel10stig_400265: {{ rhel10stig_400265 }}
+rhel10stig_400270: {{ rhel10stig_400270 }}
+rhel10stig_400275: {{ rhel10stig_400275 }}
+rhel10stig_400280: {{ rhel10stig_400280 }}
+rhel10stig_400285: {{ rhel10stig_400285 }}
+rhel10stig_400290: {{ rhel10stig_400290 }}
+rhel10stig_400295: {{ rhel10stig_400295 }}
+rhel10stig_400300: {{ rhel10stig_400300 }}
+rhel10stig_400305: {{ rhel10stig_400305 }}
+rhel10stig_400310: {{ rhel10stig_400310 }}
+rhel10stig_400315: {{ rhel10stig_400315 }}
+rhel10stig_400320: {{ rhel10stig_400320 }}
+rhel10stig_400325: {{ rhel10stig_400325 }}
+rhel10stig_400330: {{ rhel10stig_400330 }}
+rhel10stig_400335: {{ rhel10stig_400335 }}
+rhel10stig_400340: {{ rhel10stig_400340 }}
+rhel10stig_400345: {{ rhel10stig_400345 }}
+rhel10stig_400350: {{ rhel10stig_400350 }}
+rhel10stig_400355: {{ rhel10stig_400355 }}
+rhel10stig_400360: {{ rhel10stig_400360 }}
+rhel10stig_400365: {{ rhel10stig_400365 }}
+rhel10stig_400400: {{ rhel10stig_400400 }}
+rhel10stig_400405: {{ rhel10stig_400405 }}
+rhel10stig_400410: {{ rhel10stig_400410 }}
+rhel10stig_400450: {{ rhel10stig_400450 }}
+rhel10stig_400500: {{ rhel10stig_400500 }}
+rhel10stig_500000: {{ rhel10stig_500000 }}
+rhel10stig_500005: {{ rhel10stig_500005 }}
+rhel10stig_500010: {{ rhel10stig_500010 }}
+rhel10stig_500015: {{ rhel10stig_500015 }}
+rhel10stig_500020: {{ rhel10stig_500020 }}
+rhel10stig_500025: {{ rhel10stig_500025 }}
+rhel10stig_500030: {{ rhel10stig_500030 }}
+rhel10stig_500035: {{ rhel10stig_500035 }}
+rhel10stig_500040: {{ rhel10stig_500040 }}
+rhel10stig_500045: {{ rhel10stig_500045 }}
+rhel10stig_500105: {{ rhel10stig_500105 }}
+rhel10stig_500110: {{ rhel10stig_500110 }}
+rhel10stig_500115: {{ rhel10stig_500115 }}
+rhel10stig_500120: {{ rhel10stig_500120 }}
+rhel10stig_500125: {{ rhel10stig_500125 }}
+rhel10stig_500205: {{ rhel10stig_500205 }}
+rhel10stig_500210: {{ rhel10stig_500210 }}
+rhel10stig_500215: {{ rhel10stig_500215 }}
+rhel10stig_500300: {{ rhel10stig_500300 }}
+rhel10stig_500310: {{ rhel10stig_500310 }}
+rhel10stig_500320: {{ rhel10stig_500320 }}
+rhel10stig_500330: {{ rhel10stig_500330 }}
+rhel10stig_500340: {{ rhel10stig_500340 }}
+rhel10stig_500350: {{ rhel10stig_500350 }}
+rhel10stig_500360: {{ rhel10stig_500360 }}
+rhel10stig_500370: {{ rhel10stig_500370 }}
+rhel10stig_500380: {{ rhel10stig_500380 }}
+rhel10stig_500390: {{ rhel10stig_500390 }}
+rhel10stig_500400: {{ rhel10stig_500400 }}
+rhel10stig_500410: {{ rhel10stig_500410 }}
+rhel10stig_500420: {{ rhel10stig_500420 }}
+rhel10stig_500430: {{ rhel10stig_500430 }}
+rhel10stig_500440: {{ rhel10stig_500440 }}
+rhel10stig_500450: {{ rhel10stig_500450 }}
+rhel10stig_500460: {{ rhel10stig_500460 }}
+rhel10stig_500470: {{ rhel10stig_500470 }}
+rhel10stig_500480: {{ rhel10stig_500480 }}
+rhel10stig_500490: {{ rhel10stig_500490 }}
+rhel10stig_500500: {{ rhel10stig_500500 }}
+rhel10stig_500510: {{ rhel10stig_500510 }}
+rhel10stig_500520: {{ rhel10stig_500520 }}
+rhel10stig_500530: {{ rhel10stig_500530 }}
+rhel10stig_500540: {{ rhel10stig_500540 }}
+rhel10stig_500550: {{ rhel10stig_500550 }}
+rhel10stig_500560: {{ rhel10stig_500560 }}
+rhel10stig_500570: {{ rhel10stig_500570 }}
+rhel10stig_500580: {{ rhel10stig_500580 }}
+rhel10stig_500590: {{ rhel10stig_500590 }}
+rhel10stig_500600: {{ rhel10stig_500600 }}
+rhel10stig_500610: {{ rhel10stig_500610 }}
+rhel10stig_500620: {{ rhel10stig_500620 }}
+rhel10stig_500630: {{ rhel10stig_500630 }}
+rhel10stig_500640: {{ rhel10stig_500640 }}
+rhel10stig_500650: {{ rhel10stig_500650 }}
+rhel10stig_500660: {{ rhel10stig_500660 }}
+rhel10stig_500670: {{ rhel10stig_500670 }}
+rhel10stig_500680: {{ rhel10stig_500680 }}
+rhel10stig_500690: {{ rhel10stig_500690 }}
+rhel10stig_500700: {{ rhel10stig_500700 }}
+rhel10stig_500710: {{ rhel10stig_500710 }}
+rhel10stig_500720: {{ rhel10stig_500720 }}
+rhel10stig_500730: {{ rhel10stig_500730 }}
+rhel10stig_500740: {{ rhel10stig_500740 }}
+rhel10stig_500750: {{ rhel10stig_500750 }}
+rhel10stig_500760: {{ rhel10stig_500760 }}
+rhel10stig_500780: {{ rhel10stig_500780 }}
+rhel10stig_500790: {{ rhel10stig_500790 }}
+rhel10stig_500810: {{ rhel10stig_500810 }}
+rhel10stig_600000: {{ rhel10stig_600000 }}
+rhel10stig_600010: {{ rhel10stig_600010 }}
+rhel10stig_600020: {{ rhel10stig_600020 }}
+rhel10stig_600100: {{ rhel10stig_600100 }}
+rhel10stig_600110: {{ rhel10stig_600110 }}
+rhel10stig_600120: {{ rhel10stig_600120 }}
+rhel10stig_600130: {{ rhel10stig_600130 }}
+rhel10stig_600140: {{ rhel10stig_600140 }}
+rhel10stig_600150: {{ rhel10stig_600150 }}
+rhel10stig_600160: {{ rhel10stig_600160 }}
+rhel10stig_600170: {{ rhel10stig_600170 }}
+rhel10stig_600180: {{ rhel10stig_600180 }}
+rhel10stig_600190: {{ rhel10stig_600190 }}
+rhel10stig_600200: {{ rhel10stig_600200 }}
+rhel10stig_600210: {{ rhel10stig_600210 }}
+rhel10stig_600220: {{ rhel10stig_600220 }}
+rhel10stig_600230: {{ rhel10stig_600230 }}
+rhel10stig_600240: {{ rhel10stig_600240 }}
+rhel10stig_600250: {{ rhel10stig_600250 }}
+rhel10stig_600260: {{ rhel10stig_600260 }}
+rhel10stig_600270: {{ rhel10stig_600270 }}
+rhel10stig_600280: {{ rhel10stig_600280 }}
+rhel10stig_600290: {{ rhel10stig_600290 }}
+rhel10stig_600300: {{ rhel10stig_600300 }}
+rhel10stig_600310: {{ rhel10stig_600310 }}
+rhel10stig_600320: {{ rhel10stig_600320 }}
+rhel10stig_600400: {{ rhel10stig_600400 }}
+rhel10stig_600405: {{ rhel10stig_600405 }}
+rhel10stig_600410: {{ rhel10stig_600410 }}
+rhel10stig_600415: {{ rhel10stig_600415 }}
+rhel10stig_600420: {{ rhel10stig_600420 }}
+rhel10stig_600425: {{ rhel10stig_600425 }}
+rhel10stig_600430: {{ rhel10stig_600430 }}
+rhel10stig_600450: {{ rhel10stig_600450 }}
+rhel10stig_600455: {{ rhel10stig_600455 }}
+rhel10stig_600460: {{ rhel10stig_600460 }}
+rhel10stig_600470: {{ rhel10stig_600470 }}
+rhel10stig_600485: {{ rhel10stig_600485 }}
+rhel10stig_600500: {{ rhel10stig_600500 }}
+rhel10stig_600510: {{ rhel10stig_600510 }}
+rhel10stig_600520: {{ rhel10stig_600520 }}
+rhel10stig_600530: {{ rhel10stig_600530 }}
+rhel10stig_600540: {{ rhel10stig_600540 }}
+rhel10stig_600550: {{ rhel10stig_600550 }}
+rhel10stig_600600: {{ rhel10stig_600600 }}
+rhel10stig_600610: {{ rhel10stig_600610 }}
+rhel10stig_600620: {{ rhel10stig_600620 }}
+rhel10stig_600630: {{ rhel10stig_600630 }}
+rhel10stig_600650: {{ rhel10stig_600650 }}
+rhel10stig_600700: {{ rhel10stig_600700 }}
+rhel10stig_600710: {{ rhel10stig_600710 }}
+rhel10stig_600720: {{ rhel10stig_600720 }}
+rhel10stig_700010: {{ rhel10stig_700010 }}
+rhel10stig_700020: {{ rhel10stig_700020 }}
+rhel10stig_700030: {{ rhel10stig_700030 }}
+rhel10stig_700040: {{ rhel10stig_700040 }}
+rhel10stig_700100: {{ rhel10stig_700100 }}
+rhel10stig_700105: {{ rhel10stig_700105 }}
+rhel10stig_700110: {{ rhel10stig_700110 }}
+rhel10stig_700115: {{ rhel10stig_700115 }}
+rhel10stig_700120: {{ rhel10stig_700120 }}
+rhel10stig_700125: {{ rhel10stig_700125 }}
+rhel10stig_700130: {{ rhel10stig_700130 }}
+rhel10stig_700135: {{ rhel10stig_700135 }}
+rhel10stig_700140: {{ rhel10stig_700140 }}
+rhel10stig_700145: {{ rhel10stig_700145 }}
+rhel10stig_700150: {{ rhel10stig_700150 }}
+rhel10stig_700155: {{ rhel10stig_700155 }}
+rhel10stig_700160: {{ rhel10stig_700160 }}
+rhel10stig_700165: {{ rhel10stig_700165 }}
+rhel10stig_700170: {{ rhel10stig_700170 }}
+rhel10stig_700175: {{ rhel10stig_700175 }}
+rhel10stig_700180: {{ rhel10stig_700180 }}
+rhel10stig_700185: {{ rhel10stig_700185 }}
+rhel10stig_700190: {{ rhel10stig_700190 }}
+rhel10stig_700195: {{ rhel10stig_700195 }}
+rhel10stig_700200: {{ rhel10stig_700200 }}
+rhel10stig_700400: {{ rhel10stig_700400 }}
+rhel10stig_700410: {{ rhel10stig_700410 }}
+rhel10stig_700420: {{ rhel10stig_700420 }}
+rhel10stig_700430: {{ rhel10stig_700430 }}
+rhel10stig_700500: {{ rhel10stig_700500 }}
+rhel10stig_700510: {{ rhel10stig_700510 }}
+rhel10stig_700520: {{ rhel10stig_700520 }}
+rhel10stig_700530: {{ rhel10stig_700530 }}
+rhel10stig_700540: {{ rhel10stig_700540 }}
+rhel10stig_700550: {{ rhel10stig_700550 }}
+rhel10stig_700560: {{ rhel10stig_700560 }}
+rhel10stig_700570: {{ rhel10stig_700570 }}
+rhel10stig_700580: {{ rhel10stig_700580 }}
+rhel10stig_700590: {{ rhel10stig_700590 }}
+rhel10stig_700600: {{ rhel10stig_700600 }}
+rhel10stig_700610: {{ rhel10stig_700610 }}
+rhel10stig_700620: {{ rhel10stig_700620 }}
+rhel10stig_700630: {{ rhel10stig_700630 }}
+rhel10stig_700660: {{ rhel10stig_700660 }}
+rhel10stig_700670: {{ rhel10stig_700670 }}
+rhel10stig_700680: {{ rhel10stig_700680 }}
+rhel10stig_700690: {{ rhel10stig_700690 }}
+rhel10stig_700700: {{ rhel10stig_700700 }}
+rhel10stig_700710: {{ rhel10stig_700710 }}
+rhel10stig_700730: {{ rhel10stig_700730 }}
+rhel10stig_700740: {{ rhel10stig_700740 }}
+rhel10stig_700750: {{ rhel10stig_700750 }}
+rhel10stig_700760: {{ rhel10stig_700760 }}
+rhel10stig_700770: {{ rhel10stig_700770 }}
+rhel10stig_700780: {{ rhel10stig_700780 }}
+rhel10stig_700790: {{ rhel10stig_700790 }}
+rhel10stig_700800: {{ rhel10stig_700800 }}
+rhel10stig_700810: {{ rhel10stig_700810 }}
+rhel10stig_700820: {{ rhel10stig_700820 }}
+rhel10stig_700830: {{ rhel10stig_700830 }}
+rhel10stig_700840: {{ rhel10stig_700840 }}
+rhel10stig_700850: {{ rhel10stig_700850 }}
+rhel10stig_700860: {{ rhel10stig_700860 }}
+rhel10stig_700870: {{ rhel10stig_700870 }}
+rhel10stig_700880: {{ rhel10stig_700880 }}
+rhel10stig_700900: {{ rhel10stig_700900 }}
+rhel10stig_700920: {{ rhel10stig_700920 }}
+rhel10stig_700930: {{ rhel10stig_700930 }}
+rhel10stig_700940: {{ rhel10stig_700940 }}
+rhel10stig_700970: {{ rhel10stig_700970 }}
+rhel10stig_700980: {{ rhel10stig_700980 }}
+rhel10stig_700990: {{ rhel10stig_700990 }}
+rhel10stig_701000: {{ rhel10stig_701000 }}
+rhel10stig_701010: {{ rhel10stig_701010 }}
+rhel10stig_701020: {{ rhel10stig_701020 }}
+rhel10stig_701030: {{ rhel10stig_701030 }}
+rhel10stig_701040: {{ rhel10stig_701040 }}
+rhel10stig_701060: {{ rhel10stig_701060 }}
+rhel10stig_701070: {{ rhel10stig_701070 }}
+rhel10stig_701080: {{ rhel10stig_701080 }}
+rhel10stig_701090: {{ rhel10stig_701090 }}
+rhel10stig_701100: {{ rhel10stig_701100 }}
+rhel10stig_701110: {{ rhel10stig_701110 }}
+rhel10stig_701120: {{ rhel10stig_701120 }}
+rhel10stig_701130: {{ rhel10stig_701130 }}
+rhel10stig_701140: {{ rhel10stig_701140 }}
+rhel10stig_701150: {{ rhel10stig_701150 }}
+rhel10stig_701160: {{ rhel10stig_701160 }}
+rhel10stig_701170: {{ rhel10stig_701170 }}
+rhel10stig_701180: {{ rhel10stig_701180 }}
+rhel10stig_701190: {{ rhel10stig_701190 }}
+rhel10stig_701200: {{ rhel10stig_701200 }}
+rhel10stig_701210: {{ rhel10stig_701210 }}
+rhel10stig_701220: {{ rhel10stig_701220 }}
+rhel10stig_701230: {{ rhel10stig_701230 }}
+rhel10stig_701240: {{ rhel10stig_701240 }}
+rhel10stig_701250: {{ rhel10stig_701250 }}
+rhel10stig_701260: {{ rhel10stig_701260 }}
+rhel10stig_701270: {{ rhel10stig_701270 }}
+rhel10stig_701280: {{ rhel10stig_701280 }}
+rhel10stig_701290: {{ rhel10stig_701290 }}
+rhel10stig_800000: {{ rhel10stig_800000 }}
+rhel10stig_800010: {{ rhel10stig_800010 }}
+rhel10stig_800020: {{ rhel10stig_800020 }}
+rhel10stig_800030: {{ rhel10stig_800030 }}
+rhel10stig_800040: {{ rhel10stig_800040 }}
+rhel10stig_800050: {{ rhel10stig_800050 }}
+rhel10stig_800060: {{ rhel10stig_800060 }}
+rhel10stig_800070: {{ rhel10stig_800070 }}
+rhel10stig_800080: {{ rhel10stig_800080 }}
+rhel10stig_800090: {{ rhel10stig_800090 }}
+rhel10stig_800100: {{ rhel10stig_800100 }}
+rhel10stig_800110: {{ rhel10stig_800110 }}
+rhel10stig_800120: {{ rhel10stig_800120 }}
+rhel10stig_800130: {{ rhel10stig_800130 }}
+rhel10stig_800140: {{ rhel10stig_800140 }}
+rhel10stig_800150: {{ rhel10stig_800150 }}
+rhel10stig_800160: {{ rhel10stig_800160 }}
+rhel10stig_800170: {{ rhel10stig_800170 }}
+rhel10stig_800180: {{ rhel10stig_800180 }}
+rhel10stig_800190: {{ rhel10stig_800190 }}
+rhel10stig_800200: {{ rhel10stig_800200 }}
+rhel10stig_800210: {{ rhel10stig_800210 }}
+rhel10stig_800220: {{ rhel10stig_800220 }}
+rhel10stig_800230: {{ rhel10stig_800230 }}
+rhel10stig_800240: {{ rhel10stig_800240 }}
+rhel10stig_800250: {{ rhel10stig_800250 }}
+rhel10stig_800260: {{ rhel10stig_800260 }}
+rhel10stig_800270: {{ rhel10stig_800270 }}
+rhel10stig_800280: {{ rhel10stig_800280 }}
+rhel10stig_800290: {{ rhel10stig_800290 }}
+rhel10stig_800300: {{ rhel10stig_800300 }}
+rhel10stig_800310: {{ rhel10stig_800310 }}
+rhel10stig_900000: {{ rhel10stig_900000 }}
+rhel10stig_900100: {{ rhel10stig_900100 }}
+
+### Cat3
+rhel10stig_000520: {{ rhel10stig_000520 }}
+rhel10stig_200662: {{ rhel10stig_200662 }}
+rhel10stig_500100: {{ rhel10stig_500100 }}
+rhel10stig_600475: {{ rhel10stig_600475 }}
+rhel10stig_700890: {{ rhel10stig_700890 }}
+
+#### Variables
+
+### Aide configuration
+rhel10stig_use_aide: {{ rhel10stig_use_aide }}
+rhel10stig_aide_cron_file: {{ rhel10stig_aide_cron_file }}
+rhel10stig_aide_cron_day: '{{ rhel10stig_aide_cron_day }}'
+rhel10stig_aide_cron_hour: '{{ rhel10stig_aide_cron_hour }}'
+rhel10stig_aide_cron_minute: '{{ rhel10stig_aide_cron_minute }}'
+rhel10stig_aide_cron_job: '{{ rhel10stig_aide_cron_job }}'
+rhel10stig_aide_cron_name: '{{ rhel10stig_aide_cron_name }}'
+
+### Audit configuration
+rhel10stig_audit_conf_action_mail_acct: {{ rhel10stig_audit_conf_action_mail_acct }}
+rhel10stig_audit_conf_log_group: root
+
+### Authentication configuration
+rhel10stig_smartcard_reader: {{ rhel10stig_smartcard_reader }}
+
+### DConf configuration
+rhel10stig_dconf_db: local.d
+
+### Grub configuration
+rhel10stig_grub_superuser: {{ rhel10stig_grub_superuser }}
+
+### ipv6
+rhel10stig_system_uses_ipv6: {{ rhel10stig_system_uses_ipv6 }}
+
+### home filesystem
+rhel10stig_home_filesystem: {{ rhel10stig_home_filesystem }}
+
+### NFS configuration
+rhel10stig_nfs_required: {{ rhel10stig_nfs_utils_required }}
+
+### Postfix configuration
+rhel10stig_postfix_client_conf: {{ rhel10stig_postfix_client_conf }}
+
+### Rsyslog configuration
+rhel10stig_rsyslog_server: {{ rhel10stig_rsyslog_server }}
+rhel10stig_rsyslog_remote_server_ip: '{{ rhel10stig_rsyslog_remote_server_ip }}'
+rhel10stig_rsyslog_remote_server_port: '{{ rhel10stig_rsyslog_remote_server_port }}'
+
+rhel10stig_logon_banner:
+  - You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only.
+  - By using this IS (which includes any device attached to this IS), you consent to the following conditions
+  - -The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+  - -At any time, the USG may inspect and seize data stored on this IS.
+  - -Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose.
+  - -This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.
+  - -Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.
+
+### SSHD settings
+rhel10stig_sshd_config_clientalivecountmax: {{ rhel10stig_sshd_config_clientalivecountmax }}
+rhel10stig_sshd_config_clientaliveinterval: {{ rhel10stig_sshd_config_clientaliveinterval }}
+rhel10stig_sshd_config_gssapiauth: {{ rhel10stig_sshd_config_gssapiauth }}
+rhel10stig_sshd_config_hostauth: {{ rhel10stig_sshd_config_hostauth }}
+rhel10stig_sshd_config_ignorerhosts: {{ rhel10stig_sshd_config_ignorerhosts }}
+rhel10stig_sshd_config_kerbauth: {{ rhel10stig_sshd_config_kerbauth }}
+rhel10stig_sshd_config_loglevel: ENRICHED
+rhel10stig_sshd_config_permitroot: {{ rhel10stig_sshd_config_permitroot }}
+rhel10stig_sshd_config_rekeylimit: {{ rhel10stig_sshd_config_rekeylimit }}
+rhel10stig_sshd_config_userenv: {{ rhel10stig_sshd_config_userenv }}
+rhel10stig_sshd_config_x11forward: {{ rhel10stig_sshd_config_x11forward }}
+rhel10stig_sshd_config_x11uselocal: {{ rhel10stig_sshd_config_x11uselocal }}
+rhel10stig_sshd_config_ciphers: '{{ rhel10stig_sshd_config_ciphers }}'
+rhel10stig_sshd_config_macs: '{{ rhel10stig_sshd_config_macs }}'
+
+### TFTP server required
+# If true, the TFTP server will be configured to operate in secure mode.
+rhel10stig_tftp_server_required: {{ rhel10stig_tftp_server_required }}
+

@@ -1,0 +1,922 @@
+---
+
+## metadata for Audit benchmark
+benchmark_version: 'v1r1'
+
+## Benchmark name used by auditing control role
+# The audit variable found at the base
+benchmark: RHEL10-STIG
+
+# Whether to skip the OS check for supported OS's
+skip_os_check: false
+
+# Whether to skip the FIPS mode check
+# This affects many tasks and would put you in a non-compliant state.
+# In order not skip fips it needs to be enabled at installation time.
+# https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/10/html/security_hardening/switching-rhel-to-fips-mode
+# The only correct way to switch the system to FIPS mode is to enable it during the OS installation.
+# We do not test for any other method to enable FIPS mode.
+skip_fips_mode: false
+
+rhel10stig_cat1: true
+rhel10stig_cat2: true
+rhel10stig_cat3: true
+
+# We've defined disruption-high to indicate items that are likely to cause
+# disruption in a normal workflow.  These items can be remediated automatically
+# but are disabled by default to avoid disruption.
+rhel10stig_disruption_high: false
+
+# Set if system uses ipv6
+rhel10stig_system_uses_ipv6: false
+
+# Place to find the container yml file for your environment - /vars/...
+container_vars_file: is_container.yml
+
+# rhel10stig is left off the front of this var for consistency in testing pipeline
+# system_is_ec2 toggle will disable tasks that fail on Amazon EC2 instances. Set true to skip and false to run tasks
+system_is_ec2: false
+
+# Create managed not custom local_facts files
+create_benchmark_facts: true
+ansible_facts_path: /etc/ansible/facts.d
+
+# Connecting user, due to the way many users work differently this is to try and assist the use of connecting user if required
+# This is useful when part of kickstart build or running as root and not defining the ansible_user option
+# used @ RHEL-10-411015
+# This variable governs whether the system uses the root account directly.
+# When set to true, tasks that would otherwise restrict or skip root-based access are adjusted accordingly.
+rhel10stig_uses_root: false
+rhel10stig_default_user: root
+rhel10stig_connecting_user: "{{ ansible_facts['env']['SUDO_USER'] | default(rhel10stig_default_user) }}"
+rhel10stig_playbook_user: "{{ ansible_user | default(rhel10stig_connecting_user) }}"
+
+# Whether to skip the reboot
+skip_reboot: true
+
+# system acts or requires router networking options
+rhel10stig_system_is_router: false
+###
+### Settings for associated Audit role using Goss
+###
+
+###########################################
+### Goss is required on the remote host ###
+### vars/auditd.yml for other settings  ###
+
+## Audit setup
+# Audits are carried out using Goss. This variable
+# determines whether execution of the role prepares for auditing
+# by installing the required binary.
+setup_audit: false
+
+## Enable audits to run - this runs the audit and get the latest content
+# This variable governs whether the audit using the
+# separately maintained audit role using Goss
+# is carried out.
+# This runs the audit and gets the latest content
+run_audit: false
+# Run heavy tests - some tests can have more impact on a system enabling these can have greater impact on a system
+audit_run_heavy_tests: true
+
+## Only run Audit do not remediate
+audit_only: false
+
+#############################
+
+## Ability to collect and take audit files moving to a centralized location
+# This enables the collection of the files from the host
+fetch_audit_output: false
+
+# Method of getting,uploading the summary files
+## Ensure access and permissions are available for these to occur.
+## options are
+# fetch - fetches from server and moves to location on the ansible controller (could be a mount point available to controller)
+# copy - copies file to a location available to the managed node
+audit_output_collection_method: fetch
+
+# Location to put the audit files
+audit_output_destination: /opt/audit_summaries/
+
+### Goss Settings ##
+####### END ########
+
+#### CAT 1
+rhel10stig_000500: true
+rhel10stig_000510: true
+rhel10stig_001000: true
+rhel10stig_001030: true
+rhel10stig_001040: true
+rhel10stig_001050: true
+rhel10stig_200020: true
+rhel10stig_200070: true
+rhel10stig_200090: true
+rhel10stig_200631: true
+rhel10stig_300000: true
+rhel10stig_300010: true
+rhel10stig_300030: true
+rhel10stig_300040: true
+rhel10stig_300050: true
+rhel10stig_300060: true
+rhel10stig_300070: true
+rhel10stig_300080: true
+rhel10stig_300090: true
+rhel10stig_600560: true
+rhel10stig_600640: true
+rhel10stig_600730: true
+rhel10stig_600740: true
+rhel10stig_600750: true
+rhel10stig_700640: true
+rhel10stig_700650: true
+rhel10stig_700720: true
+rhel10stig_700950: true
+rhel10stig_700960: true
+rhel10stig_701050: true
+
+#### CAT 2
+rhel10stig_000530: true
+rhel10stig_000540: true
+rhel10stig_000550: true
+rhel10stig_000560: true
+rhel10stig_000570: true
+rhel10stig_001020: true
+rhel10stig_200000: true
+rhel10stig_200010: true
+rhel10stig_200030: true
+rhel10stig_200040: true
+rhel10stig_200050: true
+rhel10stig_200060: true
+rhel10stig_200080: true
+rhel10stig_200500: true
+rhel10stig_200510: true
+rhel10stig_200520: true
+rhel10stig_200530: true
+rhel10stig_200531: true
+rhel10stig_200532: true
+rhel10stig_200540: true
+rhel10stig_200541: true
+rhel10stig_200542: true
+rhel10stig_200543: true
+rhel10stig_200560: true
+rhel10stig_200561: true
+rhel10stig_200562: true
+rhel10stig_200563: true
+rhel10stig_200570: true
+rhel10stig_200580: true
+rhel10stig_200590: true
+rhel10stig_200600: true
+rhel10stig_200601: true
+rhel10stig_200602: true
+rhel10stig_200610: true
+rhel10stig_200611: true
+rhel10stig_200612: true
+rhel10stig_200620: true
+rhel10stig_200621: true
+rhel10stig_200630: true
+rhel10stig_200632: true
+rhel10stig_200633: true
+rhel10stig_200634: true
+rhel10stig_200635: true
+rhel10stig_200640: true
+rhel10stig_200641: true
+rhel10stig_200642: true
+rhel10stig_200643: true
+rhel10stig_200644: true
+rhel10stig_200645: true
+rhel10stig_200646: true
+rhel10stig_200647: true
+rhel10stig_200648: true
+rhel10stig_200650: true
+rhel10stig_200660: true
+rhel10stig_200661: true
+rhel10stig_200680: true
+rhel10stig_200690: true
+rhel10stig_200691: true
+rhel10stig_200692: true
+rhel10stig_200700: true
+rhel10stig_200720: true
+rhel10stig_200721: true
+rhel10stig_200722: true
+rhel10stig_200730: true
+rhel10stig_200740: true
+rhel10stig_400000: true
+rhel10stig_400005: true
+rhel10stig_400010: true
+rhel10stig_400015: true
+rhel10stig_400020: true
+rhel10stig_400025: true
+rhel10stig_400030: true
+rhel10stig_400035: true
+rhel10stig_400040: true
+rhel10stig_400045: true
+rhel10stig_400050: true
+rhel10stig_400055: true
+rhel10stig_400060: true
+rhel10stig_400065: true
+rhel10stig_400070: true
+rhel10stig_400075: true
+rhel10stig_400080: true
+rhel10stig_400085: true
+rhel10stig_400090: true
+rhel10stig_400095: true
+rhel10stig_400100: true
+rhel10stig_400105: true
+rhel10stig_400110: true
+rhel10stig_400115: true
+rhel10stig_400120: true
+rhel10stig_400125: true
+rhel10stig_400130: true
+rhel10stig_400135: true
+rhel10stig_400140: true
+rhel10stig_400145: true
+rhel10stig_400150: true
+rhel10stig_400155: true
+rhel10stig_400160: true
+rhel10stig_400165: true
+rhel10stig_400170: true
+rhel10stig_400175: true
+rhel10stig_400180: true
+rhel10stig_400185: true
+rhel10stig_400190: true
+rhel10stig_400195: true
+rhel10stig_400200: true
+rhel10stig_400205: true
+rhel10stig_400210: true
+rhel10stig_400215: true
+rhel10stig_400220: true
+rhel10stig_400225: true
+rhel10stig_400230: true
+rhel10stig_400235: true
+rhel10stig_400240: true
+rhel10stig_400245: true
+rhel10stig_400250: true
+rhel10stig_400255: true
+rhel10stig_400260: true
+rhel10stig_400265: true
+rhel10stig_400270: true
+rhel10stig_400275: true
+rhel10stig_400280: true
+rhel10stig_400285: true
+rhel10stig_400290: true
+rhel10stig_400295: true
+rhel10stig_400300: true
+rhel10stig_400305: true
+rhel10stig_400310: true
+rhel10stig_400315: true
+rhel10stig_400320: true
+rhel10stig_400325: true
+rhel10stig_400330: true
+rhel10stig_400335: true
+rhel10stig_400340: true
+rhel10stig_400345: true
+rhel10stig_400350: true
+rhel10stig_400355: true
+rhel10stig_400360: true
+rhel10stig_400365: true
+rhel10stig_400400: true
+rhel10stig_400405: true
+rhel10stig_400410: true
+rhel10stig_400450: true
+rhel10stig_400500: true
+rhel10stig_500000: true
+rhel10stig_500005: true
+rhel10stig_500010: true
+rhel10stig_500015: true
+rhel10stig_500020: true
+rhel10stig_500025: true
+rhel10stig_500030: true
+rhel10stig_500035: true
+rhel10stig_500040: true
+rhel10stig_500045: true
+rhel10stig_500105: true
+rhel10stig_500110: true
+rhel10stig_500115: true
+rhel10stig_500120: true
+rhel10stig_500125: true
+rhel10stig_500205: true
+rhel10stig_500210: true
+rhel10stig_500215: true
+rhel10stig_500300: true
+rhel10stig_500310: true
+rhel10stig_500320: true
+rhel10stig_500330: true
+rhel10stig_500340: true
+rhel10stig_500350: true
+rhel10stig_500360: true
+rhel10stig_500370: true
+rhel10stig_500380: true
+rhel10stig_500390: true
+rhel10stig_500400: true
+rhel10stig_500410: true
+rhel10stig_500420: true
+rhel10stig_500430: true
+rhel10stig_500440: true
+rhel10stig_500450: true
+rhel10stig_500460: true
+rhel10stig_500470: true
+rhel10stig_500480: true
+rhel10stig_500490: true
+rhel10stig_500500: true
+rhel10stig_500510: true
+rhel10stig_500520: true
+rhel10stig_500530: true
+rhel10stig_500540: true
+rhel10stig_500550: true
+rhel10stig_500560: true
+rhel10stig_500570: true
+rhel10stig_500580: true
+rhel10stig_500590: true
+rhel10stig_500600: true
+rhel10stig_500610: true
+rhel10stig_500620: true
+rhel10stig_500630: true
+rhel10stig_500640: true
+rhel10stig_500650: true
+rhel10stig_500660: true
+rhel10stig_500670: true
+rhel10stig_500680: true
+rhel10stig_500690: true
+rhel10stig_500700: true
+rhel10stig_500710: true
+rhel10stig_500720: true
+rhel10stig_500730: true
+rhel10stig_500740: true
+rhel10stig_500750: true
+rhel10stig_500760: true
+rhel10stig_500780: true
+rhel10stig_500790: true
+rhel10stig_500810: true
+rhel10stig_600000: true
+rhel10stig_600010: true
+rhel10stig_600020: true
+rhel10stig_600100: true
+rhel10stig_600110: true
+rhel10stig_600120: true
+rhel10stig_600130: true
+rhel10stig_600140: true
+rhel10stig_600150: true
+rhel10stig_600160: true
+rhel10stig_600170: true
+rhel10stig_600180: true
+rhel10stig_600190: true
+rhel10stig_600200: true
+rhel10stig_600210: true
+rhel10stig_600220: true
+rhel10stig_600230: true
+rhel10stig_600240: true
+rhel10stig_600250: true
+rhel10stig_600260: true
+rhel10stig_600270: true
+rhel10stig_600280: true
+rhel10stig_600290: true
+rhel10stig_600300: true
+rhel10stig_600310: true
+rhel10stig_600320: true
+rhel10stig_600400: true
+rhel10stig_600405: true
+rhel10stig_600410: true
+rhel10stig_600415: true
+rhel10stig_600420: true
+rhel10stig_600425: true
+rhel10stig_600430: true
+rhel10stig_600450: true
+rhel10stig_600455: true
+rhel10stig_600460: true
+rhel10stig_600470: true
+rhel10stig_600485: true
+rhel10stig_600500: true
+rhel10stig_600510: true
+rhel10stig_600520: true
+rhel10stig_600530: true
+rhel10stig_600540: true
+rhel10stig_600550: true
+rhel10stig_600600: true
+rhel10stig_600610: true
+rhel10stig_600620: true
+rhel10stig_600630: true
+rhel10stig_600650: true
+rhel10stig_600700: true
+rhel10stig_600710: true
+rhel10stig_600720: true
+rhel10stig_700010: true
+rhel10stig_700020: true
+rhel10stig_700030: true
+rhel10stig_700040: true
+rhel10stig_700100: true
+rhel10stig_700105: true
+rhel10stig_700110: true
+rhel10stig_700115: true
+rhel10stig_700120: true
+rhel10stig_700125: true
+rhel10stig_700130: true
+rhel10stig_700135: true
+rhel10stig_700140: true
+rhel10stig_700145: true
+rhel10stig_700150: true
+rhel10stig_700155: true
+rhel10stig_700160: true
+rhel10stig_700165: true
+rhel10stig_700170: true
+rhel10stig_700175: true
+rhel10stig_700180: true
+rhel10stig_700185: true
+rhel10stig_700190: true
+rhel10stig_700195: true
+rhel10stig_700200: true
+rhel10stig_700400: true
+rhel10stig_700410: true
+rhel10stig_700420: true
+rhel10stig_700430: true
+rhel10stig_700500: true
+rhel10stig_700510: true
+rhel10stig_700520: true
+rhel10stig_700530: true
+rhel10stig_700540: true
+rhel10stig_700550: true
+rhel10stig_700560: true
+rhel10stig_700570: true
+rhel10stig_700580: true
+rhel10stig_700590: true
+rhel10stig_700600: true
+rhel10stig_700610: true
+rhel10stig_700620: true
+rhel10stig_700630: true
+rhel10stig_700660: true
+rhel10stig_700670: true
+rhel10stig_700680: true
+rhel10stig_700690: true
+rhel10stig_700700: true
+rhel10stig_700710: true
+rhel10stig_700730: true
+rhel10stig_700740: true
+rhel10stig_700750: true
+rhel10stig_700760: true
+rhel10stig_700770: true
+rhel10stig_700780: true
+rhel10stig_700790: true
+rhel10stig_700800: true
+rhel10stig_700810: true
+rhel10stig_700820: true
+rhel10stig_700830: true
+rhel10stig_700840: true
+rhel10stig_700850: true
+rhel10stig_700860: true
+rhel10stig_700870: true
+rhel10stig_700880: true
+rhel10stig_700900: true
+rhel10stig_700920: true
+rhel10stig_700930: true
+rhel10stig_700940: true
+rhel10stig_700970: true
+rhel10stig_700980: true
+rhel10stig_700990: true
+rhel10stig_701000: true
+rhel10stig_701010: true
+rhel10stig_701020: true
+rhel10stig_701030: true
+rhel10stig_701040: true
+rhel10stig_701060: true
+rhel10stig_701070: true
+rhel10stig_701080: true
+rhel10stig_701090: true
+rhel10stig_701100: true
+rhel10stig_701110: true
+rhel10stig_701120: true
+rhel10stig_701130: true
+rhel10stig_701140: true
+rhel10stig_701150: true
+rhel10stig_701160: true
+rhel10stig_701170: true
+rhel10stig_701180: true
+rhel10stig_701190: true
+rhel10stig_701200: true
+rhel10stig_701210: true
+rhel10stig_701220: true
+rhel10stig_701230: true
+rhel10stig_701240: true
+rhel10stig_701250: true
+rhel10stig_701260: true
+rhel10stig_701270: true
+rhel10stig_701280: true
+rhel10stig_701290: true
+rhel10stig_800000: true
+rhel10stig_800010: true
+rhel10stig_800020: true
+rhel10stig_800030: true
+rhel10stig_800040: true
+rhel10stig_800050: true
+rhel10stig_800060: true
+rhel10stig_800070: true
+rhel10stig_800080: true
+rhel10stig_800090: true
+rhel10stig_800100: true
+rhel10stig_800110: true
+rhel10stig_800120: true
+rhel10stig_800130: true
+rhel10stig_800140: true
+rhel10stig_800150: true
+rhel10stig_800160: true
+rhel10stig_800170: true
+rhel10stig_800180: true
+rhel10stig_800190: true
+rhel10stig_800200: true
+rhel10stig_800210: true
+rhel10stig_800220: true
+rhel10stig_800230: true
+rhel10stig_800240: true
+rhel10stig_800250: true
+rhel10stig_800260: true
+rhel10stig_800270: true
+rhel10stig_800280: true
+rhel10stig_800290: true
+rhel10stig_800300: true
+rhel10stig_800310: true
+rhel10stig_900000: true
+rhel10stig_900100: true
+
+### Cat3
+rhel10stig_000520: true
+rhel10stig_200662: true
+rhel10stig_500100: true
+rhel10stig_600475: true
+rhel10stig_700890: true
+
+### CONTROLS
+
+## Graphical/Gnome interface approved to be present
+rhel10stig_gui_approved: false
+
+# If gui not installed
+rhel10stig_gui: "{{ prelim_gnome_present.stat.exists | default(false) }}"
+
+## SSHD
+rhel10stig_sshd_required: true
+rhel10stig_sshd_config_file: /etc/ssh/sshd_config
+
+rhel10stig_sshd_config_ciphers: Ciphers aes256-gcm@openssh.com,aes256-ctr,aes128-gcm@openssh.com,aes128-ctr
+rhel10stig_sshd_config_clientalivecountmax: 1
+rhel10stig_sshd_config_clientaliveinterval: 600  # max 600
+rhel10stig_sshd_config_gssapiauth: 'no'
+rhel10stig_sshd_config_hostauth: 'no'
+rhel10stig_sshd_config_ignoreknownhosts: 'yes'
+rhel10stig_sshd_config_ignorerhosts: 'yes'
+rhel10stig_sshd_config_kerbauth: 'no'
+rhel10stig_sshd_config_lastlog: 'yes'
+rhel10stig_sshd_config_loglevel: VERBOSE
+rhel10stig_sshd_config_macs: MACs hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
+rhel10stig_sshd_config_maxlogins: 10
+rhel10stig_sshd_config_pubkeyauth: 'yes'
+rhel10stig_sshd_config_permitroot: 'no'
+##### rhel10stig_sshd_config_privsep: sandbox
+rhel10stig_sshd_config_rekeylimit: '1G 1h'
+rhel10stig_sshd_config_strictmodes: 'yes'
+rhel10stig_sshd_config_userenv: 'no'
+rhel10stig_sshd_config_x11forward: 'no'
+rhel10stig_sshd_config_x11uselocal: 'yes'
+
+################## bootloader password #####################################
+#
+# Two options for setting the bootloader password
+#
+# Will also need to add the set_boot_pass variable to the task to ensure the password is set.
+#
+# This variable governs whether a bootloader password should be set in '/boot/grub2/user.cfg' file.
+rhel10stig_set_boot_pass: false
+#
+# Option 1: Set the bootloader password and salt – requires the passlib Python module
+# to be available on the Ansible controller.
+# Set this value to something secure to have predictable hashes,
+# which will prevent unnecessary changes.
+
+rhel10stig_bootloader_salt: ''
+
+# This variable stores the GRUB bootloader password to be written
+# to the '/boot/grub2/user.cfg' file. The default value must be changed.
+
+rhel10stig_bootloader_password: 'password'  # pragma: allowlist secret
+
+# Option 2: Set the bootloader password hash – if the salt value is empty,
+# the password will be set using the variable below.
+# If you are not using the bootloader hash filter, you can set it here
+# in encrypted format, e.g. grub.pbkdf2.sha512.hashstring
+
+rhel10stig_bootloader_password_hash: 'grub.pbkdf2.sha512.changethispassword'  # pragma: allowlist secret
+
+## Bootloader superuser
+# This is the superuser account that will be used to access the bootloader.
+# The default value can be changed but must not be a common name such as root, admin, or administrator.
+# The default value is 'stig_boot_user'.
+rhel10stig_grub_superuser: 'stig_boot_user'
+
+####################################################
+
+## Banner
+rhel10stig_workaround_for_disa_benchmark: true
+
+rhel10stig_logon_banner: "{{ rhel10stig_workaround_for_disa_benchmark | ternary(
+        rhel10stig_logon_banner_nice | regex_replace('(?s)(?<!\\n)\\n(?!(\n|$))', ' '),
+        rhel10stig_logon_banner_nice) }}"
+rhel10stig_logon_banner_nice: |
+    You are accessing a U.S. Government (USG) Information System (IS) that is
+    provided for USG-authorized use only.
+
+    By using this IS (which includes any device attached to this IS), you consent
+    to the following conditions:
+
+    -The USG routinely intercepts and monitors communications on this IS for
+    purposes including, but not limited to, penetration testing, COMSEC monitoring,
+    network operations and defense, personnel misconduct (PM), law enforcement
+    (LE), and counterintelligence (CI) investigations.
+
+    -At any time, the USG may inspect and seize data stored on this IS.
+
+    -Communications using, or data stored on, this IS are not private, are subject
+    to routine monitoring, interception, and search, and may be disclosed or used
+    for any USG-authorized purpose.
+
+    -This IS includes security measures (e.g., authentication and access controls)
+    to protect USG interests--not for your personal benefit or privacy.
+
+    -Notwithstanding the above, using this IS does not constitute consent to PM, LE
+    or CI investigative searching or monitoring of the content of privileged
+    communications, or work product, related to personal representation or services
+    by attorneys, psychotherapists, or clergy, and their assistants. Such
+    communications and work product are private and confidential. See User
+    Agreement for details.
+
+# Packages and services
+rhel10stig_is_ftp_server: false
+rhel10stig_nfs_utils_required: false
+
+# TFTP server required
+# If true, the TFTP server will be configured to operate in secure mode.
+rhel10stig_tftp_server_required: false
+
+# Add list of additional crypto subpolicies to be added to FIPS
+rhel10stig_additional_fips_crypto_subpolicies: false
+rhel10stig_additional_fips_crypto_subpolicies_list:
+# - AD-SUPPORT
+# - NO-ENFORCE-EMS
+
+## 23xxxx
+rhel10stig_home_filesystem: '/home'
+
+## 25xxxx
+# 252040 - DNS processing mode in Network Manager - Must be one of the following: default, none, systemd-resolved
+# default: NetworkManager will update /etc/resolv.conf to reflect the nameservers provided by currently active connections.
+# none: NetworkManager will not modify /etc/resolv.conf. Used when DNS is managed manually or by another service.
+# systemd-resolved: Uses systemd-resolved to manage DNS.
+rhel10stig_dns_processing_mode: 'none'
+
+## Firewalld
+# rhel10stig_custom_firewall_zone is the desired name for the firewall zone
+rhel10stig_custom_firewall_zone: "drop"
+rhel10stig_custom_firewall_interface: "{{ ansible_default_ipv4.interface | list }}"
+
+# rhel10stig_white_list_services is the services that you want to allow through initially for the new firewall zone
+# This can also be a port number if no service exists
+# Examples below
+rhel10stig_white_list_services:
+- name: ssh
+- name: dns
+- name: ntp
+# - port: 53
+# - protocol: udp
+# - port: 53
+# - protocol: tcp
+
+## Interface list allowed to have promiscuous mode set
+rhel10stig_promisc_if:
+- none
+
+# Set sysctl files
+# Sysctl file
+rhel10stig_sysctl_file_default: /etc/sysctl.d/99-sysctl.conf
+# rhel10stig_sysctl_file:
+#   fs: "{{ rhel10stig_sysctl_file_default }}"
+#   kernel: "{{ rhel10stig_sysctl_file_default }}"
+#   network: "{{ rhel10stig_sysctl_file_default }}"
+#   user: "{{ rhel10stig_sysctl_file_default }}"
+# Systems that run containers must set this value to greater then 0 for example: 65536
+# rhel10stig_sysctl_max_user_namespaces: '0'
+
+## Chrony
+rhel10stig_time_synchronization_servers:
+- '0.us.pool.ntp.mil'
+- '1.us.pool.ntp.mil'
+rhel10stig_chrony_server_options: "iburst maxpoll 16"  # The Max Setting is maxpoll 16
+
+## fapolicy
+# Allow adding of fapolicy rules to be updated - also needs rhel10stig_disruption_high
+rhel10stig_allow_fapolicy_updates: false
+
+# rhel10stig_fapolicy_white_list is the whitelist for fapolicyd
+rhel10stig_fapolicy_white_list:
+- '# Allow Ansible'
+- "allow perm=any trust=1 : dir={{ ansible_facts['env']['PWD'] }}/.ansible/"
+- 'allow perm=any trust=1 : dir=/root/.ansible/'
+- 'allow perm=any trust=1 : dir=/tmp/ansible/'
+
+## DNS
+# Please adjust accordingly for ipv4 or ipv6
+rhel10stig_dns_ip4_servers:
+- 8.8.8.8
+- 8.8.4.4
+
+# rhel10stig_dns_ip6_servers:
+#   - '2001:4860:4860::8888'
+#   - '2001:4860:4860::8844'
+
+## Optional settings Please adjust accordingly for your environment
+# rhel10stig_resolv_domains:
+# - example.com
+# rhel10stig_resolv_search_options: example.com example1.com
+# rhel10stig_resolv_dns_options: 'timeout:2 rotate'
+
+## Mail Settings
+rhel10stig_postfix_client_conf: permit_mynetworks,reject
+
+### ACCOUNTS and AUTH ###
+## PAM and password settings
+rhel10stig_pass_max_days: 60
+rhel10stig_pass_min_days: 1
+rhel10stig_pass_minlen: '15'
+
+rhel10stig_user_inactive_days: '35'  # 35 or less is compliant
+
+# Path to set for users initialization files e.g. echo $PATH expected results
+rhel10stig_env_path: '$PATH:$HOME/.local/bin:$HOME/bin'
+
+# Authselect profile settings
+# If Set to true will use authselect - Can cause disruption to authentication
+# if false will use the legacy method
+rhel10stig_uses_authselect: false
+
+##### rhel10stig_authselect_custom_profile: minimal
+
+# Faillock settings
+rhel10stig_faillock_deny: '3'  # 3 or less but not 0
+rhel10stig_faillock_fail_interval: '900'  # 900 or less is required not '0'
+rhel10stig_faillock_unlock_time: 0  # should be set to 0 unless documented
+rhel10stig_faillock_dir: '/var/log/faillock'
+
+# rhel10stig_unnecessary_accounts:
+# - ftp
+# - games
+##### rhel10stig_remove_unnecessary_user_files: false
+
+rhel10stig_login_defs_fail_delay: '4'
+
+##### rhel10stig_logind_conf_stopsessionidle: '600'
+
+rhel10stig_pam_retry: '3'  # must be set between 1-3, anything else is a failure
+rhel10stig_pam_rounds: '5000'
+
+rhel10stig_pwquality_dcredit: -1
+rhel10stig_pwquality_dictcheck: 1
+rhel10stig_pwquality_difok: 8
+rhel10stig_pwquality_lcredit: -1
+rhel10stig_pwquality_maxclassrepeat: 4
+rhel10stig_pwquality_maxrepeat: 3
+rhel10stig_pwquality_minclass: 4
+rhel10stig_pwquality_ocredit: -1
+rhel10stig_pwquality_ucredit: -1
+
+rhel10stig_sudoers_exclude_nopasswd_list:
+- ec2-user
+- vagrant
+
+rhel10stig_smartcard_reader: false
+
+### SSSD
+rhel10stig_configure_sssd: false
+rhel10stig_sssd_config_certmap: |
+  [certmap/{{ rhel10stig_sssd.domain }}/{{ rhel10stig_sssd.rulename }}"]
+  matchrule ='.*example@mil'
+  maprule = (userCertificate;binary={cert!bin})
+  domains = example.com
+
+### Aide
+# AIDE is a file integrity checking tool, similar in nature to Tripwire.
+# While it cannot prevent intrusions, it can detect unauthorized changes
+# to configuration files by alerting when the files are changed. Review
+# the AIDE quick start guide and AIDE documentation before proceeding.
+# By setting this variable to `true`, all of the settings related to AIDE will be applied!
+rhel10stig_use_aide: true
+
+# If DB file older than below will automatically rebuild DB
+# e.g. options:1w = 1 week, 1d = 1day 1h = 1 hour
+rhel10stig_aide_db_file_age: 1w
+
+# If aide already setup this forces a new DB to be created despite age
+rhel10stig_aide_db_recreate: false
+
+# New db file
+rhel10stig_aide_db_new_file: /var/lib/aide/aide.db.new.gz
+# Active db file
+rhel10stig_aide_db_file: /var/lib/aide/aide.db.gz
+
+# Must run a minimum of weekly
+rhel10stig_aide_cron_file: /etc/cron.daily/aide  # NOTE the path may change if not running daily
+rhel10stig_aide_cron_day: '*'
+rhel10stig_aide_cron_hour: '4'
+rhel10stig_aide_cron_minute: '30'
+rhel10stig_aide_cron_job: '/usr/sbin/aide --check | /bin/mail -s "$HOSTNAME - Daily aide integrity check run" root@sysname.mil'
+rhel10stig_aide_cron_name: 'Aide Job runs Daily at {{ rhel10stig_aide_cron_hour }}:{{ rhel10stig_aide_cron_minute }}'
+
+# AIDE is a file integrity checking tool, similar in nature to Tripwire.
+# While it cannot prevent intrusions, it can detect unauthorized changes
+# to configuration files by alerting when the files are changed. Review
+# the AIDE quick start guide and AIDE documentation before proceeding.
+# By setting this variable to `true`, all of the settings related to AIDE will be applied!
+##### rhel10stig_config_aide: true
+
+### Rsyslog
+# Set the type either rsyslogd or syslog-ng this sets the audit tools binary as referred to controls
+# RHEL-10-232035, RHEL-10-232220, RHEL-10-232225
+rhel10stig_syslog_binary: rsyslogd
+# Set the following to true if the server accepts incoming syslog data using rsyslog
+rhel10stig_rsyslog_server: false
+
+# Adjust to match remote syslog server configuration
+# There are two ways to offload
+# 1. Legacy way - using @@
+# 2. New way - using Rainer scripts
+# The new way is more secure and is the preferred method.
+
+# If using legacy offload, set this to true
+# If using Rainer scripts offload, set this to false
+rhel10stig_rsyslog_legacy_offload: false
+
+# Standard settings for remote syslog server
+# Server IP address
+rhel10stig_rsyslog_remote_server_ip: 10.10.10.10
+# Server port
+rhel10stig_rsyslog_remote_server_port: 9999
+# Server protocol
+rhel10stig_rsyslog_remote_server_protocol: '@@'
+
+# Stream driver settings for rainerscripts offload
+# Stream driver type
+rhel10stig_rsyslog_stream_driver: 'gtls'
+# Stream driver mode
+rhel10stig_rsyslog_stream_driver_mode: '1'
+# Stream driver authentication mode
+rhel10stig_rsyslog_stream_driver_auth_mode: 'x509/name'
+# Stream driver permitted peers
+rhel10stig_rsyslog_stream_driver_permitted_peers: 'central.example.net'
+
+### AUDITD
+# Ensure this matches the filesystem where the audit logs are stored.
+# It will affect checks for control RHEL-10-653030
+rhel10stig_auditd_required: true
+rhel10stig_audit_log_filesystem: '/var/log/audit'
+# Audit log space left
+# Accepted values can be one of "25%" or less
+rhel10stig_audit_conf_space_left: 25%
+# Audit log name format
+# Accepted values can be one of "hostname", "fqdn", "numeric", "fqn"
+rhel10stig_audit_conf_name_format: hostname
+# Audit log admin space left
+# Accepted values can be one of "5%" or less
+rhel10stig_audit_conf_admin_space_left: 5%
+# Audit log admin space left action
+# Only accepted value is "single" - unless otherwise documented
+rhel10stig_audit_conf_admin_space_left_action: single
+# Audit log overflow action
+# Accepted values can be one of "syslog", "single", or "halt"
+rhel10stig_audit_conf_overflow_action: syslog
+# Audit log format
+# Only accepted value is: "ENRICHED" - unless otherwise documented
+rhel10stig_audit_conf_log_format: ENRICHED
+# Audit log frequency
+# Accepted values must be 100 or greater
+rhel10stig_audit_conf_freq: '100'
+# Audit log space left action
+# Only accepted value is "email" - unless otherwise documented
+rhel10stig_audit_conf_space_left_action: email
+# Audit log email account
+# Account to send email to for audit log errors
+rhel10stig_audit_conf_action_mail_acct: root
+# Audit log file group
+# Group to set for audit log file
+rhel10stig_audit_conf_logfile_group: root
+
+rhel10stig_audit_backlog_limit: 8192
+# Audit binaries
+rhel10stig_audit_bins:
+- '/usr/sbin/auditctl'
+- '/usr/sbin/aureport'
+- '/usr/sbin/ausearch'
+- '/usr/sbin/autrace'
+- '/usr/sbin/auditd'
+- '/usr/sbin/{{ rhel10stig_syslog_binary }}'  # Note you may not need this is container
+- '/usr/sbin/augenrules'
+
+## Advanced option found in auditd post
+# This variable governs if defining user exceptions for auditd logging is acceptable.
+# Ensure that this is documented in your exceptions list for any auditors
+rhel10stig_allow_auditd_uid_user_exclusions: false
+# This variable contains a list of uids to be excluded(users whose actions are not logged by auditd)
+rhel10stig_auditd_uid_exclude:
+- 1999

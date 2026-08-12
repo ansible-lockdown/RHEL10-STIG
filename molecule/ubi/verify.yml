@@ -1,0 +1,15 @@
+---
+
+# Molecule verifier for the UBI 10 scenario.
+#
+# The assertions are identical to the default scenario's, so this imports them rather than
+# duplicating a file that would then drift - the two files were byte-identical before this
+# change. The scenarios differ only in base image (redhat/ubi10-init vs
+# rockylinux/rockylinux:10-ubi-init) and in which packages prepare.yml can install, not in the
+# hardening being asserted.
+#
+# Without this file `molecule verify -s ubi` is a silent no-op: the ansible verifier logs
+# "Executed: Missing playbook" and exits 0, so the scenario reports green having asserted
+# nothing.
+- name: Verify (UBI 10)
+  ansible.builtin.import_playbook: ../default/verify.yml

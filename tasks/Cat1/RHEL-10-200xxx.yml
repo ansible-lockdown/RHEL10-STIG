@@ -1,0 +1,66 @@
+---
+- name: "HIGH | RHEL-10-200020 | PATCH | RHEL 10 must not have the telnet-server package installed."
+  when: rhel10stig_200020
+  tags:
+    - RHEL-10-200020
+    - CAT1
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-280944r1184749_rule
+    - V-280944
+    - NIST800-53R4_CM-7
+  ansible.builtin.package:
+    name: telnet-server
+    state: absent
+
+- name: "HIGH | RHEL-10-200070 | PATCH | RHEL 10 must not have the tftp package installed."
+  when: rhel10stig_200070
+  tags:
+    - RHEL-10-200070
+    - CAT2
+    - CCI-000197
+    - SRG-OS-000074-GPOS-0042
+    - SV-280949r1195338_rule
+    - V-280949
+    - NIST800-53R4_IA-5
+  ansible.builtin.package:
+    name: tftp
+    state: absent
+
+- name: HIGH | RHEL-10-200090 | PATCH | RHEL 10 must not have a File Transfer Protocol (FTP) server package installed.
+  when:
+    - not rhel10stig_is_ftp_server
+    - rhel10stig_200090
+  tags:
+    - RHEL-10-200090
+    - CAT1
+    - CCI-000197
+    - CCI-000381
+    - SRG-OS-000074-GPOS-00042
+    - SRG-OS-000095-GPOS-00049
+    - SV-280951r1184744_rule
+    - V-280951
+    - NIST800-53R4_IA-5
+    - NIST800-53R4_CM-7
+  ansible.builtin.package:
+    name: vsftpd
+    state: absent
+
+- name: "HIGH | RHEL-10-200631 | PATCH | RHEL 10 must use cryptographic mechanisms to protect the integrity of audit tools."
+  when:
+    - rhel10stig_200631
+    - rhel10stig_use_aide
+  tags:
+    - RHEL-10-200631
+    - CAT1
+    - CCI-001496
+    - SRG-OS-000278-GPOS-00108
+    - SV-280978r1165289_rule
+    - V-280978
+    - NIST800-53R4_AU-9
+    - aide
+    - audit
+  ansible.builtin.template:
+    src: etc/aide.conf.j2
+    dest: /etc/aide.conf
+    mode: 'u-x,go-rwx'

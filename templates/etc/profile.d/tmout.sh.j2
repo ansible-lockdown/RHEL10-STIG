@@ -1,0 +1,7 @@
+{{ file_managed_by_ansible }}
+
+#!/bin/bash
+
+{% if rhel10stig_700920 %}
+declare -xr TMOUT=600
+{% endif %}

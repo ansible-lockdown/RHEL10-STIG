@@ -1,0 +1,139 @@
+---
+
+- name: "MEDIUM | RHEL-10-000530 | AUDIT | A separate RHEL 10 file system must be used for user home directories (such as /home or an equivalent)."
+  when: rhel10stig_000530
+  tags:
+    - RHEL-10-000530
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-280937r1184727_rule
+    - V-280937
+    - NIST800-53R4_SC-5
+  block:
+    - name: "MEDIUM | RHEL-10-000530 | AUDIT | A separate RHEL 10 file system must be used for user home directories (such as /home or an equivalent)."
+      when: "rhel10stig_home_filesystem in mount_names"
+      ansible.builtin.debug:
+        msg: "Congratulations /home directory is a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000530 | AUDIT | A separate RHEL 10 file system must be used for user home directories (such as /home or an equivalent). | Warning"
+      when: "rhel10stig_home_filesystem not in mount_names"
+      ansible.builtin.debug:
+        msg: "Warning!! The designated /home directory is not a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000530 | AUDIT | A separate RHEL 10 file system must be used for user home directories (such as /home or an equivalent). | Warning"
+      when: "rhel10stig_home_filesystem in mount_names"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-000530"
+
+- name: "MEDIUM | RHEL-10-000540 | AUDIT | RHEL 10 must use a separate file system for /tmp."
+  when: rhel10stig_000540
+  tags:
+    - RHEL-10-000540
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-280938r1184728_rule
+    - V-280938
+    - NIST800-53R4_SC-5
+  block:
+    - name: "MEDIUM | RHEL-10-000540 | AUDIT | RHEL 10 must use a separate file system for /tmp."
+      when: "'/tmp' in mount_names"
+      ansible.builtin.debug:
+        msg: "Congratulations /tmp directory is a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000540 | AUDIT | RHEL 10 must use a separate file system for /tmp. | Warning"
+      when: "'/tmp' not in mount_names"
+      ansible.builtin.debug:
+        msg: "Warning!! /tmp directory is not a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000540 | AUDIT | RHEL 10 must use a separate file system for /tmp. | Warning"
+      when: "'/tmp' not in mount_names"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-000540"
+
+- name: "MEDIUM | RHEL-10-000550 | AUDIT | RHEL 10 must use a separate file system for /var"
+  when: rhel10stig_000550
+  tags:
+    - RHEL-10-000550
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-280939r1184729_rule
+    - V-280939
+    - NIST800-53R4_SC-5
+  block:
+    - name: "MEDIUM | RHEL-10-000550 | AUDIT | RHEL 10 must use a separate file system for /var"
+      when: "'/var' in mount_names"
+      ansible.builtin.debug:
+        msg: "Congratulations /var directory is a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000550 | AUDIT | RHEL 10 must use a separate file system for /var. | Warning"
+      when: "'/var' not in mount_names"
+      ansible.builtin.debug:
+        msg: "Warning!! /var directory is not a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000550 | AUDIT | RHEL 10 must use a separate file system for /var. | Warning"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-000550"
+
+- name: "MEDIUM | RHEL-10-000560 | AUDIT | RHEL 10 must use a separate file system for /var/log"
+  when: rhel10stig_000560
+  tags:
+    - RHEL-10-000560
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000480-GPOS-00227
+    - SV-280940r1184730_rule
+    - V-280940
+    - NIST800-53R4_SC-5
+  block:
+    - name: "MEDIUM | RHEL-10-000560 | AUDIT | RHEL 10 must use a separate file system for /var/log"
+      when: "'/var/log' in mount_names"
+      ansible.builtin.debug:
+        msg: "Congratulations /var/log directory is a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000560 | AUDIT | RHEL 10 must use a separate file system for /var/log. | Warning"
+      when: "'/var/log' not in mount_names"
+      ansible.builtin.debug:
+        msg: "Warning!! /var/log directory is not a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000560 | AUDIT | RHEL 10 must use a separate file system for /var/log. | Warning"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-000560"
+
+- name: "MEDIUM | RHEL-10-000570 | AUDIT | RHEL 10 must use a separate file system for /var/tmp."
+  when: rhel10stig_000570
+  tags:
+    - RHEL-10-000570
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000480-GPOS-00227
+    - SV-280941r1184731_rule
+    - V-280941
+    - NIST800-53R4_SC-5
+  block:
+    - name: "MEDIUM | RHEL-10-000570 | AUDIT | RHEL 10 must use a separate file system for /var/tmp."
+      when: "'/var/tmp' in mount_names"
+      ansible.builtin.debug:
+        msg: "Congratulations /var/tmp directory is a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000570 | AUDIT | RHEL 10 must use a separate file system for /var/tmp. | Warning"
+      when: "'/var/tmp' not in mount_names"
+      ansible.builtin.debug:
+        msg: "Warning!! /var/tmp directory is not a separate filesystem"
+
+    - name: "MEDIUM | RHEL-10-000570 | AUDIT | RHEL 10 must use a separate file system for /var/tmp. | Warning"
+      when: "'/var/tmp' not in mount_names"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-000570"

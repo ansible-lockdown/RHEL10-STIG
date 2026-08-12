@@ -1,0 +1,61 @@
+{{ file_managed_by_ansible }}
+
+{% if rhel10stig_600220 %}
+# STIG RHEL-10-600220 | RHEL 10 must enforce that passwords be created with a minimum of 15 characters.
+minlen = {{ rhel10stig_pass_minlen }}
+{% endif %}
+
+{% if rhel10stig_600230 %}
+# STIG RHEL-10-600230 | RHEL 10 must enforce password complexity by requiring that at least one special character be used.
+ocredit = {{ rhel10stig_pwquality_ocredit }}
+{% endif %}
+
+{% if rhel10stig_600240 %}
+# STIG RHEL-10-600240 | RHEL 10 must enforce password complexity by requiring that at least one lowercase character be used.
+lcredit = {{ rhel10stig_pwquality_lcredit }}
+{% endif %}
+
+{% if rhel10stig_600250 %}
+# STIG RHEL-10-600250 | RHEL 10 must enforce password complexity by requiring that at least one uppercase character be used.
+ucredit = {{ rhel10stig_pwquality_ucredit }}
+{% endif %}
+
+{% if rhel10stig_600260 %}
+# STIG RHEL-10-600260 | RHEL 10 must enforce password complexity by requiring that at least eight characters when passwords are changed.
+difok = {{ rhel10stig_pwquality_difok }}
+{% endif %}
+
+{% if rhel10stig_600280 %}
+# STIG RHEL-10-600280 | RHEL 10 must require the maximum number of repeating characters of the same character class be limited to four when passwords are changed.
+maxclassrepeat = {{ rhel10stig_pwquality_maxclassrepeat }}
+{% endif %}
+
+{% if rhel10stig_600290 %}
+# STIG RHEL-10-600290 | RHEL 10 must require the maximum number of repeating characters be limited to three when passwords are changed.
+maxrepeat = {{ rhel10stig_pwquality_maxrepeat }}
+{% endif %}
+
+{% if rhel10stig_600300 %}
+# STIG RHEL-10-600300 | RHEL 10 must require the change of at least four character classes when passwords are changed.
+minclass = {{ rhel10stig_pwquality_minclass }}
+{% endif %}
+
+{% if rhel10stig_600310 %}
+# STIG RHEL-10-600310 | RHEL 10 must enforce password complexity by requiring that at least one numeric character be used.
+dcredit = {{ rhel10stig_pwquality_dcredit }}
+{% endif %}
+
+{% if rhel10stig_600320 %}
+# STIG RHEL-10-600320 | RHEL 10 must prevent the use of dictionary words for passwords.
+dictcheck = {{ rhel10stig_pwquality_dictcheck }}
+{% endif %}
+
+{% if rhel10stig_600405 %}
+# STIG RHEL-10-600405 | RHEL 10 must enforce password complexity rules for the root account.
+enforce_for_root = true
+{% endif %}
+
+{% if rhel10stig_600485 %}
+# STIG RHEL-10-600485 | RHEL 10 must ensure the password complexity module in the system-auth file is configured for three or fewer retries.
+retry = {{ rhel10stig_pam_retry }}
+{% endif %}

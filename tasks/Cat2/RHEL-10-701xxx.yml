@@ -1,0 +1,743 @@
+---
+
+- name: "MEDIUM | RHEL-10-701000 | PATCH | RHEL 10 must clear the page allocator to prevent use-after-free attacks."
+  when: rhel10stig_701000
+  tags:
+    - RHEL-10-701000
+    - CAT2
+    - CCI-001084
+    - SRG-OS-000134-GPOS-00068
+    - SV-257793r1044843_rule
+    - V-257793
+    - NIST800-53R4_SC-3
+  block:
+    - name: "MEDIUM | RHEL-10-701000 | AUDIT | RHEL 10 must clear the page allocator to prevent use-after-free attacks. | Capture grubby"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep 'page_poison=1'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_page_alloc.rc not in [ 0, 1 ]
+      register: discovered_grubby_page_alloc
+
+    - name: "MEDIUM | RHEL-10-701000 | PATCH | RHEL 10 must clear the page allocator to prevent use-after-free attacks. | Amend grubby"
+      when: discovered_grubby_page_alloc.stdout | length == 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="page_poison=1"
+      changed_when: true
+
+    - name: "MEDIUM | RHEL-10-701000 | AUDIT | RHEL 10 must clear the page allocator to prevent use-after-free attacks. | Capture default grub"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub | cut -f2 -d'"' | grep page_poison
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_def_grub_poison.rc not in [ 0 ,1 ]
+      register: discovered_def_grub_poison
+
+    - name: "MEDIUM | RHEL-10-701000 | PATCH | RHEL 10 must clear the page allocator to prevent use-after-free attacks. | Set default"
+      when: discovered_def_grub_poison.rc != 0
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: ^(GRUB_CMDLINE_LINUX=")(.*)"
+        line: '\1\2 page_poison=1"'
+        backrefs: true
+      notify: Rebuild grub
+
+- name: "MEDIUM | RHEL-10-701010 | PATCH | RHEL 10 must clear memory when it is freed to prevent use-after-free attacks."
+  when: rhel10stig_701010
+  tags:
+    - RHEL-10-701010
+    - CAT2
+    - CCI-001084
+    - SRG-OS-000134-GPOS-00068
+    - SV-257794r1069362_rule
+    - V-257794
+    - NIST800-53R4_SC-3
+  block:
+    - name: "MEDIUM | RHEL-10-701010 | AUDIT | RHEL 10 must clear memory when it is freed to prevent use-after-free attacks. | Capture grubby"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep 'init_on_free=1'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_slab.rc not in [ 0, 1 ]
+      register: discovered_grubby_slab
+
+    - name: "MEDIUM | RHEL-10-701010 | PATCH | RHEL 10 must clear memory when it is freed to prevent use-after-free attacks. | Amend grubby"
+      when: discovered_grubby_slab.stdout | length == 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="init_on_free=1"
+      changed_when: true
+      notify: Rebuild grub
+
+    - name: "MEDIUM | RHEL-10-701010 | AUDIT | RHEL 10 must clear memory when it is freed to prevent use-after-free attacks. | Capture default grub"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub | cut -f2 -d'"' | grep init_on_free
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_def_grub_slab.rc not in [ 0 ,1 ]
+      register: discovered_def_grub_slab
+
+    - name: "MEDIUM | RHEL-10-701010 | PATCH | RHEL 10 must clear memory when it is freed to prevent use-after-free attacks. | Set default"
+      when: discovered_def_grub_slab.rc != 0
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: ^(GRUB_CMDLINE_LINUX=")(.*)"
+        line: '\1\2 init_on_free=1"'
+        backrefs: true
+      notify: Rebuild grub
+
+- name: "MEDIUM | RHEL-10-701020 | PATCH | RHEL 10 must enable mitigations against processor-based vulnerabilities."
+  when: rhel10stig_701020
+  tags:
+    - RHEL-10-701020
+    - CAT2
+    - CCI-002824
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SRG-OS-000433-GPOS-00193
+    - SV-281304r1167062_rule
+    - V-281304
+    - grub
+  block:
+    - name: "MEDIUM | RHEL-10-701020 | AUDIT | RHEL 10 must enable mitigations against processor-based vulnerabilities. | Capture grubby"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep 'pti=on'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_pti.rc not in [ 0, 1 ]
+      register: discovered_grubby_pti
+
+    - name: "MEDIUM | RHEL-10-701020 | PATCH | RHEL 10 must enable mitigations against processor-based vulnerabilities. | Amend grubby"
+      when: discovered_grubby_pti.stdout | length == 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="pti=on"
+      changed_when: true
+      notify: Rebuild grub
+
+    - name: "MEDIUM | RHEL-10-701020 | AUDIT | RHEL 10 must enable mitigations against processor-based vulnerabilities. | Capture default grub"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub | cut -f2 -d'"' | grep pti=
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_def_grub_pti.rc not in [ 0, 1 ]
+      register: discovered_def_grub_pti
+
+    - name: "MEDIUM | RHEL-10-701020 | PATCH | RHEL 10 must enable mitigations against processor-based vulnerabilities. | Set default"
+      when: discovered_def_grub_pti.rc != 0
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: ^(GRUB_CMDLINE_LINUX=")(.*)"
+        line: '\1\2 pti=on"'
+        backrefs: true
+      notify: Rebuild grub
+
+- name: "MEDIUM | RHEL-10-701030 | PATCH | RHEL 10 must restrict access to the kernel message buffer."
+  when: rhel10stig_701030
+  tags:
+    - RHEL-10-701030
+    - CAT2
+    - CCI-001082
+    - CCI-001090
+    - SRG-OS-000132-GPOS-00067
+    - SRG-OS-000138-GPOS-00069
+    - SV-281305r1167065_rule
+    - V-281305
+    - NIST800-53R4_SC-2
+    - NIST800-53R4_SC-4
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_dmesg_restrict.conf"
+    src: etc/sysctl.d/99-kernel_dmesg_restrict.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701040 | PATCH | RHEL 10 must prevent kernel profiling by nonprivileged users."
+  when: rhel10stig_701040
+  tags:
+    - RHEL-10-701040
+    - CAT2
+    - CCI-001082
+    - CCI-001090
+    - SRG-OS-000132-GPOS-00067
+    - SRG-OS-000138-GPOS-00069
+    - SV-257798r1155694_rule
+    - V-257798
+    - NIST800-53R4_SC-2
+    - NIST800-53R4_SC-4
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_perf_event_paranoid.conf"
+    src: etc/sysctl.d/99-kernel_perf_event_paranoid.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701060 | PATCH | RHEL 10 must restrict exposed kernel pointer addresses access."
+  when: rhel10stig_701060
+  tags:
+    - RHEL-10-701060
+    - CAT2
+    - CCI-001082
+    - CCI-002824
+    - SRG-OS-000132-GPOS-00067
+    - SRG-OS-000433-GPOS-00193
+    - SV-281306r1167068_rule
+    - V-281306
+    - NIST800-53R4_SC-2
+    - NIST800-53R4_SC-4
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_kptr_restrict.conf"
+    src: etc/sysctl.d/99-kernel_kptr_restrict.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701070 | PATCH | RHEL 10 must enable kernel parameters to enforce discretionary access control on (DAC) hardlinks."
+  when: rhel10stig_701070
+  tags:
+    - RHEL-10-701070
+    - CAT2
+    - CCI-002165
+    - CCI-002235
+    - SRG-OS-000312-GPOS-00122
+    - SRG-OS-000312-GPOS-00123
+    - SRG-OS-000324-GPOS-00125
+    - SV-281309r1184631_rule
+    - V-281309
+    - NIST800-53R4_AC-3
+    - NIST800-53R4_AC-6
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-fs_protected_hardlinks.conf"
+    src: etc/sysctl.d/99-fs_protected_hardlinks.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701080 | PATCH | RHEL 10 must enable kernel parameters to enforce discretionary access control on symlinks."
+  when: rhel10stig_701080
+  tags:
+    - RHEL-10-701080
+    - CAT2
+    - CCI-002165
+    - CCI-002235
+    - SRG-OS-000312-GPOS-00122
+    - SRG-OS-000312-GPOS-00123
+    - SRG-OS-000324-GPOS-00125
+    - SV-281310r1167080_rule
+    - V-281310
+    - NIST800-53R4_AC-3
+    - NIST800-53R4_AC-6
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-fs_protected_symlinks.conf"
+    src: etc/sysctl.d/99-fs_protected_symlinks.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701090 | PATCH | RHEL 10 must disable the kernel.core_pattern."
+  when: rhel10stig_701090
+  tags:
+    - RHEL-10-701090
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281311r1167083_rule
+    - V-281311
+    - NIST800-53R4_CM-7
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_core_pattern.conf"
+    src: etc/sysctl.d/99-kernel_core_pattern.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701100 | PATCH | RHEL 10 must be configured to disable the Controller Area Network kernel module."
+  when: rhel10stig_701100
+  tags:
+    - RHEL-10-701100
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281312r1167086_rule
+    - V-281312
+    - NIST800-53R4_CM-7
+  vars:
+    blacklist: 'can'
+  notify: Reboot required
+  ansible.builtin.template:
+    dest: "/etc/modprobe.d/{{ blacklist }}.conf"
+    src: etc/modprobe.d/module.conf.j2
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-701110 | PATCH | RHEL 10 must disable the Stream Control Transmission Protocol (SCTP) kernel module."
+  when: rhel10stig_701110
+  tags:
+    - RHEL-10-701110
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281313r1184770_rule
+    - V-281313
+    - NIST800-53R4_CM-7
+  vars:
+    blacklist: 'sctp'
+  notify: Reboot required
+  ansible.builtin.template:
+    dest: "/etc/modprobe.d/{{ blacklist }}.conf"
+    src: etc/modprobe.d/module.conf.j2
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-701120 | PATCH | RHEL 10 must disable the Transparent Inter Process Communication (TIPC) kernel module."
+  when: rhel10stig_701120
+  tags:
+    - RHEL-10-701120
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281314r1184771_rule
+    - V-281314
+    - NIST800-53R4_CM-7
+  vars:
+    blacklist: 'tipc'
+  notify: Reboot required
+  ansible.builtin.template:
+    dest: "/etc/modprobe.d/{{ blacklist }}.conf"
+    src: etc/modprobe.d/module.conf.j2
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-701130 | PATCH | RHEL 10 must implement address space layout randomization (ASLR) to protect its memory from unauthorized code execution."
+  when: rhel10stig_701130
+  tags:
+    - RHEL-10-701130
+    - CAT2
+    - CCI-002824
+    - SRG-OS-000433-GPOS-00193
+    - SV-281315r1167095_rule
+    - V-281315
+    - NIST800-53R4_SI-16
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_randomize_va_space.conf"
+    src: etc/sysctl.d/99-kernel_randomize_va_space.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701140 | PATCH | RHEL 10 must restrict usage of ptrace to descendant processes."
+  when: rhel10stig_701140
+  tags:
+    - RHEL-10-701140
+    - CAT2
+    - CCI-001082
+    - SRG-OS-000132-GPOS-00067
+    - SV-281316r1167098_rule
+    - V-281316
+    - NIST800-53R4_SC-2
+  ansible.builtin.template:
+    dest: "/etc/sysctl.d/99-kernel_yama.ptrace_scope.conf"
+    src: etc/sysctl.d/99-kernel_yama.ptrace_scope.conf.j2
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Reload sysctl
+
+- name: "MEDIUM | RHEL-10-701150 | PATCH | RHEL 10 must disable core dump backtraces."
+  when: rhel10stig_701150
+  tags:
+    - RHEL-10-701150
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281317r1167101_rule
+    - V-281317
+    - NIST800-53R4_CM-7
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/coredump.conf
+    regexp: ^(#?)ProcessSizeMax\s*=\s*(?!0)\d+
+    line: ProcessSizeMax=0
+    mode: 'u-x,go-wx'
+    create: true
+
+- name: "MEDIUM | RHEL-10-701160 | PATCH | RHEL 10 must disable storing core dumps."
+  when: rhel10stig_701160
+  tags:
+    - RHEL-10-701160
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281318r1167104_rule
+    - V-281318
+    - NIST800-53R4_CM-7
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/coredump.conf
+    regexp: ^(#?)Storage=.*
+    line: Storage=none
+    mode: 'u-x,go-wx'
+    create: true
+
+- name: "MEDIUM | RHEL-10-701170 | PATCH | RHEL 10 must disable core dumps for all users."
+  when: rhel10stig_701170
+  tags:
+    - RHEL-10-701170
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281319r1184633_rule
+    - V-281319
+    - NIST800-53R4_CM-7
+  ansible.builtin.lineinfile:
+    path: /etc/security/limits.conf
+    regexp: '^\* hard core (?!0)\d*'
+    line: '* hard core 0'
+
+- name: "MEDIUM | RHEL-10-701180 | PATCH | RHEL 10 must disable acquiring, saving, and processing core dumps."
+  when: rhel10stig_701180
+  tags:
+    - RHEL-10-701180
+    - CAT2
+    - CCI-002165
+    - SRG-OS-000312-GPOS-00124
+    - SV-281320r1184635_rule
+    - V-281320
+    - NIST800-53R4_AC-3
+  notify: Systemd daemon reload
+  ansible.builtin.systemd:
+    name: systemd-coredump.socket
+    masked: true
+    state: stopped
+
+- name: "MEDIUM | RHEL-10-701190 | PATCH | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution."
+  when: rhel10stig_701190
+  tags:
+    - RHEL-10-701190
+    - CAT2
+    - CCI-002824
+    - SRG-OS-000433-GPOS-00192
+    - SV-281321r1167113_rule
+    - V-281321
+    - NIST800-53R4_SI-16
+  notify: Reboot required
+  block:
+    - name: "MEDIUM | RHEL-10-701190 | AUDIT | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution. | Capture default grub"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep ^flags /proc/cpuinfo | grep -Ev '([^[:alnum:]])(nx)([^[:alnum:]]|$)'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_cpuinfo_nx.rc not in [ 0, 1 ]
+      register: discovered_cpuinfo_nx
+
+    - name: "MEDIUM | RHEL-10-701190 | AUDIT | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution. | Capture existence"
+      when: discovered_cpuinfo_nx.stdout | length > 0
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep -E '([^[:alnum:]])(noexec)([^[:alnum:]])'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_noexec.rc not in [ 0, 1 ]
+      register: discovered_grubby_noexec
+
+    - name: "MEDIUM | RHEL-10-701190 | PATCH | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution. | Set default"
+      when:
+        - discovered_grubby_noexec.stdout is defined
+        - discovered_grubby_noexec.stdout | length > 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="noexec"
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-701200 | PATCH | RHEL 10 must disable the kdump service."
+  when: rhel10stig_701200
+  tags:
+    - RHEL-10-701200
+    - CAT2
+    - CCI-001665
+    - SRG-OS-000269-GPOS-00103
+    - SV-281322r1167116_rule
+    - V-281322
+    - NIST800-53R4_SC-24
+  notify: Systemd daemon reload
+  ansible.builtin.systemd:
+    masked: true
+    name: kdump.service
+    state: "{{ omit if 'kdump' not in ansible_facts['packages'] else 'stopped' }}"
+
+- name: "MEDIUM | RHEL-10-701210 | PATCH | RHEL 10 must disable the file system automount function unless required."
+  when:
+    - rhel10stig_701210
+    - not system_is_ec2
+  tags:
+    - RHEL-10-701210
+    - CAT2
+    - CCI-000778
+    - CCI-001958
+    - SRG-OS-000114-GPOS-00059
+    - SRG-OS-000378-GPOS-00163
+    - SV-281323r1167119_rule
+    - V-281323
+    - NIST800-53R4_IA-3
+  notify: Systemd daemon reload
+  ansible.builtin.systemd:
+    name: autofs.service
+    masked: true
+    state: "{{ omit if 'autofs' not in ansible_facts['packages'] else 'stopped' }}"
+
+- name: "MEDIUM | RHEL-10-701220 | PATCH | RHEL 10 must enable certificate based smart card authentication."
+  when:
+    - rhel10stig_701220
+    - rhel10stig_disruption_high
+    - prelim_sssd_installed
+    - rhel10stig_smartcard_reader
+  tags:
+    - RHEL-10-701220
+    - CAT2
+    - CCI-000765
+    - CCI-000766
+    - SRG-OS-000105-GPOS-00052
+    - SRG-OS-000106-GPOS-00053
+    - SRG-OS-000107-GPOS-00054
+    - SRG-OS-000108-GPOS-00055
+    - SRG-OS-000375-GPOS-00160
+    - SV-281324r1167122_rule
+    - V-281324
+    - NIST800-53R4_IA-5
+  community.general.ini_file:
+    path: /etc/sssd/conf.d/stig.conf
+    option: pam_cert_auth
+    section: 'sssd'
+    value: true
+    create: true
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+  notify: Restart sssd
+
+- name: "MEDIUM | RHEL-10-701230 | PATCH | RHEL 10 must implement certificate status checking for multifactor authentication."
+  when:
+    - rhel10stig_701230
+    - rhel10stig_disruption_high
+    - prelim_sssd_installed
+  tags:
+    - RHEL-10-701230
+    - CAT2
+    - CCI-001954
+    - SRG-OS-000375-GPOS-00160
+    - SRG-OS-000377-GPOS-00162
+    - SRG-OS-000705-GPOS-00150
+    - SV-281325r1184772_rule
+    - V-281325
+    - NIST800-53R4_IA-2
+  notify: Restart sssd
+  block:
+    - name: "MEDIUM | RHEL-10-701230 | AUDIT | RHEL 10 must implement certificate status checking for multifactor authentication. | Capture existence"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep certificate_verification /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf | grep -v "^#"
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_sssd_cert_verification_files.rc not in [ 0, 1, 2 ]
+      register: discovered_sssd_cert_verification_files
+
+    - name: "MEDIUM | RHEL-10-701230 | PATCH | RHEL 10 must implement certificate status checking for multifactor authentication. | Add if missing"
+      when:
+        - discovered_sssd_cert_verification_files.stdout | length > 0
+        - "item not /etc/sssd/conf.d/certificate_verification.conf"
+      ansible.builtin.lineinfile:
+        path: "{{ item }}"
+        regexp: ^((#|)certificate_verification =.*)
+        line: '#\1'
+        backrefs: true
+      loop: "{{ discovered_sssd_cert_verification_files.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-701230 | PATCH | RHEL 10 must implement certificate status checking for multifactor authentication. | Add if missing"
+      when: discovered_sssd_cert_verification_files.stdout | length == 0
+      community.general.ini_file:
+        path: /etc/sssd/conf.d/certificate_verification.conf
+        section: 'sssd'
+        value: 'ocsp_dgst=sha512'
+        option: certificate_verification
+        group: root
+        owner: root
+        mode: 'u-x,go-rwx'
+        create: true
+
+- name: "MEDIUM | RHEL-10-701240 | PATCH | RHEL 10 must, for PKI-based authentication, enforce authorized access to the corresponding private key."
+  when: rhel10stig_701240
+  tags:
+    - RHEL-10-701240
+    - CAT2
+    - CCI-000186
+    - SRG-OS-000067-GPOS-00035
+    - SV-281326r1184637_rule
+    - V-281326
+    - NIST800-53R4_IA-2
+  block:
+    - name: MEDIUM | RHEL-10-701240 | AUDIT | RHEL 10 must, for PKI-based authentication, enforce authorized access to the corresponding private key.
+      ansible.builtin.find:
+        paths: /home/*/.ssh
+        patterns: .*(!?\..*)
+      register: discovered_private_ssh_keys
+
+    - name: MEDIUM | RHEL-10-701240 | AUDIT | RHEL 10 must, for PKI-based authentication, enforce authorized access to the corresponding private key.
+      ansible.builtin.command: ssh-keygen -y -P "" -f {{ item.path }}
+      changed_when: false
+      failed_when: false
+      loop: "{{ discovered_private_ssh_keys.files }}"
+      register: discovered_ssh_private_passwd_check
+
+    - name: MEDIUM | RHEL-10-701240 | AUDIT | RHEL 10 must, for PKI-based authentication, enforce authorized access to the corresponding private key.
+      when: discovered_ssh_private_passwd_check.stdout is defined
+      block:
+        - name: MEDIUM | RHEL-10-701240 | AUDIT | RHEL 10 must, for PKI-based authentication, enforce authorized access to the corresponding private key.
+          ansible.builtin.debug:
+            msg: "WARNING!! A user Private key found without a password"
+
+        - name: MEDIUM | RHEL-10-701240 | AUDIT | RHEL 10, for PKI-based authentication, must enforce authorized access to the corresponding private key.
+          ansible.builtin.import_tasks:
+            file: warning_facts.yml
+          vars:
+            warn_control_id: "MEDIUM | RHEL-10-701240"
+
+- name: "MEDIUM | RHEL-10-701250 | PATCH | RHEL 10 must require authentication to access emergency mode."
+  when: rhel10stig_701250
+  tags:
+    - RHEL-10-701250
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281327r1167131_rule
+    - V-281327
+    - NIST800-53R4_AC-3
+  block:
+    - name: MEDIUM | RHEL-10-701250 | PATCH | RHEL 10 must require authentication to access emergency mode. | create directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/emergency.service.d
+        owner: root
+        group: root
+        mode: 'u,go-w'
+        state: directory
+
+    - name: MEDIUM | RHEL-10-701250 | PATCH | RHEL 10 must require authentication to access emergency mode. | deploy authentication override drop-in
+      ansible.builtin.template:
+        src: etc/systemd/system/emergency.service.d/emergency.service.conf.j2
+        dest: /etc/systemd/system/emergency.service.d/emergency.service.conf
+        owner: root
+        group: root
+        mode: 'u-x,go-wx'
+      notify: Systemd daemon reload
+
+- name: "MEDIUM | RHEL-10-701260 | PATCH | RHEL 10 must require authentication to access single-user mode"
+  when: rhel10stig_701260
+  tags:
+    - RHEL-10-701260
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281328r1167134_rule
+    - V-281328
+    - NIST800-53R4_AC-3
+  block:
+    - name: MEDIUM | RHEL-10-701260 | PATCH | RHEL 10 must require authentication to access single-user mode. | create directory
+      ansible.builtin.file:
+        path: /etc/systemd/system/rescue.service.d
+        owner: root
+        group: root
+        state: directory
+        mode: 'u,go-w'
+
+    - name: MEDIUM | RHEL-10-701260 | PATCH | RHEL 10 must require authentication to access single-user mode. | deploy authentication override drop-in
+      ansible.builtin.template:
+        src: etc/systemd/system/rescue.service.d/rescue.service.conf.j2
+        dest: /etc/systemd/system/rescue.service.d/rescue.service.conf
+        owner: root
+        group: root
+        mode: 'u-x,go-wx'
+      notify: Systemd daemon reload
+
+- name: "MEDIUM | RHEL-10-701270 | PATCH | RHEL 10 must, for PKI-based authentication, validate certificates by constructing a certification path (which includes status information) to an accepted trust anchor."
+  when: rhel10stig_701270
+  tags:
+    - RHEL-10-701270
+    - CAT2
+    - CCI-000185
+    - SRG-OS-000066-GPOS-00034
+    - SRG-OS-000384-GPOS-00167
+    - SV-281329r1195452_rule
+    - V-281329
+    - NIST800-53R4_IA-5
+  block:
+    - name: "MEDIUM | RHEL-10-701270 | AUDIT | RHEL 10 must, for PKI-based authentication, validate certificates by constructing a certification path (which includes status information) to an accepted trust anchor."
+      ansible.builtin.shell: |
+        set -o pipefail
+        openssl x509 -text -in /etc/sssd/pki/sssd_auth_ca_db.pem | grep 'Issuer: C = US, O = U.S. Government, OU = DoD, OU = PKI, CN = DoD Root CA 3'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_dod_cert_check.rc not in [ 0 , 1 ]
+      register: discovered_dod_cert_check
+
+    - name: "MEDIUM | RHEL-10-701270 | WARN | RHEL 10 must, for PKI-based authentication, validate certificates by constructing a certification path (which includes status information) to an accepted trust anchor."
+      when: discovered_dod_cert_check is defined
+      ansible.builtin.debug:
+        msg: "Warning!! Please Investigate - Not a DOD issued ssl certificate "
+
+    - name: "MEDIUM | RHEL-10-701270 | WARN | RHEL 10 must, for PKI-based authentication, validate certificates by constructing a certification path (which includes status information) to an accepted trust anchor."
+      when: discovered_dod_cert_check is defined
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-701270"
+
+- name: "MEDIUM | RHEL-10-701280 | PATCH | RHEL 10 must map the authenticated identity to the user or group account for PKI-based authentication."
+  when:
+    - rhel10stig_701280
+    - rhel10stig_configure_sssd
+  tags:
+    - RHEL-10-701280
+    - CAT2
+    - CCI-000187
+    - SRG-OS-000068-GPOS-00036
+    - SV-258132r1045260_rule
+    - V-258132
+    - NIST800-53R4_IA-5
+  ansible.builtin.blockinfile:
+    path: /etc/sssd/sssd.conf
+    block: "{{ rhel10stig_sssd_config_certmap }}"
+    marker: "<!-- {mark} Ansible-Lockdown RHEL10-STIG -->"
+  notify: Restart sssd
+
+- name: "MEDIUM | RHEL-10-701290 | PATCH | RHEL 10 must prohibit the use of cached authenticators after one day."
+  when:
+    - rhel10stig_701290
+    - rhel10stig_configure_sssd
+  tags:
+    - RHEL-10-701290
+    - CAT2
+    - CCI-002007
+    - SRG-OS-000383-GPOS-00166
+    - SV-258133r1045263_rule
+    - V-258133
+    - NIST800-53R4_IA-5
+  community.general.ini_file:
+    path: /etc/sssd/conf.d/stig.conf
+    option: offline_credentials_expiration
+    section: pam
+    value: '1'
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+    create: true

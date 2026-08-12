@@ -1,0 +1,21 @@
+---
+
+- name: Run Cat STIG | 000xxx controls
+  ansible.builtin.import_tasks:
+    file: RHEL-10-000xxx.yml
+
+- name: Run Cat STIG | 200xxx controls
+  ansible.builtin.import_tasks:
+    file: RHEL-10-200xxx.yml
+
+- name: Run Cat STIG | 500xxx controls
+  ansible.builtin.import_tasks:
+    file: RHEL-10-500xxx.yml
+
+- name: Run Cat STIG | 600xxx controls
+  ansible.builtin.import_tasks:
+    file: RHEL-10-600xxx.yml
+
+- name: Run Cat STIG | 700xxx controls
+  ansible.builtin.import_tasks:
+    file: RHEL-10-700xxx.yml

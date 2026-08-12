@@ -1,0 +1,1912 @@
+---
+
+- name: PRELIM | Discover dconf systemdb
+  when: rhel10stig_gui
+  tags: always
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep system-db /etc/dconf/profile/user | cut -d ':' -f2
+  args:
+    executable: "{{ rhel10stig_shell_executable }}"
+  changed_when: false
+  failed_when: discovered_dconf_db.rc not in [ 0, 1 ]
+  register: discovered_dconf_db
+
+- name: "MEDIUM | RHEL-10-700010 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a Secure Shell (SSH) login."
+  when: rhel10stig_700010
+  tags:
+    - RHEL-10-700010
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281224r1184753_rule
+    - V-281224
+    - NIST800-53R4_AC-3
+    - ssh
+  notify: Restart sshd service
+  ansible.builtin.template:
+    src: etc/ssh/sshd_config.d/10-stig.conf.j2
+    dest: /etc/ssh/sshd_config.d/10-stig.conf
+    mode: 'u-x,go-wx'
+    owner: root
+    group: root
+    validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700020 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a graphical user login."
+  when:
+    - rhel10stig_700020
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700020
+    - CAT2
+    - CCI-000048
+    - CCI-001384
+    - CCI-001385
+    - CCI-001386
+    - CCI-001387
+    - CCI-001388
+    - SRG-OS-000023-GPOS-00006
+    - SRG-OS-000228-GPOS-00088
+    - SV-281225r1166627_rule
+    - V-281225
+    - NIST800-53R4_AC-8
+  block:
+    - name: "MEDIUM | RHEL-10-700020 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a graphical user login."
+      ansible.builtin.command: gsettings get org.gnome.login-screen banner-message-text
+      changed_when: false
+      failed_when: false
+      register: discovered_banner_text
+
+    - name: "MEDIUM | RHEL-10-700020 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a graphical user login."
+      ansible.builtin.template:
+        src: etc/dconf/db/local.d/01-banner-message.j2
+        dest: /etc/dconf/db/local.d/01-banner-message
+        mode: 'u-x,go-wx'
+        owner: root
+        group: root
+        validate: dconf update
+      notify: Update dconf
+
+- name: "MEDIUM | RHEL-10-700030 | PATCH | RHEL 10 must prevent a user from overriding the banner-message-enable setting for the graphical user interface."
+  when:
+    - rhel10stig_700030
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700030
+    - CAT2
+    - CCI-000048
+    - CCI-001384
+    - CCI-001385
+    - CCI-001386
+    - CCI-001387
+    - CCI-001388
+    - SRG-OS-000023-GPOS-00006
+    - SV-281226r1166630_rule
+    - V-281226
+    - NIST800-53R4_CM-6
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: /etc/dconf/db/local.d/locks/session
+    line: /org/gnome/login-screen/banner-message-enable
+    create: true
+    mode: 'go-wx'
+    state: present
+
+- name: "MEDIUM | RHEL-10-700040 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a command line user login."
+  when:
+    - rhel10stig_700040
+  tags:
+    - RHEL-10-700040
+    - CAT2
+    - CCI-000048
+    - CCI-001384
+    - CCI-001385
+    - CCI-001386
+    - CCI-001387
+    - CCI-001388
+    - SRG-OS-000023-GPOS-00006
+    - SV-281227r1184627_rule
+    - V-281227
+    - NIST800-53R4_AC-8
+  block:
+    - name: "MEDIUM | RHEL-10-700040 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a command line user login."
+      ansible.builtin.template:
+        src: etc/issue.net.j2
+        dest: /etc/issue
+        mode: 'u-x,go-wx'
+        owner: root
+        group: root
+
+    - name: "MEDIUM | RHEL-10-700040 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a command line user login."
+      ansible.builtin.stat:
+        path: /etc/issue.net
+      changed_when: false
+      failed_when: false
+      register: discovered_issue_net
+
+    - name: "MEDIUM | RHEL-10-700040 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a command line user login."
+      when:
+        - discovered_issue_net.stat.exists
+        - discovered_issue_net.stat.isreg
+      ansible.builtin.file:
+        path: /etc/issue.net
+        state: absent
+
+    - name: "MEDIUM | RHEL-10-700040 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a command line user login."
+      when: not discovered_issue_net.stat.exists or discovered_issue_net.stat.isreg
+      ansible.builtin.file:
+        src: /etc/issue
+        dest: /etc/issue.net
+        state: link
+
+- name: "MEDIUM | RHEL-10-700100 | PATCH | RHEL 10 must prevent special devices on file systems that are imported via Network File System (NFS)."
+  when:
+    - rhel10stig_700100
+    - "'nfs-utils' in ansible_facts['packages']"
+    - "'nodev' not in item.options"
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-700100
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281228r1166636_rule
+    - V-281228
+    - NIST800-53R4_CM-6
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "{{ item.device }}"
+    fstype: "nfs"
+    opts: "{{ item.options }},nodev"
+    state: present
+  loop: "{{ ansible_facts['mounts'] | selectattr('fstype', 'contains', 'nfs') | rejectattr('fstype',
+    'equalto', 'autofs') | list }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700105 | PATCH | RHEL 10 must prevent code from being executed on file systems that are imported via Network File System (NFS)."
+  when:
+    - rhel10stig_700105
+    - "'nfs-utils' in ansible_facts['packages']"
+    - "'noexec' not in item.options"
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-700105
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281229r1166639_rule
+    - V-281229
+    - NIST800-53R4_CM-6
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "{{ item.device }}"
+    fstype: "nfs"
+    opts: "{{ item.options }}{% if rhel10stig_700100 %},nodev{% endif %},noexec"
+    state: present
+  loop: "{{ ansible_facts['mounts'] | selectattr('fstype', 'contains', 'nfs') | rejectattr('fstype',
+    'equalto', 'autofs') | list }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700110 | PATCH | RHEL 10 must prevent files with the setuid and setgid bit set from being executed on file systems that are imported via Network File System (NFS)."
+  when:
+    - rhel10stig_700110
+    - "'nfs-utils' in ansible_facts['packages']"
+    - "'nosuid' not in item.options"
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-700110
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281230r1166642_rule
+    - V-281230
+    - NIST800-53R4_CM-6
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "{{ item.device }}"
+    fstype: "nfs"
+    opts: "{{ item.options }}{% if rhel10stig_700100 %},nodev{% endif %}{% if rhel10stig_700105
+      %},noexec{% endif %},nosuid"
+    state: present
+  loop: "{{ ansible_facts['mounts'] | selectattr('fstype', 'contains', 'nfs') | rejectattr('fstype',
+    'equalto', 'autofs') | list }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700115 | PATCH | RHEL 10 must be configured so that the Network File System (NFS) is configured to use RPCSEC_GSS."
+  when:
+    - rhel10stig_700115
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-700115
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281231r1166645_rule
+    - V-281231
+    - NIST800-53R4_IA-5
+  community.general.ini_file:
+    path: /etc/libuser.conf
+    option: crypt_style
+    section: 'default'
+    value: 'sha512'
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-700120 | PATCH | RHEL 10 must mount /boot with the nodev option."
+  when:
+    - rhel10stig_700120 or rhel10stig_700135 or rhel10stig_700140
+  tags:
+    - RHEL-10-700120
+    - RHEL-10-700135
+    - RHEL-10-700140
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281232r1166648_rule
+    - SV-281235r1166657_rule
+    - SV-281236r1166660_rule
+    - V-281232
+    - V-281235
+    - V-281236
+    - NIST800-53R4_CM-7
+  notify:
+    - Reboot required
+  block:
+    - name: |
+        "MEDIUM | RHEL-10-700120 | AUDIT | RHEL 10 must mount "/boot" with the "nodev" option.
+         MEDIUM | RHEL-10-700135 | AUDIT | RHEL 10 must mount "/dev/shm" with the "nodev" option.
+         MEDIUM | RHEL-10-700140 | AUDIT | RHEL 10 must mount "/dev/shm" with the "noexec" option.
+      ansible.builtin.shell: |
+        set -o pipefail
+        mount | grep /dev/shm
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: false
+      register: discovered_dev_shm_status
+
+    - name: |
+        "MEDIUM | RHEL-10-700120 | PATCH | RHEL 10 must mount "/boot" with the "nodev" option.
+         MEDIUM | RHEL-10-700135 | PATCH | RHEL 10 must mount "/dev/shm" with the "nodev" option.
+         MEDIUM | RHEL-10-700140 | PATCH | RHEL 10 must mount "/dev/shm" with the "noexec" option.
+      when: discovered_dev_shm_status.stdout | length > 0
+      ansible.posix.mount:
+        path: /dev/shm
+        src: mpfs
+        fstype: tmpfs
+        opts: "defaults{{ rhel10stig_700120 | ternary(',nodev', '') }}{{ rhel10stig_700135 | ternary(',noexec', '') }}{{ rhel10stig_700140 | ternary(',nosuid', '') }}"
+        state: mounted
+
+    - name: |
+        "MEDIUM | RHEL-10-700120 | WARN | RHEL 10 must mount "/boot" with the "nodev" option.
+         MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount "/dev/shm" with the "nodev" option.
+         MEDIUM | RHEL-10-700140 | WARN | RHEL 10 must mount "/dev/shm" with the "noexec" option.
+      when: discovered_dev_shm_status.stdout | length == 0
+      ansible.builtin.debug:
+        msg: "Warning!! You have no /dev/shm mount"
+
+    - name: |
+        "MEDIUM | RHEL-10-700120 | WARN | RHEL 10 must mount "/boot" with the "nodev" option.
+         MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount "/dev/shm" with the "nodev" option.
+         MEDIUM | RHEL-10-700140 | WARN | RHEL 10 must mount "/dev/shm" with the "noexec" option.
+      when: discovered_dev_shm_status.stdout | length == 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-700120"
+
+- name: "MEDIUM | RHEL-10-700125 | PATCH | RHEL 10 must prevent files with the setuid and setgid bit set from being executed on the /boot directory. | BIOS based OS"
+  when:
+    - rhel10stig_700125
+    - item.mount == '/boot'
+    - "'nosuid' not in item.options"
+  tags:
+    - RHEL-10-700125
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281233r1166651_rule
+    - V-281233
+    - NIST800-53R4_CM-7
+  notify: Reboot required
+  ansible.posix.mount:
+    path: '/boot'
+    src: "UUID={{ item.uuid }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if rhel10stig_700125 %},nodev{% endif %},nosuid"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700130 | PATCH | RHEL 10 must prevent files with the setuid and setgid bit set from being executed on the /boot/efi directory. | UEFI based OS"
+  when:
+    - rhel10stig_700130
+    - not rhel10stig_legacy_boot
+    - item.mount == '/boot/efi'
+    - "'nosuid' not in item.options"
+  tags:
+    - RHEL-10-700130
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281234r1166654_rule
+    - V-281234
+    - NIST800-53R4_CM-7
+  notify: Reboot required
+  ansible.posix.mount:
+    path: '/boot/efi'
+    src: "UUID={{ item.uuid }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nosuid"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: MEDIUM | RHEL-10-700145 | PATCH | RHEL 10 must mount /dev/shm with the nosuid option.
+  when:
+    - rhel10stig_700145
+    - item.mount == '/tmp'
+    - "'nodev' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount dev_shm
+  tags:
+    - RHEL-10-700145
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281237r1166663_rule
+    - V-281237
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /tmp
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  register: discovered_tmp_nodev
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700150 | PATCH | RHEL 10 must mount /tmp with the nodev option."
+  when:
+    - rhel10stig_700150
+    - item.mount == '/tmp'
+    - "'nodev' not in item.options"
+  notify:
+    - Remount tmp
+  tags:
+    - RHEL-10-700150
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281238r1166666_rule
+    - V-281238
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /tmp
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700155 | PATCH | RHEL 10 must mount /tmp with the noexec option."
+  when:
+    - rhel10stig_700155
+    - item.mount == '/tmp'
+    - "'noexec' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount tmp
+  tags:
+    - RHEL-10-700155
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281239r1166669_rule
+    - V-281239
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /tmp
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if discovered_tmp_nodev.changed and 'nodev' not in item.options %},nodev{% endif %},noexec"
+    state: present
+  register: discovered_tmp_noexec
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700160 | PATCH | RHEL 10 must mount /var with the nosuid option."
+  when:
+    - rhel10stig_700160
+    - item.mount == '/var'
+    - "'nosuid' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var
+  tags:
+    - RHEL-10-700160
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281240r1166672_rule
+    - V-281240
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/log
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if discovered_var_nodev.changed and 'nodev' not in item.options %},nodev{% endif %}{% if discovered_var_noexec.changed and 'noexec' not in item.options %},noexec{% endif %},nosuid"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700165 | PATCH | RHEL 10 must mount /var with the nodev option."
+  when:
+    - rhel10stig_700165
+    - item.mount == '/var'
+    - "'nodev' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var
+  tags:
+    - RHEL-10-700165
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281241r1166675_rule
+    - V-281241
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  register: discovered_var_nodev
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700170 | PATCH | RHEL 10 must mount /var/log with the nodev option."
+  when:
+    - rhel10stig_700170
+    - item.mount == '/var/log'
+    - "'nodev' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var_log
+  tags:
+    - RHEL-10-700170
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281242r1166678_rule
+    - V-281242
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/log
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  register: discovered_var_log_nodev
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700175 | PATCH | RHEL 10 must mount /var/log with the noexec option."
+  when:
+    - rhel10stig_700175
+    - item.mount == '/var/log'
+    - "'noexec' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var_log
+  tags:
+    - RHEL-10-700175
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281243r1166681_rule
+    - V-281243
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/log
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if discovered_var_log_nodev.changed and 'nodev' not in item.options %},nodev{% endif %},noexec"
+    state: present
+  register: discovered_var_log_noexec
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700180 | PATCH | RHEL 10 must mount /var/log with the nosuid option."
+  when:
+    - rhel10stig_700180
+    - item.mount == '/var/log'
+    - "'nosuid' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var_log
+  tags:
+    - RHEL-10-700180
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281244r1166684_rule
+    - V-281244
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/log
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if discovered_var_log_nodev.changed and 'nodev' not in item.options %},nodev{% endif %}{% if discovered_var_log_noexec.changed and 'noexec' not in item.options %},noexec{% endif %},nosuid"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700185 | PATCH | RHEL 10 must mount /var/tmp with the nodev option."
+  when:
+    - rhel10stig_700185
+    - item.mount == '/var/tmp'
+    - "'nodev' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var_tmp
+  tags:
+    - RHEL-10-700185
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281245r1166687_rule
+    - V-281245
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/tmp
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  register: discovered_var_tmp_nodev
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700190 | PATCH | RHEL 10 must mount /var/tmp with the noexec option."
+  when:
+    - rhel10stig_700190
+    - item.mount == '/var/tmp'
+    - "'noexec' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var_tmp
+  tags:
+    - RHEL-10-700190
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281246r1166690_rule
+    - V-281246
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/tmp
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if discovered_var_tmp_nodev.changed %},nodev{% endif
+      %},noexec"
+    state: present
+  register: discovered_var_tmp_noexec
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700195 | PATCH | RHEL 10 must mount /var/tmp with the nosuid option."
+  when:
+    - rhel10stig_700195
+    - item.mount == '/var/tmp'
+    - "'nosuid' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount var_tmp
+  tags:
+    - RHEL-10-700195
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281247r1166693_rule
+    - V-281247
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /var/tmp
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }}{% if discovered_var_tmp_nodev.changed %},nodev{% endif
+      %}{% if discovered_var_tmp_noexec.changed %},noexec{% endif %},nosuid"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700200 | PATCH | RHEL 10 must prevent special devices on nonroot local partitions."
+  when: rhel10stig_700200
+  tags:
+    - RHEL-10-700200
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281248r1166696_rule
+    - V-281248
+    - NIST800-53R4_CM-6
+  block:
+    - name: "MEDIUM | RHEL-10-700200 | AUDIT | RHEL 10 must prevent special devices on nonroot local partitions. | discover partition"
+      ansible.builtin.shell: |
+        set -o pipefail
+        mount | grep '^/dev\S* on /\S' | grep -Ev 'nodev|vfat' | awk -F" " '{print $3}'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_non_root_missing_nodev.rc not in [ 0, 1 ]
+      register: discovered_non_root_missing_nodev
+
+    - name: "MEDIUM | RHEL-10-700200 | WARN | RHEL 10 must prevent special devices on nonroot local partitions."
+      when: discovered_non_root_missing_nodev.stdout | length > 0
+      ansible.builtin.debug:
+        msg: "Warning!! The following filesystems are missing the nodev option {{
+          discovered_non_root_missing_nodev.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-700200 | WARN | RHEL 10 must prevent special devices on nonroot local partitions."
+      when: discovered_non_root_missing_nodev.stdout | length > 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-700200"
+
+- name: "MEDIUM | RHEL-10-700400 | PATCH | RHEL 10 must enable the SELinux targeted policy."
+  when: rhel10stig_700400
+  tags:
+    - RHEL-10-700400
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281249r1197242_rule
+    - V-281249
+    - NIST800-53R4_SI-6
+  ansible.builtin.lineinfile:
+    path: /etc/selinux/config
+    regexp: ^(#|)SELINUXTYPE\s*=\s*\w+
+    line: SELINUXTYPE=targeted
+
+- name: "MEDIUM | RHEL-10-700410 | PATCH | RHEL 10 must elevate the SELinux context when an administrator calls the sudo command."
+  when:
+    - rhel10stig_700410
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-700410
+    - CAT2
+    - CCI-002235
+    - SRG-OS-000324-GPOS-00125
+    - SV-281250r1184704_rule
+    - V-281250
+    - NIST800-53R4_AC-6
+    - selinux
+    - disruption_high
+    - sudo
+  block:
+    - name: "MEDIUM | RHEL-10-700410 | AUDIT | RHEL 10 must elevate the SELinux context when an administrator calls the sudo command."
+      ansible.builtin.shell: |
+        set -o pipefail
+        semanage login -l | grep {{ rhel10stig_playbook_user }}
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      register: discovered_semanage_login
+      changed_when: false
+      failed_when: discovered_semanage_login.rc not in [ 0, 1 ]
+
+    - name: "MEDIUM | RHEL-10-700410 | WARN | RHEL 10 must elevate the SELinux context when an administrator calls the sudo command."
+      when: discovered_semanage_login.stdout | length == 0
+      ansible.builtin.debug:
+        msg: "Warning!! Selinux is not configured correctly for the system and user"
+
+    - name: "MEDIUM | RHEL-10-700410 | WARN | RHEL 10 must elevate the SELinux context when an administrator calls the sudo command."
+      when: discovered_semanage_login.stdout | length == 0
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "MEDIUM | RHEL-10-700410"
+
+    - name: "MEDIUM | RHEL-10-700410 | PATCH | RHEL 10 must elevate the SELinux context when an administrator calls the sudo command."
+      when: discovered_semanage_login.stdout | length > 0
+      ansible.builtin.lineinfile:
+        path: "{{ item }}"
+        regexp: ^(?!(#|root))(.*\s*ALL\s*=\s*.*\b)\sTYPE=sysadm_t ROLE=sysadm_r(.*)
+        line: \1 TYPE=sysadm_t ROLE=sysadm_r    \2
+        state: present
+        backrefs: true
+        validate: '/usr/sbin/visudo -cf %s'
+      loop: "{{ prelim_sudoers_files.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700420 | PATCH | RHEL 10 must use a Linux Security Module configured to enforce limits on system services."
+  when:
+    - rhel10stig_700420
+    - rhel10stig_disruption_high
+  notify: Reboot required
+  tags:
+    - RHEL-10-700420
+    - CAT2
+    - CCI-002696
+    - CCI-001084
+    - SRG-OS-000445-GPOS-00199
+    - SV-281251r1166705_rule
+    - V-281251
+    - NIST800-53R4_SC-3
+    - NIST800-53R4_SI-6
+    - rhel10stig
+    - selinux
+  ansible.builtin.lineinfile:
+    path: /etc/selinux/config
+    regexp: (?i)^selinux=
+    line: SELINUX=enforcing
+
+- name: "MEDIUM | RHEL-10-700430 | PATCH | RHEL 10 must configure SELinux context type to allow the use of a nondefault faillock tally directory."
+  when: rhel10stig_700430
+  tags:
+    - RHEL-10-700430
+    - CAT2
+    - CCI-000044
+    - SRG-OS-000021-GPOS-00005
+    - SV-281252r1166708_rule
+    - V-281252
+    - NIST800-53R4_AC-7
+  block:
+    - name: "MEDIUM | RHEL-10-700430 | PATCH | RHEL 10 must configure SELinux context type to allow the use of a nondefault faillock tally directory."
+      community.general.sefcontext:
+        target: "{{ rhel10stig_faillock_dir }}(/.*)?"
+        ftype: a
+        setype: faillog_t
+        seuser: system_u
+        state: present
+      register: discovered_faillock_secontext
+
+    - name: "MEDIUM | RHEL-10-700430 | PATCH | RHEL 10 must configure SELinux context type to allow the use of a nondefault faillock tally directory."
+      when: discovered_faillock_secontext.changed # noqa no-handler
+      ansible.builtin.command: "restorecon -irvF {{ rhel10stig_faillock_dir }}"
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-700500 | PATCH | RHEL 10 must be configured so that Secure Shell (SSH) public host key files have mode 0644 or less permissive."
+  when:
+    - rhel10stig_700500
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700500
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281253r1184654_rule
+    - V-281253
+    - NIST800-53R4_CM-6
+  block:
+    - name: "MEDIUM | RHEL-10-700500 | AUDIT | RHEL 10 must be configured so that Secure Shell (SSH) public host key files have mode 0644 or less permissive."
+      ansible.builtin.find:
+        path: /etc/ssh
+        pattern: '*.pub'
+      register: discovered_pub_ssh_keys
+
+    - name: "MEDIUM | RHEL-10-700500 | PATCH | RHEL 10 must be configured so that Secure Shell (SSH) public host key files have mode 0644 or less permissive."
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        mode: 'u-x,go-wx'
+      loop: "{{ discovered_pub_ssh_keys.files }}"
+
+- name: "MEDIUM | RHEL-10-700510 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow Generic Security Service Application Program Interface (GSSAPI) authentication."
+  when:
+    - rhel10stig_700510
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700510
+    - CAT2
+    - CCI-001813
+    - SRG-OS-000364-GPOS-00151
+    - SV-281254r1184754_rule
+    - V-281254
+    - NIST800-53R4_CM-5
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700510 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow Generic Security Service Application Program Interface (GSSAPI) authentication. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: (?i)^(GSSAPIAuthentication (yes|true))
+        replace: '#\1'
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700510 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow Generic Security Service Application Program Interface (GSSAPI) authentication. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*GSSAPIAuthentication\s*(yes|no)
+        line: "GSSAPIAuthentication {{ rhel10stig_sshd_config_gssapiauth }}"
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700520 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow Kerberos authentication."
+  when:
+    - rhel10stig_700520
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700520
+    - CAT2
+    - CCI-001813
+    - SRG-OS-000364-GPOS-00151
+    - SV-281255r1184755_rule
+    - V-281255
+    - NIST800-53R4_CM-5
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700520 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow Kerberos authentication. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)KerberosAuthentication
+        replace: '#\1'
+      failed_when: discovered_kerberosauth_exists.rc not in [0, 257]
+      register: discovered_kerberosauth_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700520 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow Kerberos authentication. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*KerberosAuthentication\s*(yes|no|true|false)
+        line: "KerberosAuthentication {{ rhel10stig_sshd_config_kerbauth }}"
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700530 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow rhosts authentication."
+  when:
+    - rhel10stig_700530
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700530
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281256r1184756_rule
+    - V-281256
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700530 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow rhosts authentication. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(IgnoreRhosts.*)
+        replace: '#\2'
+      failed_when: discovered_ignorerhosts_exists.rc not in [0, 257]
+      register: discovered_ignorerhosts_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700530 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow rhosts authentication. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#?)\s*IgnoreRhosts\s*(no|false)
+        line: "IgnoreRhosts {{ rhel10stig_sshd_config_ignorerhosts }}"
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700540 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow known hosts authentication."
+  when:
+    - rhel10stig_700540
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700540
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281257r1184757_rule
+    - V-281257
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700540 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow known hosts authentication. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: (?i)^(#?)\s*(IgnoreUserKnownHosts.*)
+        replace: '#\2'
+      failed_when: discovered_knownhosts_exists.rc not in [0, 257]
+      register: discovered_knownhosts_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700540 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon does not allow known hosts authentication. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#)\s*IgnoreUserKnownHosts\s*(yes|no|true|false)
+        line: "IgnoreUserKnownHosts {{ rhel10stig_sshd_config_ignoreknownhosts }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700550 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon disables remote X connections for interactive users."
+  when:
+    - rhel10stig_700550
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700550
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281258r1184758_rule
+    - V-281258
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700550 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon disables remote X connections for interactive users. | Remove"
+      when: item.path != rhel10stig_sshd_config_file
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: (?i)^(#?)\s*(X11Forwarding.*)
+        replace: '#\2'
+      failed_when: discovered_x11forward_exists.rc not in [0, 257]
+      register: discovered_x11forward_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700550 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon disables remote X connections for interactive users. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#?)\s*X11forwarding\s*(yes|true)
+        line: "X11forwarding {{ rhel10stig_sshd_config_x11forward }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700560 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon performs strict mode checking of home directory configuration files."
+  when:
+    - rhel10stig_700560
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700560
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281259r1184759_rule
+    - V-281259
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700560 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon performs strict mode checking of home directory configuration files. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item.path }}"
+        regexp: (?i)^(#?)\s*(StrictModes.*)
+        replace: '#\2'
+      failed_when: discovered_strictmode_exists.rc not in [0, 257]
+      register: discovered_strictmode_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700560 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon performs strict mode checking of home directory configuration files. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*StrictModes\s*(yes|no|true|false)
+        line: "StrictModes {{ rhel10stig_sshd_config_strictmodes }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700570 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon displays the date and time of the last successful account login upon an SSH login."
+  when:
+    - rhel10stig_700570
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700570
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281260r1184760_rule
+    - V-281260
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700570 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon displays the date and time of the last successful account login upon an SSH login. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(PrintLastLog.*)
+        replace: '#\2'
+      failed_when: discovered_printlastlog_exists.rc not in [0, 257]
+      register: discovered_printlastlog_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700570 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon displays the date and time of the last successful account login upon an SSH login. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*PrintLastLog\s*(yes|no|true|false)
+        line: "PrintLastLog {{ rhel10stig_sshd_config_lastlog }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700580 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon prevents remote hosts from connecting to the proxy display."
+  when:
+    - rhel10stig_700580
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700580
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281261r1184761_rule
+    - V-281261
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700580 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon prevents remote hosts from connecting to the proxy display. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(X11UseLocalhost.*)
+        replace: '#\2'
+      failed_when: discovered_x11localhost_exists.rc not in [0, 257]
+      register: discovered_x11localhost_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700580 | PATCH | RHEL 10 must be configured so that the Secure Shell (SSH) daemon prevents remote hosts from connecting to the proxy display. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*X11UseLocalhost\s*(yes|no|true|false)
+        line: "X11UseLocalhost {{ rhel10stig_sshd_config_x11uselocal }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700590 | PATCH | RHEL 10 must be configured so that Secure Shell (SSH) server configuration files' permissions are not modified."
+  when:
+    - rhel10stig_700590
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700590
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281262r1184762_rule
+    - V-281262
+    - NIST800-53R4_CM-6
+    - ssh
+  ansible.builtin.file:
+    path: "{{ rhel10stig_sshd_config_file }}"
+    mode: 'u-x,go-rwx'
+    owner: root
+    group: root
+
+- name: "MEDIUM | RHEL-10-700600 | PATCH | RHEL 10 must be configured so that SSHD accepts public key authentication."
+  when:
+    - rhel10stig_700600
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700600
+    - CAT2
+    - CCI-000765
+    - CCI-000766
+    - SRG-OS-000105-GPOS-00052
+    - SV-281263r1184763_rule
+    - V-281263
+    - NIST800-53R4_IA-2
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700600 | PATCH | RHEL 10 must be configured so that SSHD accepts public key authentication. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(PubkeyAuthentication.*)
+        replace: '#\2'
+      failed_when: discovered_pubkey_exists.rc not in [0, 257]
+      register: discovered_pubkey_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700600 | PATCH | RHEL 10 must be configured so that SSHD accepts public key authentication. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*PubkeyAuthentication\s*(yes|no|true|false)
+        line: "PubkeyAuthentication {{ rhel10stig_sshd_config_pubkeyauth }}"
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700610 | PATCH | RHEL 10 must be configured so that SSHD does not allow blank passwords."
+  when:
+    - rhel10stig_700610
+    - rhel10stig_disruption_high
+  tags:
+    - RHEL-10-700610
+    - CAT2
+    - CCI-000766
+    - SRG-OS-000106-GPOS-00053
+    - SV-281264r1184764_rule
+    - V-281264
+    - NIST800-53R4_IA-5
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: \s*ENCRYPT_METHOD
+    line: ENCRYPT_METHOD SHA512
+    backrefs: true
+
+- name: "MEDIUM | RHEL-10-700620 | PATCH | RHEL 10 must not permit direct logins to the root account using remote access via Secure Shell (SSH)."
+  when:
+    - rhel10stig_700620
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700620
+    - CAT2
+    - CCI-004045
+    - SRG-OS-000109-GPOS-00056
+    - SV-281265r1184765_rule
+    - V-281265
+    - NIST800-53R4_IA-2
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700620 | PATCH | RHEL 10 must not permit direct logins to the root account using remote access via Secure Shell (SSH). | Remove existing"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(PermitRootLogin.*)
+        replace: '#\2'
+      failed_when: discovered_rootlogin_exists.rc not in [0, 257]
+      register: discovered_rootlogin_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700620 | PATCH | RHEL 10 must not permit direct logins to the root account using remote access via Secure Shell (SSH). | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#?)\s*PermitRootLogin\s*(yes|no|true|false)
+        line: "PermitRootLogin {{ rhel10stig_sshd_config_permitroot }}"
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700630 | PATCH | RHEL 10 must not allow a noncertificate trusted host Secure Shell (SSH) login to the system."
+  when:
+    - rhel10stig_700630
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700630
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281266r1184766_rule
+    - V-281266
+    - NIST800-53R4_CM-6
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700630 | PATCH | RHEL 10 must not allow a noncertificate trusted host Secure Shell (SSH) login to the system. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(HostbasedAuthentication.*)
+        replace: '#\2'
+      failed_when: discovered_hostbasedauth_exists.rc not in [0, 257]
+      register: discovered_hostbasedauth_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700630 | PATCH | RHEL 10 must not allow a noncertificate trusted host Secure Shell (SSH) login to the system. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*HostbasedAuthentication\s*(yes|no|true|false)
+        line: "HostbasedAuthentication {{ rhel10stig_sshd_config_hostauth }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700660 | PATCH | RHEL 10 must be configured so that all network connections associated with Secure Shell (SSH) traffic terminate after becoming unresponsive."
+  when:
+    - rhel10stig_700660
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-700660
+    - CAT2
+    - CCI-001133
+    - CCI-002361
+    - SRG-OS-000163-GPOS-00072
+    - SV-281269r1184769_rule
+    - V-281269
+    - NIST800-53R4_SC-10
+    - NIST800-53R4_AC-12
+    - ssh
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700660 | PATCH | RHEL 10 must be configured so that all network connections associated with Secure Shell (SSH) traffic terminate after becoming unresponsive. | Remove"
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: (?i)^(#?)\s*(ClientAliveCountMax.*)
+        replace: '#\2'
+      failed_when: discovered_alivecount_exists.rc not in [0, 257]
+      register: discovered_alivecount_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700660 | PATCH | RHEL 10 must be configured so that all network connections associated with Secure Shell (SSH) traffic terminate after becoming unresponsive. | Exists"
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^(#|)\s*ClientAliveCountMax\s\d*
+        line: "ClientAliveCountMax {{ rhel10stig_sshd_config_clientalivecountmax
+          }}"
+        create: true
+        mode: 'go-rwx'
+        validate: sshd -t -f %s
+
+- name: "MEDIUM | RHEL-10-700670 | PATCH | RHEL 10 must forward mail from postmaster to the root account using a postfix alias."
+  when:
+    - rhel10stig_700670
+    - "'postfix' in ansible_facts['packages']"
+  tags:
+    - RHEL-10-700670
+    - CAT2
+    - CCI-000139
+    - SRG-OS-000046-GPOS-00022
+    - SV-281270r1166762_rule
+    - V-281270
+    - NIST800-53R4_AU-5
+  notify: Update aliases
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: postmaster:\s*root
+    line: "postmaster: root"
+    mode: 'u-x,go-wx'
+    create: true
+
+- name: "MEDIUM | RHEL-10-700680 | PATCH | RHEL 10 must not have a shosts.equiv file on the system."
+  when:
+    - rhel10stig_700680
+    - "'bind' in ansible_facts['packages']"
+  tags:
+    - RHEL-10-700680
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281271r1197244_rule
+    - V-281271
+    - NIST800-53R4_SC-8
+    - bind
+    - encryption
+  ansible.builtin.lineinfile:
+    path: /etc/named.conf
+    regexp: ^(#|)\s*include "/etc/crypto-policies/back-ends/bind.config"
+    line: 'include "/etc/crypto-policies/back-ends/bind.config";'
+
+- name: "MEDIUM | RHEL-10-700690 | PATCH | RHEL 10 must not have any .shosts files on the system."
+  when: rhel10stig_700690
+  tags:
+    - RHEL-10-700690
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281272r1166768_rule
+    - V-281272
+    - NIST800-53R4_CM-6
+  ansible.builtin.package:
+    name: quagga
+    state: absent
+
+- name: "MEDIUM | RHEL-10-700700 | PATCH | RHEL 10 must prevent a user from overriding the disabling of the graphical user interface automount function."
+  when:
+    - rhel10stig_700700
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700700
+    - CAT2
+    - CCI-000778
+    - CCI-001958
+    - SRG-OS-000114-GPOS-00059
+    - SV-281273r1184699_rule
+    - V-281273
+    - NIST800-53R4_IA-3
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/00-security-settings-lock"
+    line: /org/gnome/desktop/media-handling/automount-open
+    mode: 'go-wx'
+    create: true
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700710 | PATCH | RHEL 10 must prevent a user from overriding the disabling of the graphical user interface autorun function."
+  when:
+    - rhel10stig_700710
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700710
+    - CAT2
+    - CCI-000778
+    - CCI-001958
+    - SRG-OS-000114-GPOS-00059
+    - SV-281274r1197245_rule
+    - V-281274
+    - NIST800-53R4_IA-3
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/00-security-settings-lock"
+    line: /org/gnome/desktop/media-handling/autorun-never
+    mode: 'go-wx'
+    create: true
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700730 | PATCH | RHEL 10 must prevent a user from overriding the disabling of the graphical user smart card removal action."
+  when:
+    - rhel10stig_700730
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700730
+    - CAT2
+    - CCI-000056
+    - CCI-000057
+    - SRG-OS-000028-GPOS-00009
+    - SV-281276r1166780_rule
+    - V-281276
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/00-security-settings-lock"
+    line: /org/gnome/settings-daemon/peripherals/smartcard/removal-action
+    mode: 'go-wx'
+    create: true
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700740 | PATCH | RHEL 10 must prevent a user from overriding the screensaver lock-enabled setting for the graphical user interface."
+  when:
+    - rhel10stig_700740
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700740
+    - CAT2
+    - CCI-000056
+    - CCI-000057
+    - SRG-OS-000028-GPOS-00009
+    - SV-281277r1166783_rule
+    - V-281277
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/session"
+    line: /org/gnome/desktop/screensaver/lock-enabled
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700750 | PATCH | RHEL 10 must automatically lock graphical user sessions after 15 minutes of inactivity."
+  when:
+    - rhel10stig_700750
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700750
+    - CAT2
+    - CCI-000057
+    - CCI-000060
+    - SRG-OS-000029-GPOS-00010
+    - SV-281278r1166786_rule
+    - V-281278
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  community.general.ini_file:
+    path: "/etc/dconf/db/{{ item }}.d/00-screensaver"
+    option: idle-delay
+    section: 'org/gnome/desktop/session'
+    value: 'uint32 600'
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700760 | PATCH | RHEL 10 must prevent a user from overriding the session idle-delay setting for the graphical user interface."
+  when:
+    - rhel10stig_700760
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700760
+    - CAT2
+    - CCI-000057
+    - CCI-000060
+    - SRG-OS-000029-GPOS-00010
+    - SV-281279r1166789_rule
+    - V-281279
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/session"
+    line: /org/gnome/desktop/session/idle-delay
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700770 | PATCH | RHEL 10 must initiate a session lock for graphical user interfaces when the screensaver is activated."
+  when:
+    - rhel10stig_700770
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700770
+    - CAT2
+    - CCI-000057
+    - CCI-000060
+    - SRG-OS-000029-GPOS-00010
+    - SV-281280r1166792_rule
+    - V-281280
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  community.general.ini_file:
+    path: "/etc/dconf/db/{{ item }}.d/00-screensaver"
+    option: lock-delay
+    section: 'org/gnome/desktop/screensaver'
+    value: 'uint32 5'
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700780 | PATCH | RHEL 10 must prevent a user from overriding the session lock-delay setting for the graphical user interface."
+  when:
+    - rhel10stig_700780
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700780
+    - CAT2
+    - CCI-000057
+    - CCI-000060
+    - SRG-OS-000029-GPOS-00010
+    - SV-281281r1166795_rule
+    - V-281281
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/session"
+    line: /org/gnome/desktop/screensaver/lock-delay
+    mode: 'go-wx'
+    create: true
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700790 | PATCH | RHEL 10 must conceal, via the session lock, information previously visible on the display with a publicly viewable image."
+  when:
+    - rhel10stig_700790
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700790
+    - CAT2
+    - CCI-000060
+    - SRG-OS-000031-GPOS-00012
+    - SV-281282r1166798_rule
+    - V-281282
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  block:
+    - name: "MEDIUM | RHEL-10-700790 | PATCH | RHEL 10 must conceal, via the session lock, information previously visible on the display with a publicly viewable image."
+      community.general.ini_file:
+        path: "/etc/dconf/db/{{ item }}.d/00-security-settings"
+        option: picture-uri
+        section: 'org/gnome/desktop/screensaver'
+        value: "''"
+        mode: 'u-x,go-wx'
+        create: true
+      loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+    - name: "MEDIUM | RHEL-10-700790 | PATCH | RHEL 10 must conceal, via the session lock, information previously visible on the display with a publicly viewable image."
+      ansible.builtin.lineinfile:
+        path: "/etc/dconf/db/{{ item }}.d/locks/00-security-settings-lock"
+        line: /org/gnome/desktop/screensaver/picture-uri
+        create: true
+        mode: 'go-wx'
+      loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700800 | PATCH | RHEL 10 must ensure effective dconf policy matches the policy keyfiles."
+  when:
+    - rhel10stig_700800
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700800
+    - CAT2
+    - CCI-000213
+    - SRG-OS-000080-GPOS-00048
+    - SV-281283r1166801_rule
+    - V-281283
+    - NIST800-53R4_AC-11
+  notify: Update dconf
+  ansible.builtin.command: echo "Run dconf update"
+  changed_when: false
+
+- name: "MEDIUM | RHEL-10-700810 | PATCH | RHEL 10 must prevent a user from overriding the disable-restart-buttons setting for the graphical user interface."
+  when:
+    - rhel10stig_700810
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700810
+    - CAT2
+    - CCI-002696
+    - SRG-OS-000445-GPOS-00199
+    - SV-281284r1197247_rule
+    - V-281284
+    - NIST800-53R4_CM-6
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/session"
+    line: /org/gnome/login-screen/disable-restart-buttons
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700820 | PATCH | RHEL 10 must prevent a user from overriding the Ctrl-Alt-Del sequence settings for the graphical user interface."
+  when:
+    - rhel10stig_700820
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700820
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-281285r1197249_rule
+    - V-281285
+    - NIST800-53R4_CM-6
+  notify: Update dconf
+  ansible.builtin.lineinfile:
+    path: "/etc/dconf/db/{{ item }}.d/locks/session"
+    line: /org/gnome/settings-daemon/plugins/media-keys/logout
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700830 | PATCH | RHEL 10 must disable the ability of a user to accidentally press Ctrl-Alt-Del and cause a system to shut down or reboot."
+  when:
+    - rhel10stig_700830
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700830
+    - CAT2
+    - CCI-002385
+    - SRG-OS-000420-GPOS-00186
+    - SV-281286r1166810_rule
+    - V-281286
+    - NIST800-53R4_CM-6
+  block:
+    - name: "MEDIUM | RHEL-10-700830 | AUDIT | RHEL 10 must disable the ability of a user to accidentally press Ctrl-Alt-Del and cause a system to shut down or reboot."
+      ansible.builtin.command: gsettings set org.gnome.settings-daemon.plugins.media-keys
+        logout
+      changed_when: false
+      register: discovered_gnome_logout_option
+      failed_when: discovered_gnome_logout_option.rc not in [0, 1]
+
+    - name: "MEDIUM | RHEL-10-700830 | PATCH | RHEL 10 must disable the ability of a user to accidentally press Ctrl-Alt-Del and cause a system to shut down or reboot."
+      when: discovered_gnome_logout_option.stdout | length > 2 or discovered_gnome_logout_option.stdout
+        is not defined
+      ansible.builtin.command: gsettings set org.gnome.settings-daemon.plugins.media-keys
+        logout "['']"
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-700840 | PATCH | RHEL 10 must disable the user list at login for graphical user interfaces."
+  when:
+    - rhel10stig_700840
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700840
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281287r1166813_rule
+    - V-281287
+    - NIST800-53R4_CM-6
+  notify: Update dconf
+  community.general.ini_file:
+    path: "/etc/dconf/db/{{ item }}.d/02-login-screen"
+    option: disable-user-list
+    section: 'org/gnome/login-screen'
+    value: 'true'
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700850 | PATCH | RHEL 10 must be configured to disable USB mass storage."
+  when: rhel10stig_700850
+  tags:
+    - RHEL-10-700850
+    - CAT2
+    - CCI-000778
+    - CCI-001958
+    - SRG-OS-000114-GPOS-00059
+    - SV-281288r1166816_rule
+    - V-281288
+    - NIST800-53R4_IA-3
+  vars:
+    blacklist: 'usb-storage'
+  notify: Reboot required
+  ansible.builtin.template:
+    src: etc/modprobe.d/module.conf.j2
+    dest: "/etc/modprobe.d/{{ blacklist }}.conf"
+    mode: 'go-wx'
+
+- name: "MEDIUM | RHEL-10-700860 | PATCH | RHEL 10 must disable Bluetooth."
+  when: rhel10stig_700860
+  tags:
+    - RHEL-10-700860
+    - CAT2
+    - CCI-000381
+    - CCI-001443
+    - SRG-OS-000095-GPOS-00049
+    - SV-281289r1166819_rule
+    - V-281289
+    - NIST800-53R4_CM-7
+  vars:
+    blacklist: 'firewire-core'
+    mod_value: 'false'
+  notify: Reboot required
+  ansible.builtin.template:
+    dest: "/etc/modprobe.d/{{ blacklist }}.conf"
+    src: etc/modprobe.d/module.conf.j2
+    mode: 'u-x,go-wx'
+
+- name: "MEDIUM | RHEL-10-700870 | PATCH | RHEL 10 must disable wireless network adapters."
+  when: rhel10stig_700870
+  tags:
+    - RHEL-10-700870
+    - CAT2
+    - CCI-001444
+    - CCI-001443
+    - CCI-002421
+    - CCI-002418
+    - SRG-OS-000299-GPOS-00117
+    - SV-281290r1166822_rule
+    - V-281290
+    - NIST800-53R4_SC-8
+    - NIST800-53R4_AC-18
+  block:
+    - name: MEDIUM | RHEL-10-700870 | AUDIT | RHEL 10 must disable wireless network adapters.
+      ansible.builtin.shell: |
+        set -o pipefail
+        nmcli radio wifi | grep -i enabled
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_wifi_enabled.rc not in [ 0, 1 ]
+      register: discovered_wifi_enabled
+
+    - name: "MEDIUM | RHEL-10-700870 | PATCH | RHEL 10 must disable wireless network adapters."
+      when:
+        - discovered_wifi_enabled is defined
+        - discovered_wifi_enabled.stdout | length > 0
+      ansible.builtin.command: nmcli radio all off
+      changed_when: true
+      failed_when: discovered_radio_turned_off.rc not in [ 0, 1 ]
+      register: discovered_radio_turned_off
+
+- name: "MEDIUM | RHEL-10-700880 | PATCH | RHEL 10 must disable the graphical user interface automounter unless required."
+  when:
+    - rhel10stig_700880
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700880
+    - CAT2
+    - CCI-000778
+    - CCI-001958
+    - SRG-OS-000114-GPOS-00059
+    - SV-281291r1166825_rule
+    - V-281291
+    - NIST800-53R4_IA-3
+  notify: Update dconf
+  community.general.ini_file:
+    path: "/etc/dconf/db/{{ item }}.d/00-security-settings"
+    option: automount-open
+    section: 'org/gnome/desktop/media-handling'
+    value: 'false'
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
+
+- name: "MEDIUM | RHEL-10-700900 | PATCH | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution."
+  when:
+    - rhel10stig_700900
+    - rhel10stig_gui
+  tags:
+    - RHEL-10-700900
+    - CAT2
+    - CCI-002824
+    - SRG-OS-000433-GPOS-00192
+    - SV-281293r1166831_rule
+    - V-281293
+    - NIST800-53R4_SI-16
+  block:
+    - name: "MEDIUM | RHEL-10-700900 | AUDIT | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution."
+      ansible.builtin.shell: |
+        set -o pipefail
+        dmesg | grep '[NX|DX]*protection'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_nxdx.rc not in [ 0, 1 ]
+      register: discovered_nxdx
+
+    - name: "MEDIUM | RHEL-10-700900 | PATCH | RHEL 10 must implement nonexecutable data to protect its memory from unauthorized code execution."
+      when: "'protection: active' not in discovered_nxdx.stdout"
+      ansible.builtin.command: grubby --update-kernel=ALL --remove-args=noexec
+      changed_when: true
+
+- name: "MEDIUM | RHEL-10-700920 | PATCH | RHEL 10 must automatically exit interactive command shell user sessions after 15 minutes of inactivity."
+  when: rhel10stig_700920
+  tags:
+    - RHEL-10-700920
+    - CAT2
+    - CCI-001133
+    - CCI-000057
+    - SRG-OS-000163-GPOS-00072
+    - SV-281295r1166837_rule
+    - V-281295
+    - NIST800-53R4_AC-11
+    - NIST800-53R4_SC-10
+  block:
+    - name: "MEDIUM | RHEL-10-700920 | AUDIT | RHEL 10 must automatically exit interactive command shell user sessions after 15 minutes of inactivity."
+      ansible.builtin.stat:
+        path: /etc/profile.d/tmout.sh
+      register: discovered_timeout_script
+
+    - name: "MEDIUM | RHEL-10-700920 | AUDIT | RHEL 10 must automatically exit interactive command shell user sessions after 15 minutes of inactivity. | create file"
+      when: not discovered_timeout_script.stat.exists
+      ansible.builtin.template:
+        src: etc/profile.d/tmout.sh.j2
+        dest: /etc/profile.d/tmout.sh
+        group: root
+        owner: root
+        mode: 'u+x,go-w,go+x'
+
+    - name: "MEDIUM | RHEL-10-700920 | AUDIT | RHEL 10 must automatically exit interactive command shell user sessions after 15 minutes of inactivity. | Edit file"
+      when: discovered_timeout_script.stat.exists
+      ansible.builtin.lineinfile:
+        path: /etc/profile.d/tmout.sh
+        regexp: ^\s*declare -xr TMOUT=600
+        line: declare -xr TMOUT=600
+        mode: 'u+x,go-w,go+x'
+
+- name: "MEDIUM | RHEL-10-700930 | PATCH | RHEL 10 must be configured with a timeout interval for the Secure Shell (SSH) daemon."
+  when: rhel10stig_700930
+  tags:
+    - RHEL-10-700930
+    - CAT2
+    - CCI-001133
+    - CCI-002361
+    - CCI-002891
+    - SRG-OS-000163-GPOS-00072
+    - SV-281296r1184670_rule
+    - V-281296
+    - NIST800-53R4_CM-6
+  notify: Restart sshd service
+  block:
+    - name: "MEDIUM | RHEL-10-700930 | AUDIT | RHEL 10 must be configured with a timeout interval for the Secure Shell (SSH) daemon."
+      when: "item.path != rhel10stig_sshd_config_file"
+      ansible.builtin.replace:
+        path: "{{ item.path}}"
+        regexp: (?i)^ClientAliveInterval\s*([1-9]|[1-5][0-9]{1,2}|600)
+        replace: '#ClientAliveInterval \1'
+      failed_when: discovered_clientaliveinterval_exists.rc not in [0, 257]
+      register: discovered_clientaliveinterval_exists
+      loop: "{{ prelim_sshd_config_files.files }}"
+
+    - name: "MEDIUM | RHEL-10-700930 | AUDIT | RHEL 10 must be configured with a timeout interval for the Secure Shell (SSH) daemon."
+      ansible.builtin.lineinfile:
+        path: "{{ rhel10stig_sshd_config_file }}"
+        regexp: (?i)^ClientAliveInterval\s*([1-9]|[1-5][0-9]{1,2}|600)
+        line: ClientAliveInterval {{ rhel10stig_sshd_config_clientaliveinterval }}
+        create: true
+        mode: 'go-rwx'
+
+- name: "MEDIUM | RHEL-10-700940 | PATCH | RHEL 10 must not default to the graphical display manager unless approved."
+  when:
+    - rhel10stig_700940
+    - not rhel10stig_gui_approved
+  tags:
+    - RHEL-10-700940
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281297r1166843_rule
+    - V-281297
+    - NIST800-53R4_CM-6
+  ansible.builtin.package:
+    name: "xorg*common"
+    state: absent
+
+- name: "MEDIUM | RHEL-10-700970 | PATCH | RHEL 10 must disable the debug-shell systemd service."
+  when: rhel10stig_700970
+  tags:
+    - RHEL-10-700970
+    - CAT2
+    - CCI-002235
+    - SRG-OS-000324-GPOS-00125
+    - SV-280094r1184607_rule
+    - V-280094
+    - NIST800-53R4_AC-6
+  notify: Systemd daemon reload
+  ansible.builtin.systemd:
+    name: debug-shell.service
+    enabled: false
+    masked: true
+    state: stopped
+
+- name: "MEDIUM | RHEL-10-700980 | PATCH | RHEL 10 must disable the ability of systemd to spawn an interactive boot process."
+  when: rhel10stig_700980
+  tags:
+    - RHEL-10-700980
+    - CAT2
+    - CCI-000381
+    - SRG-OS-000095-GPOS-00049
+    - SV-281300r1167050_rule
+    - V-281300
+    - NIST800-53R4_CM-6
+  block:
+    - name: "MEDIUM | RHEL-10-700980 | AUDIT | RHEL 10 must disable the ability of systemd to spawn an interactive boot process. | Capture grubby output"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep 'systemd.confirm_spawn'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_systemd_spawn.rc not in [ 0, 1 ]
+      register: discovered_systemd_spawn
+
+    - name: "MEDIUM | RHEL-10-700980 | PATCH | RHEL 10 must disable the ability of systemd to spawn an interactive boot process. | Remove systemd.confirm_spawn from grubby"
+      when: discovered_systemd_spawn.stdout | length > 0
+      ansible.builtin.command: grubby --update-kernel=ALL --remove-args="systemd.confirm_spawn"
+      changed_when: true
+
+    - name: "MEDIUM | RHEL-10-700980 | PATCH | RHEL 10 must disable the ability of systemd to spawn an interactive boot process. | Edit default grub"
+      ansible.builtin.replace:
+        path: /etc/default/grub
+        regexp: '(.*)systemd.confirm_spawn=(1|yes|true|on)(.*)'
+        replace: '\1\3'
+      notify: Rebuild grub
+
+- name: "MEDIUM | RHEL-10-700990 | PATCH | RHEL 10 must disable virtual system calls."
+  when: rhel10stig_700990
+  tags:
+    - RHEL-10-700990
+    - CAT2
+    - CCI-001084
+    - SRG-OS-000134-GPOS-00068
+    - SV-281301r1184700_rule
+    - V-281301
+    - NIST800-SC-3
+  block:
+    - name: "MEDIUM | RHEL-10-700990 | AUDIT | RHEL 10 must disable virtual system calls. | Capture grubby output"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grubby --info=ALL | grep args | grep 'vsyscall=none'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_grubby_vsyscall.rc not in [ 0, 1 ]
+      register: discovered_grubby_vsyscall
+
+    - name: "MEDIUM | RHEL-10-700990 | PATCH | RHEL 10 must disable virtual system calls. | Amend grubby"
+      when: discovered_grubby_vsyscall.stdout | length == 0
+      ansible.builtin.command: grubby --update-kernel=ALL --args="vsyscall=none"
+      changed_when: true
+
+    - name: "MEDIUM | RHEL-10-700990 | AUDIT | RHEL 10 must disable virtual system calls. | Capture default grub"
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep "^GRUB_CMDLINE_LINUX=" /etc/default/grub | cut -f2 -d'"' | grep vsyscall
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      failed_when: discovered_def_grub_vsyscall.rc not in [ 0, 1 ]
+      register: discovered_def_grub_vsyscall
+
+    - name: "MEDIUM | RHEL-10-700990 | PATCH | RHEL 10 must disable virtual system calls. | Set default"
+      when: discovered_def_grub_vsyscall.rc != 0
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: ^(GRUB_CMDLINE_LINUX=")(.*)"
+        line: '\1\2 vsyscall=none"'
+        backrefs: true
+      notify: Rebuild grub

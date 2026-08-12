@@ -1,0 +1,256 @@
+---
+# Preliminary tasks that should always be run
+# List users in order to look files inside each home directory
+
+- name: PRELIM | Discover if sssd config file exists
+  tags: always
+  block:
+    - name: PRELIM | Discover if sssd config file exists
+      ansible.builtin.stat:
+        path: /etc/sssd/sssd.conf
+      register: prelim_sssd_installed
+
+    - name: PRELIM | Discover if sssd config file exists
+      ansible.builtin.set_fact:
+        prelim_sssd_installed: "{{ prelim_sssd_installed.stat.exists | default(false) }}"
+
+- name: PRELIM | Include audit specific variables
+  when:
+    - run_audit or audit_only or setup_audit
+  tags:
+    - setup_audit
+    - run_audit
+  ansible.builtin.include_vars:
+    file: audit.yml
+
+- name: PRELIM | Include pre-remediation audit tasks
+  when: run_audit or audit_only
+  tags: run_audit
+  ansible.builtin.import_tasks:
+    file: pre_remediation_audit.yml
+
+- name: PRELIM | Check current FIPS mode
+  tags: always
+  ansible.builtin.command: cat /proc/sys/crypto/fips_enabled
+  changed_when: false
+  failed_when: prelim_current_fips_enabled.rc not in [ 0, 1, 127 ]
+  register: prelim_current_fips_enabled
+
+- name: PRELIM | Discover Interactive UID MIN and MIN from logins.def
+  tags: always
+  block:
+    - name: PRELIM | Capture UID_MIN information from logins.def
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -w "^UID_MIN" /etc/login.defs | awk '{print $NF}'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      register: prelim_uid_min_id
+
+    - name: PRELIM | Capture UID_MAX information from logins.def
+      ansible.builtin.shell: |
+        set -o pipefail
+        grep -w "^UID_MAX" /etc/login.defs | awk '{print $NF}'
+      args:
+        executable: "{{ rhel10stig_shell_executable }}"
+      changed_when: false
+      register: prelim_uid_max_id
+
+    - name: PRELIM | Set_facts for interactive uid/gid
+      ansible.builtin.set_fact:
+        min_int_uid: "{{ prelim_uid_min_id.stdout }}"
+        max_int_uid: "{{ prelim_uid_max_id.stdout }}"
+
+- name: PRELIM | Capture /etc/password variables
+  tags: always
+  ansible.builtin.include_tasks:
+    file: parse_etc_passwd.yml
+
+- name: PRELIM | Install aide
+  when:
+    - rhel10stig_use_aide
+    - rhel10stig_200630 or
+      rhel10stig_200631 or
+      rhel10stig_200632 or
+      rhel10stig_200633 or
+      rhel10stig_200634 or
+      rhel10stig_200635
+  tags: always
+  ansible.builtin.package:
+    name: aide
+    state: present
+
+- name: PRELIM | Set crypto policies and subpolicies fact
+  when: rhel10stig_additional_fips_crypto_subpolicies
+  tags: always
+  ansible.builtin.set_fact:
+    combined_crypto_policy_config: "{{ combined_crypto_policy_config }}:{{ rhel10stig_additional_fips_crypto_subpolicies_list | join(':') }}"
+
+- name: PRELIM | Create list of mount points
+  tags: always
+  ansible.builtin.set_fact:
+    mount_names: "{{ ansible_mounts | map(attribute='mount') | list }}"
+
+- name: PRELIM | Ensure python3-libselinux is installed
+  when:
+    - "'python3-libselinux' not in ansible_facts['packages']"
+    - not system_is_container
+  ansible.builtin.package:
+    name: python3-libselinux
+    state: present
+
+- name: PRELIM | Set facts based on boot type
+  tags: always
+  block:
+    - name: PRELIM | Check whether machine is UEFI-based
+      ansible.builtin.stat:
+        path: /sys/firmware/efi
+      register: prelim_efi_boot
+
+    - name: PRELIM | Set legacy boot and grub path | Bios
+      when: not prelim_efi_boot.stat.exists
+      ansible.builtin.set_fact:
+        rhel10stig_legacy_boot: true
+
+- name: PRELIM | Update to latest gpg keys
+  when:
+    - ansible_facts['distribution'] != 'RedHat'
+    - ansible_facts['distribution'] != 'OracleLinux'
+  ansible.builtin.package:
+    name: "{{ gpg_key_package }}"
+    state: latest
+
+- name: PRELIM | Configure System Accounting (auditd)
+  when:
+    - rhel10stig_auditd_required
+    - "'auditd' not in ansible_facts['packages']"
+  tags:
+    - cat2
+    - auditd
+  ansible.builtin.package:
+    name:
+      - audit
+      - audit-rules
+    state: present
+
+- name: "PRELIM | Discover auditd rules files"
+  when: rhel10stig_auditd_required
+  tags: always
+  ansible.builtin.find:
+    path: /etc/audit/rules.d
+    patterns: '*.rules'
+  register: prelim_audit_rules
+
+- name: PRELIM | Ensure SElinux requirement are installed
+  when:
+    - rhel10stig_700400
+    - rhel10stig_700410
+    - rhel10stig_700420
+    - rhel10stig_700430
+  tags: always
+  ansible.builtin.package:
+    name:
+      - policycoreutils-python3
+      - acl
+    state: present
+
+- name: "PRELIM | Discover auditd_logfile_path"
+  when:
+    - rhel10stig_auditd_required
+    - rhel10stig_400165 or
+      rhel10stig_400170 or
+      rhel10stig_400175 or
+      rhel10stig_400180 or
+      rhel10stig_400185 or
+      rhel10stig_500100
+  tags: always
+  ansible.builtin.shell: |
+    set -o pipefail
+    grep ^log_file /etc/audit/auditd.conf | awk '{ print $NF }'
+  args:
+    executable: "{{ rhel10stig_shell_executable }}"
+  changed_when: false
+  register: prelim_auditd_logfile_path
+
+# Added to ensure ssh drop in file exists if not default /etc/ssh/sshd_config
+- name: PRELIM | SSH | create config file if absent
+  when:
+    - rhel10stig_sshd_required
+    - rhel10stig_sshd_config_file != '/etc/ssh/sshd_config'
+    - "'openssh-server' in ansible_facts['packages']"
+  tags: ssh
+  ansible.builtin.file:
+    path: "{{ rhel10stig_sshd_config_file }}"
+    owner: root
+    group: root
+    mode: 'u-x,go-rwx'
+    state: touch
+
+- name: PRELIM | SSH | find existing ssh config files
+  tags: always
+  ansible.builtin.find:
+    paths:
+      - /etc/ssh/
+      - /etc/ssh/sshd_config.d
+    patterns: 'sshd_config,*.conf'
+    recurse: false
+  register: prelim_sshd_config_files
+
+- name: PRELIM | Discover Gnome Desktop Environment
+  tags: always
+  ansible.builtin.stat:
+    path: /usr/share/gnome/gnome-version.xml
+  register: prelim_gnome_present
+
+- name: PRELIM | Find all sudoers files.
+  when:
+    - rhel10stig_600520 or
+      rhel10stig_600530 or
+      rhel10stig_600540 or
+      rhel10stig_600550 or
+      rhel10stig_600560 or
+      rhel10stig_700410
+  tags: always
+  ansible.builtin.command: find /etc/sudoers /etc/sudoers.d/ -type f ! -name '*~' ! -name '*.*'
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: prelim_sudoers_files
+
+- name: PRELIM | Find all sssd conf files.
+  when:
+    - rhel10stig_701220
+    - rhel10stig_701230
+    - rhel10stig_701270
+    - rhel10stig_701280
+    - rhel10stig_701290
+  tags: always
+  ansible.builtin.shell: |
+    set -o pipefail
+    find /etc/sssd/sssd.conf /etc/sssd/conf.d/*.conf
+  args:
+    executable: "{{ rhel10stig_shell_executable }}"
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  register: prelim_sssd_conf_files
+
+- name: "PRELIM | AUDIT | Discover if auditd is immutable"
+  tags: always
+  ansible.builtin.command: grep -c "^-e 2" /etc/audit/rules.d/99_auditd.rules
+  changed_when: false
+  failed_when: prelim_auditd_immutable_check.rc not in [ 0, 1, 2 ]
+  register: prelim_auditd_immutable_check
+
+- name: PRELIM | Discover removable devices
+  when: item.value.removable == '1'
+  tags: always
+  ansible.builtin.set_fact:
+    prelim_removable_storage_found: "{{ prelim_removable_storage_found | default([]) + [item.key] }}"
+  loop: "{{ ansible_facts['devices'] | dict2items }}"
+
+- name: PRELIM | Gather the package facts after prelim
+  tags: always
+  ansible.builtin.package_facts:
+    manager: auto

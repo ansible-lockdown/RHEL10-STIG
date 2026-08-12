@@ -1,0 +1,63 @@
+---
+# Controls disabled when running inside a container (system_is_container).
+# Loaded via include_vars (container_vars_file) from tasks/main.yml when a
+# container is detected. Only controls whose remediation cannot work inside a
+# container are listed here - everything else still runs so the role is exercised.
+#
+# Categories:
+#   FIPS               - cannot enable FIPS in a container (needs kernel/dracut/reboot)
+#   Separate FS        - separate partitions cannot exist in a container image
+#   Bootloader/kernel  - grub.cfg / grubby kernel cmdline is managed by the host OS
+#   auditd service     - kernel audit netlink is unavailable in a container
+#   firewalld          - firewalld daemon / netfilter backend is unavailable
+
+# FIPS
+rhel10stig_000500: false  # RHEL 10 must enable FIPS mode
+
+# Separate filesystems
+rhel10stig_000520: false  # separate fs for /var/log/audit path
+rhel10stig_000530: false  # separate fs for /home
+rhel10stig_000540: false  # separate fs for /tmp
+rhel10stig_000550: false  # separate fs for /var
+rhel10stig_000560: false  # separate fs for /var/log
+rhel10stig_000570: false  # separate fs for /var/tmp
+rhel10stig_500100: false  # audit record storage capacity (needs the separate audit fs mount)
+
+# Bootloader / kernel command line (managed by the host OS)
+rhel10stig_400345: false  # group ownership of /boot/grub2/grub.cfg
+rhel10stig_400350: false  # owner of /boot/grub2/grub.cfg
+rhel10stig_500005: false  # grubby kernel argument
+rhel10stig_500030: false  # grubby audit_backlog_limit
+rhel10stig_700900: false  # grubby kernel argument
+rhel10stig_700980: false  # grubby kernel argument
+rhel10stig_700990: false  # grubby vsyscall
+rhel10stig_701000: false  # grubby page_poison
+rhel10stig_701010: false  # grubby init_on_free
+rhel10stig_701020: false  # grubby mitigations
+rhel10stig_701190: false  # grubby kernel argument
+
+# SELinux (SELinux is disabled in the container; sefcontext/semanage need it enabled)
+rhel10stig_700430: false  # SELinux context type for nondefault faillock tally dir
+
+# systemd unit disables (masked units whose packages are absent in a minimal
+# container image, so the ansible systemd module cannot manage them)
+rhel10stig_701180: false  # disable systemd-coredump.socket
+rhel10stig_701200: false  # disable kdump.service
+rhel10stig_701210: false  # disable autofs.service
+
+# services that cannot run in a container
+rhel10stig_200601: false  # fapolicyd (fanotify not available in container)
+
+# auditd service (kernel audit unavailable in a container)
+rhel10stig_200661: false  # enable the audit service
+rhel10stig_200541: false  # start the chronyd service - chronyd cannot adjust the clock in a container
+rhel10stig_200641: false  # start the rsyslog service - fails to start against the container's journal socket
+rhel10stig_200561: false  # start the usbguard service - no USB subsystem in a container
+rhel10stig_200602: false  # start the fapolicyd service - fanotify unavailable (sibling of 200601, already gated)
+
+# firewalld (daemon / netfilter backend unavailable in a container)
+rhel10stig_200531: false  # firewalld service active
+rhel10stig_200532: false  # firewalld default deny-all zone
+rhel10stig_800000: false  # firewalld configuration
+rhel10stig_800010: false  # firewalld list configuration
+rhel10stig_800290: false  # firewalld configuration

@@ -1,0 +1,21 @@
+{{ file_managed_by_ansible }}
+
+# Using rainer scripts to offload logs to a remote server
+
+action(
+type="omfwd"
+target="{{ rhel10stig_rsyslog_remote_server_ip }}"
+port="{{ rhel10stig_rsyslog_remote_server_port }}"
+protocol="{{ rhel10stig_rsyslog_remote_server_protocol }}"
+action.resumeRetryCount="-1"
+queue.type="linkedList"
+que.size="10000"
+{% if rhel10stig_200644 and not rhel10stig_rsyslog_legacy_offload %}
+StreamDriverAuthMode="{{ rhel10stig_rsyslog_stream_driver_auth_mode }}"
+StreamDriverPermittedPeers="{{ rhel10stig_rsyslog_stream_driver_permitted_peers }}"
+{% endif %}
+{% if rhel10stig_200645 and not rhel10stig_rsyslog_legacy_offload %}
+StreamDriver="{{ rhel10stig_rsyslog_stream_driver }}"
+StreamDriverMode="{{ rhel10stig_rsyslog_stream_driver_mode }}" # run driver in TLS-only mode
+{% endif %}
+)

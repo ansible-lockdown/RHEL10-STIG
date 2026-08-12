@@ -1,0 +1,31 @@
+---
+
+- name: "LOW | RHEL-10-000520 | AUDIT | RHEL 10 must use a separate file system for system audit data path."
+  when: rhel10stig_000520
+  tags:
+    - RHEL-10-000520
+    - CAT3
+    - CCI-001849
+    - SRG-OS-000480-GPOS-00227
+    - SV-280936r1184726_rule
+    - V-280936
+    - NIST800-53R4_AU-4
+    - filesystem
+  block:
+    - name: "LOW | RHEL-10-000520 | WARN | RHEL 10 must use a separate file system for system audit data path."
+      when: "rhel10stig_audit_log_filesystem in ansible_facts['mounts'] | map(attribute='mount') | list"
+      ansible.builtin.debug:
+        msg: "Congratulations system audit data path is a separate filesystem"
+
+    - name: "LOW | RHEL-10-000520 | WARN | RHEL 10 must use a separate file system for system audit data path. | Warning"
+      when: "rhel10stig_audit_log_filesystem not in ansible_facts['mounts'] | map(attribute='mount') | list"
+      block:
+        - name: "LOW | RHEL-10-000520 | WARN | RHEL 10 must use a separate file system for system audit data path."
+          ansible.builtin.debug:
+            msg: "Warning!! {{ rhel10stig_audit_log_filesystem }} for audit logs is not a separate filesystem"
+
+        - name: "LOW | RHEL-10-000520 | WARN | RHEL 10 must use a separate file system for system audit data path."
+          ansible.builtin.import_tasks:
+            file: warning_facts.yml
+          vars:
+            warn_control_id: "LOW | RHEL-10-000520"

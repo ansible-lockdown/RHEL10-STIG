@@ -1,0 +1,48 @@
+{
+  "tool_version": "2.8.1",
+  "date": "2026-08-11T09:21:54.087311",
+  "findings": [
+    {
+      "file": "defaults/main.yml",
+      "line": 49,
+      "description": "Defined but never referenced: 'rhel10stig_uses_root'",
+      "severity": "warning",
+      "check": "unused_vars"
+    },
+    {
+      "file": "templates/lockdown_audit.yml.j2",
+      "line": 7,
+      "description": "Referenced but not defined: 'rhel10stig_os_distribution'",
+      "severity": "warning",
+      "check": "unused_vars"
+    },
+    {
+      "file": "templates/lockdown_audit.yml.j2",
+      "line": 44,
+      "description": "Referenced but not defined: 'rhel10stig_uses_sssd'",
+      "severity": "warning",
+      "check": "unused_vars"
+    },
+    {
+      "file": "templates/lockdown_audit.yml.j2",
+      "line": 504,
+      "description": "Referenced but not defined: 'rhel10stig_audit_conf_log_group'",
+      "severity": "warning",
+      "check": "unused_vars"
+    },
+    {
+      "file": "templates/lockdown_audit.yml.j2",
+      "line": 510,
+      "description": "Referenced but not defined: 'rhel10stig_dconf_db'",
+      "severity": "warning",
+      "check": "unused_vars"
+    },
+    {
+      "file": "templates/lockdown_audit.yml.j2",
+      "line": 522,
+      "description": "Referenced but not defined: 'rhel10stig_nfs_required'",
+      "severity": "warning",
+      "check": "unused_vars"
+    }
+  ]
+}

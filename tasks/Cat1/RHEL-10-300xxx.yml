@@ -1,0 +1,379 @@
+---
+
+- name: "HIGH | RHEL-10-300000 | PATCH | RHEL 10 must have the crypto-policies package installed."
+  when: rhel10stig_300000
+  tags:
+    - RHEL-10-300000
+    - CAT1
+    - CCI-002450
+    - CCI-002890
+    - CCI-003123
+    - SRG-OS-000396-GPOS-00176
+    - SRG-OS-000393-GPOS-00173
+    - SRG-OS-000394-GPOS-00174
+    - SV-281007r1195399_rule
+    - V-281007
+    - NIST800-53R4_SC-13
+    - NIST800-53R4_MA-4
+    - crypto
+  ansible.builtin.package:
+    name: crypto-policies
+    state: present
+
+- name: "HIGH | RHEL-10-300010 | PATCH | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy"
+  when:
+    - rhel10stig_300010
+    - not skip_fips_mode
+  tags:
+    - RHEL-10-300010
+    - CAT1
+    - CCI-000068
+    - CCI-002450
+    - CCI-002890
+    - CCI-003123
+    - SRG-OS-000033-GPOS-00014
+    - SRG-OS-000396-GPOS-00176
+    - SRG-OS-000393-GPOS-00173
+    - SRG-OS-000394-GPOS-00174
+    - SV-281008r1195401_rule
+    - V-281008
+    - NIST800-53R4_AC-17
+    - NIST800-53R4_SC-13
+    - NIST800-53R4_MA-4
+    - fips
+    - encryption
+  notify: Reboot required
+  block:
+    - name: "HIGH | RHEL-10-300010 | AUDIT | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy | Get crypto state"
+      ansible.builtin.command: update-crypto-policies --show
+      changed_when: false
+      failed_when: discovered_crypto_policies_check.rc not in [0 , 1]
+      register: discovered_crypto_policies_check
+
+    - name: "HIGH | RHEL-10-300010 | AUDIT | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy | capture file info"
+      when: rhel10stig_disruption_high
+      ansible.builtin.command: grep -E 'rsa_size|hash' /etc/crypto-policies/state/CURRENT.pol
+      changed_when: false
+      register: discovered_crypto_policies_config
+
+    - name: "HIGH | RHEL-10-300010 | AUDIT | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy | Set fact from output"
+      ansible.builtin.set_fact:
+        discovered_crypto_policy_rsa_size: "{{ discovered_crypto_policies_config.stdout | regex_findall('min_rsa_size = ([1-9]{0,2}$|1[0-9]{1,3}|20[0-3][0-9]|204[0-7])', '\\1') }}"
+        discovered_crypto_policy_hash: "{{ discovered_crypto_policies_config.stdout | regex_findall('SHA\\d-(1[0-9]{1,2}|2[0-1][0-9]$|22[1-3])', '\\1') }}"
+        discovered_crypto_policy_sha1: "{{ discovered_crypto_policies_config.stdout | regex_search('(SHA1)', '\\1') | default(none) }}"
+
+    - name: "HIGH | RHEL-10-300010 | AUDIT | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy | Set fact if crypto policies settings are not compliant"
+      when: discovered_crypto_policy_rsa_size is defined and discovered_crypto_policy_rsa_size | length > 0 or
+            discovered_crypto_policy_hash is defined and discovered_crypto_policy_hash | length > 0 or
+            discovered_crypto_policy_sha1 is not none
+      ansible.builtin.set_fact:
+        crypto_policy_needs_install: true
+
+    - name: "HIGH | RHEL-10-300010 | PATCH | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy | set FIPS"
+      when:
+        - crypto_policy_needs_install
+        - rhel10stig_disruption_high
+      ansible.builtin.command: "update-crypto-policies --set {{ combined_crypto_policy_config }}"
+      changed_when: true
+      notify: Install crypto policies
+
+    - name: "HIGH | RHEL-10-300010 | WARN | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy"
+      when:
+        - crypto_policy_needs_install
+        - not rhel10stig_disruption_high
+        - prelim_current_fips_enabled.stdout == '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! - Crypto-Policies is not set to {{ combined_crypto_policy_config }} only - Current {{ discovered_crypto_policies_check.stdout }}"
+
+    - name: "HIGH | RHEL-10-300010 | WARN | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy"
+      when: prelim_current_fips_enabled.stdout != '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! FIPS mode is not enabled. A new installation is required to enable FIPS mode."
+
+    - name: "HIGH | RHEL-10-300010 | WARN | RHEL 10 must implement a FIPS 140-3 compliant systemwide cryptographic policy"
+      when:
+        - crypto_policy_needs_install
+        - not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-300010"
+
+- name: "HIGH | RHEL-10-300030 | PATCH | The RHEL 10 SSH client must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+  when:
+    - rhel10stig_300030
+    - rhel10stig_sshd_required
+    - not skip_fips_mode
+  tags:
+    - RHEL-10-300030
+    - CAT1
+    - CCI-000068
+    - CCI-000877
+    - CCI-001453
+    - CCI-002890
+    - CCI-003123
+    - CCI-002418
+    - SRG-OS-000033-GPOS-00014
+    - SRG-OS-000125-GPOS-00065
+    - SRG-OS-000250-GPOS-00093
+    - SRG-OS-000393-GPOS-00173
+    - SRG-OS-000394-GPOS-00174
+    - SRG-OS-000423-GPOS-00187
+    - SV-281010r1184643_rule
+    - V-281010
+    - NIST800-53R4_AC-17
+    - NIST800-53R4_MA-4
+    - NIST800-53R4_SC-8
+    - ssh
+    - encryption
+  block:
+    - name: "HIGH | RHEL-10-300030 | AUDIT | The RHEL 10 SSH client must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | capture current"
+      ansible.builtin.command: grep -i Ciphers /etc/crypto-policies/back-ends/openssh.config
+      changed_when: false
+      register: discovered_openssh_ciphers
+
+    - name: "HIGH | RHEL-10-300030 | PATCH | The RHEL 10 SSH client must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | Correct if wrong"
+      when:
+        - rhel10stig_disruption_high
+        - "discovered_openssh_ciphers.stdout != rhel10stig_sshd_config_ciphers"
+      ansible.builtin.set_fact:
+        crypto_policy_needs_install: true
+      notify: Install crypto policies
+
+    - name: "HIGH | RHEL-10-300030 | WARN | The RHEL 10 SSH client must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when:
+        - not rhel10stig_disruption_high
+        - prelim_current_fips_enabled.stdout == '1'
+      ansible.builtin.debug:
+        msg: "Warning!! Investigate /etc/crypto-policies/back-ends/openssh.config for correct IPS 140-3 ciphers and order"
+
+    - name: "HIGH | RHEL-10-300030 | WARN | The RHEL 10 SSH client must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: prelim_current_fips_enabled.stdout != '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! FIPS mode is not enabled. A new installation is required to enable FIPS mode."
+
+    - name: "HIGH | RHEL-10-300030 | WARN | The RHEL 10 SSH client must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-300030"
+
+- name: "HIGH | RHEL-10-300040 | PATCH | The RHEL 10 SSH server must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+  when:
+    - rhel10stig_300040
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-300040
+    - CAT1
+    - CCI-000877
+    - CCI-001453
+    - SRG-OS-000125-GPOS-00065
+    - SRG-OS-000250-GPOS-00093
+    - SV-281011r1184644_rule
+    - V-281011
+    - NIST800-53R4_AC-17
+    - NIST800-53R4_MA-4
+    - ssh
+    - encryption
+  block:
+    - name: "HIGH | RHEL-10-300040 | AUDIT | The RHEL 10 SSH server must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | capture current"
+      ansible.builtin.command: grep -i Ciphers /etc/crypto-policies/back-ends/opensshserver.config
+      changed_when: false
+      register: discovered_openssh_server_ciphers
+
+    - name: "HIGH | RHEL-10-300040 | PATCH | The RHEL 10 SSH server must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | Correct if wrong"
+      when:
+        - "rhel10stig_sshd_config_ciphers not in discovered_openssh_server_ciphers.stdout"
+        - rhel10stig_disruption_high
+      ansible.builtin.set_fact:
+        crypto_policy_needs_install: true
+      notify: Install crypto policies
+
+    - name: "HIGH | RHEL-10-300040 | WARN | The RHEL 10 SSH server must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when:
+        - not rhel10stig_disruption_high
+        - prelim_current_fips_enabled.stdout == '1'
+      ansible.builtin.debug:
+        msg: "Warning!! Investigate /etc/crypto-policies/back-ends/openssh.config for correct IPS 140-3 ciphers and order"
+
+    - name: "HIGH | RHEL-10-300040 | WARN | The RHEL 10 SSH server must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: prelim_current_fips_enabled.stdout != '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! FIPS mode is not enabled. A new installation is required to enable FIPS mode."
+
+    - name: "HIGH | RHEL-10-300040 | WARN | The RHEL 10 SSH server must be configured to use only DOD-approved encryption ciphers employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when:
+        - not rhel10stig_disruption_high
+        - "(rhel10stig_sshd_config_ciphers not in discovered_openssh_server_ciphers.stdout"
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-300040"
+
+- name: "HIGH | RHEL-10-300050 | PATCH | The RHEL 10 SSH client must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+  when:
+    - rhel10stig_300050
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-300050
+    - CAT1
+    - CCI-000877
+    - CCI-001453
+    - SRG-OS-000125-GPOS-00065
+    - SRG-OS-000250-GPOS-00093
+    - SV-281012r1184645_rule
+    - V-281012
+    - NIST800-53R4_AC-17
+    - NIST800-53R4_MA-4
+    - ssh
+    - encryption
+  block:
+    - name: "HIGH | RHEL-10-300050 | AUDIT | The RHEL 10 SSH client must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | capture current"
+      ansible.builtin.command: grep -i MACs /etc/crypto-policies/back-ends/openssh.config
+      changed_when: false
+      register: discovered_openssh_macs
+
+    - name: "HIGH | RHEL-10-300050 | PATCH | The RHEL 10 SSH client must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | Correct if wrong"
+      when:
+        - rhel10stig_disruption_high
+        - "discovered_openssh_macs.stdout != rhel10stig_sshd_config_macs"
+      ansible.builtin.set_fact:
+        crypto_policy_needs_install: true
+      notify: Install crypto policies
+
+    - name: "HIGH | RHEL-10-300050 | WARN | The RHEL 10 SSH client must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when:
+        - not rhel10stig_disruption_high
+        - prelim_current_fips_enabled.stdout == '1'
+      ansible.builtin.debug:
+        msg: "Warning!! Investigate /etc/crypto-policies/back-ends/openssh.config for correct FIPS 140-3 approved MACs and order"
+
+    - name: "HIGH | RHEL-10-300050 | WARN | The RHEL 10 SSH client must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: prelim_current_fips_enabled.stdout != '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! FIPS mode is not enabled. A new installation is required to enable FIPS mode."
+
+    - name: "HIGH | RHEL-10-300050 | WARN | The RHEL 10 SSH client must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-300050"
+
+- name: "HIGH | RHEL-10-300060 | PATCH | The RHEL 10 SSH server must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+  when:
+    - rhel10stig_300060
+    - rhel10stig_sshd_required
+  tags:
+    - RHEL-10-300060
+    - CAT1
+    - CCI-001453
+    - SRG-OS-000250-GPOS-00093
+    - SV-257991r1051246_rule
+    - V-257991
+    - NIST800-53R4_AC-17
+  block:
+    - name: "HIGH | RHEL-10-300060 | AUDIT | The RHEL 10 SSH server must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | capture current"
+      ansible.builtin.command: grep -i MACs /etc/crypto-policies/back-ends/opensshserver.config
+      changed_when: false
+      register: discovered_openssh_server_macs
+
+    - name: "HIGH | RHEL-10-300060 | PATCH | The RHEL 10 SSH server must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections. | Correct if wrong"
+      when:
+        - rhel10stig_disruption_high
+        - "discovered_openssh_server_macs.stdout != rhel10stig_sshd_config_macs"
+      ansible.builtin.set_fact:
+        crypto_policy_needs_install: true
+      notify: Install crypto policies
+
+    - name: "HIGH | RHEL-10-300060 | WARN | The RHEL 10 SSH server must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when:
+        - not rhel10stig_disruption_high
+        - prelim_current_fips_enabled.stdout == '1'
+      ansible.builtin.debug:
+        msg: "Warning!! Investigate /etc/crypto-policies/back-ends/opensshserver.config for correct FIPS 140-3 approved MACs and order"
+
+    - name: "HIGH | RHEL-10-300060 | WARN | The RHEL 10 SSH server must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: prelim_current_fips_enabled.stdout != '1'
+      ansible.builtin.debug:
+        msg: "WARNING!! FIPS mode is not enabled. A new installation is required to enable FIPS mode."
+
+    - name: "HIGH | RHEL-10-300060 | WARN | The RHEL 10 SSH server must be configured to use only DOD-approved Message Authentication Codes (MACs) employing FIPS 140-3 validated cryptographic hash algorithms to protect the confidentiality of SSH client connections."
+      when: not rhel10stig_disruption_high
+      ansible.builtin.import_tasks:
+        file: warning_facts.yml
+      vars:
+        warn_control_id: "HIGH | RHEL-10-300060"
+
+- name: "HIGH | RHEL-10-300070 | PATCH | RHEL 10 IP tunnels must use FIPS 140-2/140-3 approved cryptographic algorithms."
+  when: rhel10stig_300070 and rhel10stig_200680
+  tags:
+    - RHEL-10-300070
+    - CAT1
+    - CCI-000068
+    - SRG-OS-000033-GPOS-00014
+    - SV-281014r1165397_rule
+    - V-281014
+    - NIST800-53R4_AC-17
+    - ipsec
+    - tunnel
+  ansible.builtin.lineinfile:
+    path: /etc/ipsec.conf
+    regexp: ^(#?)\s*include /etc/crypto-policies/back-ends
+    line: include /etc/crypto-policies/back-ends/libreswan.config
+    create: true
+    mode: 'u-x,g-wx,o-rwx'
+
+- name: "HIGH | RHEL-10-300080 | PATCH | RHEL 10 must implement DOD-approved encryption in the bind package."
+  when:
+    - rhel10stig_300080
+    - "'bind' in ansible_facts['packages']"
+  tags:
+    - RHEL-10-300080
+    - CAT1
+    - CCI-002418
+    - CCI-002422
+    - SRG-OS-000423-GPOS-00187
+    - SRG-OS-000426-GPOS-00190
+    - SV-258242r958908_rule
+    - V-258242
+    - NIST800-53R4_SC-8
+    - bind
+    - encryption
+  ansible.builtin.lineinfile:
+    path: /etc/named.conf
+    regexp: ^(#?)\s*include "/etc/crypto-policies/back-ends/bind.config"
+    line: 'include "/etc/crypto-policies/back-ends/bind.config";'
+
+- name: "HIGH | RHEL-10-300090 | PATCH | RHEL 10 crypto policy must not be overridden."
+  when:
+    - rhel10stig_300090
+    - not skip_fips_mode
+  tags:
+    - RHEL-10-300090
+    - CAT1
+    - CCI-002450
+    - CCI-002890
+    - CCI-003123
+    - SRG-OS-000396-GPOS-00176
+    - SRG-OS-000393-GPOS-00173
+    - SRG-OS-000394-GPOS-00174
+    - SV-258236r1101920_rule
+    - V-258236
+    - NIST800-53R4_SC-13
+    - NIST800-53R4_MA-4
+    - crypto
+  block:
+    - name: "HIGH | RHEL-10-300090 | AUDIT | RHEL 10 crypto policy must not be overridden. | capture files"
+      ansible.builtin.command: update-crypto-policies --check
+      changed_when: false
+      register: discovered_fips_policies_check
+
+    - name: "HIGH | RHEL-10-300090 | WARN | RHEL 10 crypto policy must not be overridden. | Set fact to run install again"
+      when:
+        - rhel10stig_disruption_high
+        - "'The configured policy matches the generated policy' not in discovered_fips_policies_check.stdout"
+      ansible.builtin.set_fact:
+        crypto_policy_needs_install: true
+      notify: Install crypto policies
