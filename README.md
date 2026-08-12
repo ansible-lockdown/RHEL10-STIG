@@ -1,6 +1,6 @@
 # RHEL 10 DISA STIG
 
-## Configure a RHEL10 based system to be complaint with DISA STIG
+## Configure a RHEL10 based system to be compliant with DISA STIG
 
 This role is based on RHEL 10 DISA STIG: [Version 1, Rel 1 released in March, 2026](https://dl.dod.cyber.mil/wp-content/uploads/stigs/U_RHEL_10_V1R1_STIG.zip).
 
@@ -86,7 +86,7 @@ This role **will make changes to the system** which may have unintended conseque
 STIG release always contains changes, it is highly recommended to review the new references and available variables. This have changed significantly since ansible-lockdown initial release.
 This is now compatible with python3 if it is found to be the default interpreter. This does come with pre-requisites which it configures the system accordingly.
 
-Further details can be seen in the [Changelog](./ChangeLog.md)
+Further details can be seen in the [Changelog](./Changelog.md)
 
 ---
 

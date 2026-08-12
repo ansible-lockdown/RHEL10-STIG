@@ -7,6 +7,8 @@
 - Neither fault was reachable in a container: the `when` clause requires a separate mount that containers do not have, so the template was never evaluated and molecule stayed green throughout. Verified instead by a register-ordering sweep over the whole task file, where every `discovered_*` reference now resolves to a `register:` at a lower line number
 - README "Local Testing" listed `molecule 4.0.1` plus the separate `molecule-docker`, `molecule-podman`, `molecule-vagrant` and `molecule-azure` plugins. Updated to match what the Molecule workflow installs: `ansible-core >= 2.19`, `molecule >= 25.0`, `molecule-plugins[docker]`, `docker` and `passlib`
 - fixed the `end-of-file-fixer` pre-commit failure, which was red on every pull request rather than being specific to any one change. `templates/lockdown_audit.yml.j2` ended with a trailing blank line and `.qa_baseline.json` ended with `}` and no newline at all. The repo sets `autofix_prs: false`, so pre-commit.ci reported the failure instead of pushing a correction, meaning it would have failed indefinitely. Both files now end with exactly one newline and `.qa_baseline.json` still parses as JSON
+- README: the Changelog link pointed at `./ChangeLog.md` while the tracked file is `Changelog.md`. Repository file paths are case-sensitive, so the link returned a 404 for every reader
+- README: corrected "complaint" to "compliant" in the opening heading
 
 ## Based on STIG V1R1 - 2026 August - RHEL-10-600520 sudoers detection and remediation fixes
 
