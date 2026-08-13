@@ -671,7 +671,7 @@ rhel10stig_dns_processing_mode: 'none'
 ## Firewalld
 # rhel10stig_custom_firewall_zone is the desired name for the firewall zone
 rhel10stig_custom_firewall_zone: "drop"
-rhel10stig_custom_firewall_interface: "{{ ansible_default_ipv4.interface | list }}"
+rhel10stig_custom_firewall_interface: "{{ [ansible_facts['default_ipv4']['interface']] }}"
 
 # rhel10stig_white_list_services is the services that you want to allow through initially for the new firewall zone
 # This can also be a port number if no service exists

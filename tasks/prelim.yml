@@ -90,7 +90,7 @@
 - name: PRELIM | Create list of mount points
   tags: always
   ansible.builtin.set_fact:
-    mount_names: "{{ ansible_mounts | map(attribute='mount') | list }}"
+    mount_names: "{{ ansible_facts['mounts'] | map(attribute='mount') | list }}"
 
 - name: PRELIM | Ensure python3-libselinux is installed
   when:
