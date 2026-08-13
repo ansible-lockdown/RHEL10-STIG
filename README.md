@@ -17,7 +17,7 @@ This role is based on RHEL 10 DISA STIG: [Version 1, Rel 1 released in March, 20
 
 ![License](https://img.shields.io/github/license/ansible-lockdown/RHEL10-STIG?label=License)
 
-## Lint & Pre-Commit Tools 🔧
+## Lint & Pre-Commit Tools
 
 ![YamlLint](https://img.shields.io/badge/yamllint-Present-brightgreen?style=flat&logo=yaml&logoColor=white)
 ![Ansible-Lint](https://img.shields.io/badge/ansible--lint-Present-brightgreen?style=flat&logo=ansible&logoColor=white)
@@ -53,13 +53,13 @@ This role is based on RHEL 10 DISA STIG: [Version 1, Rel 1 released in March, 20
 
 ---
 
-## Looking for support? 🤝
+## Looking for support?
 
 [Lockdown Enterprise](https://www.lockdownenterprise.com#GH_AL_RHEL10-STIG)
 
 [Ansible support](https://www.mindpointgroup.com/cybersecurity-products/ansible-counselor#GH_AL_RHEL10-STIG)
 
-### Community 💬
+### Community
 
 On our [Discord Server](https://www.lockdownenterprise.com/discord) to ask questions, discuss features, or just chat with other Ansible-Lockdown users
 
@@ -71,7 +71,7 @@ This role **will make changes to the system** which may have unintended conseque
 
 - Testing is the most important thing you can do.
 
-- Check Mode is not guaranteed! 🚫 The role will complete in check mode without errors, but it is not supported and should be used with caution.
+- Check Mode is not guaranteed! The role will complete in check mode without errors, but it is not supported and should be used with caution.
 
 - This role was developed against a clean install of the Operating System. If you are implementing to an existing system please review this role for any site specific changes that are needed.
 
@@ -103,7 +103,7 @@ The control found in defaults main also need to reflect this as this control the
 
 ---
 
-## Requirements ✅
+## Requirements
 
 **General:**
 
@@ -160,7 +160,7 @@ PLAY RECAP *********************************************************************
 default                    : ok=270  changed=23   unreachable=0    failed=0    skipped=140  rescued=0    ignored=0
 ```
 
-## Documentation 📖
+## Documentation
 
 - [Read The Docs](https://ansible-lockdown.readthedocs.io/en/latest/)
 - [Getting Started](https://www.lockdownenterprise.com/docs/getting-started-with-lockdown#GH_AL_RH10_STIG)
@@ -227,7 +227,7 @@ uses:
 Almalinux BaseOS, EPEL and many cloud providers repositories, do not allow gpgcheck or repo_gpgcheck this will cause issues during the playbook unless or a workaround is found.
 By default RHEL10 uses the encryption method yescrypt for passwords. This is not FIPS compliant (at time of writing). In order to use this a design around authselect is required. A custom profile is required in order to change this to sha512 (fips compliant). This has repercussions, please contact us.
 
-## Local Testing 💻
+## Local Testing
 
 ### example
 
