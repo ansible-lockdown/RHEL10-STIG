@@ -1,5 +1,15 @@
 # RHEL10STIG
 
+## Based on STIG V1R1 - 2026 August - Company name updated to Quantum Sky
+
+- the parent company name changed from Tyto Athene to Quantum Sky. Renamed in `meta/main.yml`, `vars/main.yml` and `LICENSE`
+- `vars/main.yml` is the one with a runtime effect: `company_title` is interpolated into `file_managed_by_ansible`, the header written into every file this role templates out. Those files show a one-off change on the next run as the header is rewritten. Nothing else about their content changes, and no audit check reads the header
+- the Repo QA workflow moves from checker `2.8.1` to `2.8.3`. `2.8.1` hardcoded the former parent as the only accepted value in Meta Validate, so it reports a correctly renamed `meta/main.yml` as wrong. `2.8.3` expects the current name and adds an `expected_company` key in `.qa_config.yml` for roles with a legitimate co-branded variant. Without this bump the rename and the check contradict each other
+- removed `galaxy.yml`. It declared a collection (`ansible_lockdown.stig_benchmarks`, version `0.0.1`) but this repository is a standalone role with no `plugins/` or `roles/` layout, so it could never build a valid collection. `meta/main.yml` is the manifest this role is actually published from, and nothing referenced the file. Its presence produced four ansible-lint findings against a manifest that was never used
+- corrected the two `jinja[spacing]` findings rather than recording them: `{{ item.path}}` gained the missing space, and the redundant space before a closing parenthesis was removed from the passwd-data loop expression. Both are whitespace inside a Jinja expression, confirmed by a whitespace-insensitive diff showing no other change in `tasks/`
+- regenerated `.qa_baseline.json` against checker `2.8.3`. `2.8.1` reported no ansible-lint findings at all on this repository, so the previous baseline recorded none; `2.8.3` surfaces them. The four now recorded are `complexity[tasks]` on large task files, which are structural and out of scope here. They are recorded rather than fixed so that a genuinely new finding still fails the check
+- existing entries in this file are deliberately left as written, since they record what was true at the time
+
 ## Based on STIG V1R1 - 2026 August - CI branch triggers
 
 - the Molecule and Repo QA workflows filtered on `devel` and `main` only, so the same file had to be edited whenever it moved between release lines. Both now list `latest`, `benchmark*`, `devel` and `main`, which makes the file valid wherever it lands and removes the edit

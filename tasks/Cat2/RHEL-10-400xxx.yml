@@ -682,7 +682,7 @@
     group: "{{ item.gid }}"
     state: directory
     mode: 'o-rwx'
-  loop: "{{ prelim_captured_passwd_data | selectattr('gid', '>=', min_int_uid | int ) | selectattr('gid', '<=', max_int_uid | int ) | list }}"
+  loop: "{{ prelim_captured_passwd_data | selectattr('gid', '>=', min_int_uid | int) | selectattr('gid', '<=', max_int_uid | int) | list }}"
   loop_control:
     label: "{{ item.id }}"
 
