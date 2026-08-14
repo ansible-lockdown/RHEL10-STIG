@@ -1783,7 +1783,7 @@
     - name: "MEDIUM | RHEL-10-700930 | AUDIT | RHEL 10 must be configured with a timeout interval for the Secure Shell (SSH) daemon."
       when: "item.path != rhel10stig_sshd_config_file"
       ansible.builtin.replace:
-        path: "{{ item.path}}"
+        path: "{{ item.path }}"
         regexp: (?i)^ClientAliveInterval\s*([1-9]|[1-5][0-9]{1,2}|600)
         replace: '#ClientAliveInterval \1'
       failed_when: discovered_clientaliveinterval_exists.rc not in [0, 257]

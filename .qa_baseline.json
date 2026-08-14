@@ -1,6 +1,6 @@
 {
   "tool_version": "2.8.3",
-  "date": "2026-08-14T14:51:24.334676",
+  "date": "2026-08-14T14:58:54.058569",
   "findings": [
     {
       "file": "tasks/Cat2/RHEL-10-200xxx.yml",
@@ -17,13 +17,6 @@
       "check": "ansiblelint"
     },
     {
-      "file": "tasks/Cat2/RHEL-10-400xxx.yml",
-      "line": 685,
-      "description": "[jinja[spacing][/]]",
-      "severity": "warning",
-      "check": "ansiblelint"
-    },
-    {
       "file": "tasks/Cat2/RHEL-10-600xxx.yml",
       "line": 1,
       "description": "[complexity[tasks][/]]",
@@ -34,13 +27,6 @@
       "file": "tasks/Cat2/RHEL-10-700xxx.yml",
       "line": 1,
       "description": "[complexity[tasks][/]]",
-      "severity": "warning",
-      "check": "ansiblelint"
-    },
-    {
-      "file": "tasks/Cat2/RHEL-10-700xxx.yml",
-      "line": 1786,
-      "description": "[jinja[spacing][/]]",
       "severity": "warning",
       "check": "ansiblelint"
     },
