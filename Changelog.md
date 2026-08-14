@@ -1,5 +1,12 @@
 # RHEL10STIG
 
+## Based on STIG V1R1 - 2026 August - CI branch triggers
+
+- the Molecule and Repo QA workflows filtered on `devel` and `main` only, so the same file had to be edited whenever it moved between release lines. Both now list `latest`, `benchmark*`, `devel` and `main`, which makes the file valid wherever it lands and removes the edit
+- this is the convention the pipeline workflows already follow: `devel_pipeline_validation.yml` triggers on `devel` and `benchmark*`, `main_pipeline_validation.yml` on `main` and `latest`. Each names the equivalent branch for the same stage under either naming scheme, which is why those two files need no adjustment
+- the `push` filter is now `main` and `latest`, matching the pair `main_pipeline_validation.yml` uses. Pull requests into `devel` still run both workflows through the `pull_request` filter, so nothing is lost - only the post-merge push to `devel` no longer re-runs work the pull request already gated
+- the `paths` filters, the weekly `schedule` and `workflow_dispatch` are unchanged
+
 ## Based on STIG V1R1 - 2026 August - Alignment Strategy, CI action versions and Dependabot
 
 - RHEL-10-400185: the PATCH task passed a quoted string as the file mode. The Jinja expression rendered `'go-rwx'` rather than `go-rwx`, with the single quotes inside the value, so `ansible.builtin.file` received something that is not a valid symbolic mode and the task failed on any host it actually ran against. The quotes are removed; both arms now render clean, `go-rwx` when the audit log group is `root` and `g-wx,o-rwx` otherwise. That the quotes were a typo rather than a convention is evident from the two sibling constructs in the role, RHEL-10-400190 and RHEL-10-500110, which use the same Jinja if/else for a mode without quoting either arm
