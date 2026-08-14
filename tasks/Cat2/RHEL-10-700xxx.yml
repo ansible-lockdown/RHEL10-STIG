@@ -93,8 +93,7 @@
     state: present
 
 - name: "MEDIUM | RHEL-10-700040 | PATCH | RHEL 10 must display the Standard Mandatory DOD Notice and Consent Banner before granting local or remote access to the system via a command line user login."
-  when:
-    - rhel10stig_700040
+  when: rhel10stig_700040
   tags:
     - RHEL-10-700040
     - CAT2
@@ -235,8 +234,7 @@
     mode: 'u-x,go-wx'
 
 - name: "MEDIUM | RHEL-10-700120 | PATCH | RHEL 10 must mount /boot with the nodev option."
-  when:
-    - rhel10stig_700120 or rhel10stig_700135 or rhel10stig_700140
+  when: rhel10stig_700120 or rhel10stig_700135 or rhel10stig_700140
   tags:
     - RHEL-10-700120
     - RHEL-10-700135
@@ -1785,7 +1783,7 @@
     - name: "MEDIUM | RHEL-10-700930 | AUDIT | RHEL 10 must be configured with a timeout interval for the Secure Shell (SSH) daemon."
       when: "item.path != rhel10stig_sshd_config_file"
       ansible.builtin.replace:
-        path: "{{ item.path}}"
+        path: "{{ item.path }}"
         regexp: (?i)^ClientAliveInterval\s*([1-9]|[1-5][0-9]{1,2}|600)
         replace: '#ClientAliveInterval \1'
       failed_when: discovered_clientaliveinterval_exists.rc not in [0, 257]

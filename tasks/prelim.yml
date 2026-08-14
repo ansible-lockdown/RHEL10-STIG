@@ -15,8 +15,7 @@
         prelim_sssd_installed: "{{ prelim_sssd_installed.stat.exists | default(false) }}"
 
 - name: PRELIM | Include audit specific variables
-  when:
-    - run_audit or audit_only or setup_audit
+  when: run_audit or audit_only or setup_audit
   tags:
     - setup_audit
     - run_audit

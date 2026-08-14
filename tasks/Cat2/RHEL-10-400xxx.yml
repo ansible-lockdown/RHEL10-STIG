@@ -682,7 +682,7 @@
     group: "{{ item.gid }}"
     state: directory
     mode: 'o-rwx'
-  loop: "{{ prelim_captured_passwd_data | selectattr('gid', '>=', min_int_uid | int ) | selectattr('gid', '<=', max_int_uid | int ) | list }}"
+  loop: "{{ prelim_captured_passwd_data | selectattr('gid', '>=', min_int_uid | int) | selectattr('gid', '<=', max_int_uid | int) | list }}"
   loop_control:
     label: "{{ item.id }}"
 
@@ -856,7 +856,7 @@
       when: item.mode > '0600'
       ansible.builtin.file:
         path: "{{ item.path }}"
-        mode: "{% if rhel10stig_audit_conf_logfile_group == 'root' %}'go-rwx'{% else %}'g-wx,o-rwx'{% endif %}"
+        mode: "{% if rhel10stig_audit_conf_logfile_group == 'root' %}go-rwx{% else %}g-wx,o-rwx{% endif %}"
       loop: "{{ discovered_auditd_logfile_mode.files }}"
 
 - name: "MEDIUM | RHEL-10-400190 | PATCH | RHEL 10 must enforce the audit log directory to have a mode of 0750 or less permissive to prevent unauthorized read access."

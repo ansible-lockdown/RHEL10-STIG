@@ -3,9 +3,14 @@
 name: Molecule
 
 on:  # yamllint disable-line rule:truthy
+  # Branch lists cover both repository models so this file needs no edit when it is
+  # overlaid between the private role and the public mirror, matching the convention the
+  # pipeline workflows already use: the private role has `latest` and `benchmark_*`, the
+  # public mirror has `devel` and `main`.
   push:
     branches:
-      - devel
+      - main
+      - latest
     paths:
       - 'defaults/**'
       - 'handlers/**'
@@ -18,8 +23,10 @@ on:  # yamllint disable-line rule:truthy
       - '.github/workflows/molecule.yml'
   pull_request:
     branches:
-      - main
+      - latest
+      - benchmark*
       - devel
+      - main
     paths:
       - 'defaults/**'
       - 'handlers/**'
