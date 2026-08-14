@@ -1,5 +1,12 @@
 # RHEL10STIG
 
+## Based on STIG V1R1 - 2026 August - Company name updated to Quantum Sky
+
+- the parent company name changed from Tyto Athene to Quantum Sky. Renamed in `meta/main.yml`, `vars/main.yml` and `LICENSE`
+- `vars/main.yml` is the one with a runtime effect: `company_title` is interpolated into `file_managed_by_ansible`, the header written into every file this role templates out. Those files show a one-off change on the next run as the header is rewritten. Nothing else about their content changes, and no audit check reads the header
+- the Repo QA workflow moves from checker `2.8.1` to `2.8.3`. `2.8.1` hardcoded the former parent as the only accepted value in Meta Validate, so it reports a correctly renamed `meta/main.yml` as wrong. `2.8.3` expects the current name and adds an `expected_company` key in `.qa_config.yml` for roles with a legitimate co-branded variant. Without this bump the rename and the check contradict each other
+- existing entries in this file are deliberately left as written, since they record what was true at the time
+
 ## Based on STIG V1R1 - 2026 August - CI branch triggers
 
 - the Molecule and Repo QA workflows filtered on `devel` and `main` only, so the same file had to be edited whenever it moved between release lines. Both now list `latest`, `benchmark*`, `devel` and `main`, which makes the file valid wherever it lands and removes the edit
