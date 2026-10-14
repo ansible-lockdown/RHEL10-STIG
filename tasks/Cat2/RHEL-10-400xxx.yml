@@ -135,7 +135,7 @@
   tags:
     - RHEL-10-400040
     - CAT2
-    - CCI-000366
+    - CCI-000213
     - SRG-OS-000480-GPOS-00227
     - SV-281025r1165430_rule
     - V-281025
@@ -284,7 +284,7 @@
     state: directory
     mode: 'u+x,go-w'
 
-- name: "MEDIUM | RHEL-10-400090 | PATCH | RHEL 10 must be configured so that the /var/log messages file is owned by root."
+- name: "MEDIUM | RHEL-10-400090 | PATCH | RHEL 10 must be configured so that the /var/log/messages file is owned by root."
   when: rhel10stig_400090
   tags:
     - RHEL-10-400090
@@ -300,7 +300,7 @@
     owner: root
     state: file
 
-- name: "MEDIUM | RHEL-10-400095 | PATCH | RHEL 10 must be configured so that the /var/log messages file is group-owned by root."
+- name: "MEDIUM | RHEL-10-400095 | PATCH | RHEL 10 must be configured so that the /var/log/messages file is group-owned by root."
   when: rhel10stig_400095
   tags:
     - RHEL-10-400095
@@ -316,32 +316,32 @@
     group: root
     state: file
 
-- name: "MEDIUM | RHEL-10-400100 | PATCH | RHEL 10 system commands must be owned by root."
+- name: "MEDIUM | RHEL-10-400100 | PATCH | RHEL 10 must be configured so that system commands are owned by root."
   when: rhel10stig_400100
   tags:
     - RHEL-10-400100
     - CAT2
     - CCI-001499
     - SRG-OS-000259-GPOS-00100
-    - SV-257918r1044977_rule
-    - V-257918
+    - SV-281037r1165466_rule
+    - V-281037
     - NIST800-53R4_CM-5
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400100 | AUDIT | RHEL 10 system commands must be owned by root."
+    - name: "MEDIUM | RHEL-10-400100 | AUDIT | RHEL 10 must be configured so that system commands are owned by root."
       ansible.builtin.command: find -L /bin /sbin /usr/bin /usr/sbin /usr/libexec /usr/local/bin /usr/local/sbin ! -user root -exec ls {} \;
       changed_when: false
       failed_when: discovered_sys_commands_owner.rc not in [ 0, 1 ]
       register: discovered_sys_commands_owner
 
-    - name: "MEDIUM | RHEL-10-400100 | PATCH | RHEL 10 system commands must be owned by root."
+    - name: "MEDIUM | RHEL-10-400100 | PATCH | RHEL 10 must be configured so that system commands are owned by root."
       when: discovered_sys_commands_owner.stdout | length > 0
       ansible.builtin.file:
         path: "{{ item }}"
         owner: root
       loop: "{{ discovered_sys_commands_owner.stdout_lines }}"
 
-- name: "MEDIUM | RHEL-10-400105 | PATCH | RHEL 10 system commands must be group-owned by root or a system account."
+- name: "MEDIUM | RHEL-10-400105 | PATCH | RHEL 10 must be configured so that system commands are group-owned by root or a system account."
   when:
     - rhel10stig_400105
     - rhel10stig_disruption_high
@@ -355,20 +355,20 @@
     - NIST800-53R4_CM-5
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400105 | AUDIT | RHEL 10 system commands must be group-owned by root or a system account."
+    - name: "MEDIUM | RHEL-10-400105 | AUDIT | RHEL 10 must be configured so that system commands are group-owned by root or a system account."
       ansible.builtin.command: find -L /bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -gid -999 -exec ls {} \;
       changed_when: false
       failed_when: discovered_sys_commands_group.rc not in [ 0, 1 ]
       register: discovered_sys_commands_group
 
-    - name: "MEDIUM | RHEL-10-400105 | WARN | RHEL 10 system commands must be group-owned by root or a system account."
+    - name: "MEDIUM | RHEL-10-400105 | WARN | RHEL 10 must be configured so that system commands are group-owned by root or a system account."
       when: discovered_sys_commands_group.stdout | length > 0
       ansible.builtin.debug:
         msg: |
             "Warning!! Please validate group ownership of the following system commands
              {{ discovered_sys_commands_group.stdout_lines }}"
 
-    - name: "MEDIUM | RHEL-10-400105 | WARN | RHEL 10 system commands must be group-owned by root or a system account."
+    - name: "MEDIUM | RHEL-10-400105 | WARN | RHEL 10 must be configured so that system commands are group-owned by root or a system account."
       when: discovered_sys_commands_group.stdout | length > 0
       ansible.builtin.import_tasks:
         file: warning_facts.yml
@@ -514,7 +514,7 @@
     - '/etc/cron.weekly'
     - '/etc/crontab'
 
-- name: "MEDIUM | RHEL-10-400135 | PATCH | RHEL 10 must be configured so that cron configuration file directories are group-owned by root."
+- name: "MEDIUM | RHEL-10-400135 | PATCH | RHEL 10 must be configured so that cron configuration files directories are group-owned by root."
   when: rhel10stig_400135
   tags:
     - RHEL-10-400135
@@ -658,7 +658,7 @@
     owner: root
   loop: "{{ prelim_sshd_config_files.files }}"
 
-- name: "MEDIUM | RHEL-10-400160 | PATCH | All RHEL 10 local interactive user home directories must be group-owned by the home directory owner's primary group."
+- name: "MEDIUM | RHEL-10-400160 | PATCH | RHEL 10 must ensure that all local interactive user home directories are group-owned by the home directory owner's primary group."
   when:
     - rhel10stig_400160
     - item.uid >= min_int_uid | int
@@ -725,7 +725,7 @@
       vars:
         warn_control_id: "MEDIUM | RHEL-10-400165"
 
-- name: "MEDIUM | RHEL-10-400170 | PATCH | RHEL 10 must enforce 'root' ownership of the audit log directory to prevent unauthorized read access."
+- name: "MEDIUM | RHEL-10-400170 | PATCH | RHEL 10 must enforce root ownership of the audit log directory to prevent unauthorized read access."
   when:
     - rhel10stig_400170
     - rhel10stig_auditd_required
@@ -751,7 +751,7 @@
     path: "{{ prelim_auditd_logfile_path.stdout }}"
     owner: root
 
-- name: "MEDIUM | RHEL-10-400175 | PATCH | RHEL 10 must enforce 'root' ownership of audit logs to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400175 | PATCH | RHEL 10 must enforce root ownership of audit logs to prevent unauthorized access."
   when:
     - rhel10stig_400175
     - rhel10stig_auditd_required
@@ -773,21 +773,21 @@
     - file_permissions
     - auditd
   block:
-    - name: "MEDIUM | RHEL-10-400175 | AUDIT | RHEL 10 must enforce 'root' ownership of audit logs to prevent unauthorized access."
+    - name: "MEDIUM | RHEL-10-400175 | AUDIT | RHEL 10 must enforce root ownership of audit logs to prevent unauthorized access."
       ansible.builtin.find:
         paths: "{{ prelim_auditd_logfile_path.stdout | dirname }}"
         patterns: "*.log"
         recurse: true
       register: discovered_auditd_logfile_owner
 
-    - name: "MEDIUM | RHEL-10-400175 | PATCH | RHEL 10 must enforce 'root' ownership of audit logs to prevent unauthorized access."
+    - name: "MEDIUM | RHEL-10-400175 | PATCH | RHEL 10 must enforce root ownership of audit logs to prevent unauthorized access."
       when: item.pw_name not in ['root']
       ansible.builtin.file:
         path: "{{ item.path }}"
         owner: root
       loop: "{{ discovered_auditd_logfile_owner.files }}"
 
-- name: "MEDIUM | RHEL-10-400180 | PATCH | RHEL 10 must enforce group ownership by 'root' or a restricted logging group for audit log files to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400180 | PATCH | RHEL 10 must enforce group ownership by root or a restricted logging group for audit log files to prevent unauthorized access."
   when:
     - rhel10stig_400180
     - rhel10stig_auditd_required
@@ -809,21 +809,21 @@
     - file_permissions
     - auditd
   block:
-    - name: "MEDIUM | RHEL-10-400180 | AUDIT | RHEL 10 must enforce group ownership by 'root' or a restricted logging group for audit log files to prevent unauthorized access."
+    - name: "MEDIUM | RHEL-10-400180 | AUDIT | RHEL 10 must enforce group ownership by root or a restricted logging group for audit log files to prevent unauthorized access."
       ansible.builtin.find:
         paths: "{{ prelim_auditd_logfile_path.stdout | dirname }}"
         patterns: "*.log"
         recurse: true
       register: discovered_auditd_logfile_group
 
-    - name: "MEDIUM | RHEL-10-400180 | PATCH | RHEL 10 must enforce group ownership by 'root' or a restricted logging group for audit log files to prevent unauthorized access."
+    - name: "MEDIUM | RHEL-10-400180 | PATCH | RHEL 10 must enforce group ownership by root or a restricted logging group for audit log files to prevent unauthorized access."
       when: item.gr_name is not in ['root', rhel10stig_audit_conf_logfile_group]
       ansible.builtin.file:
         path: "{{ item.path }}"
         group: "{{ rhel10stig_audit_conf_logfile_group }}"
       loop: "{{ discovered_auditd_logfile_group.files }}"
 
-- name: "MEDIUM | RHEL-10-400185 | PATCH | RHEL 10 must set mode '0600' or less permissive for the audit logs file to prevent unauthorized access to the audit log."
+- name: "MEDIUM | RHEL-10-400185 | PATCH | RHEL 10 must set mode 0600 or less permissive for the audit logs file to prevent unauthorized access to the audit log."
   when:
     - rhel10stig_400185
     - rhel10stig_auditd_required
@@ -845,14 +845,14 @@
     - file_permissions
     - auditd
   block:
-    - name: "MEDIUM | RHEL-10-400185 | AUDIT | RHEL 10 must set mode '0600' or less permissive for the audit logs file to prevent unauthorized access to the audit log."
+    - name: "MEDIUM | RHEL-10-400185 | AUDIT | RHEL 10 must set mode 0600 or less permissive for the audit logs file to prevent unauthorized access to the audit log."
       ansible.builtin.find:
         paths: "{{ prelim_auditd_logfile_path.stdout | dirname }}"
         patterns: "*.log"
         recurse: true
       register: discovered_auditd_logfile_mode
 
-    - name: "MEDIUM | RHEL-10-400185 | PATCH | RHEL 10 must set mode '0600' or less permissive for the audit logs file to prevent unauthorized access to the audit log."
+    - name: "MEDIUM | RHEL-10-400185 | PATCH | RHEL 10 must set mode 0600 or less permissive for the audit logs file to prevent unauthorized access to the audit log."
       when: item.mode > '0600'
       ansible.builtin.file:
         path: "{{ item.path }}"
@@ -885,7 +885,7 @@
     mode: "{% if rhel10stig_audit_conf_logfile_group == 'root' %}go-rwx{% else %}g-w,o-rwx{% endif %}"
   notify: Auditd checks
 
-- name: "MEDIUM | RHEL-10-400195 | PATCH | RHEL 10 must enforce root ownership of the '/etc/audit/' directory"
+- name: "MEDIUM | RHEL-10-400195 | PATCH | RHEL 10 must enforce root ownership of the /etc/audit/ directory."
   when:
     - rhel10stig_400195
     - rhel10stig_auditd_required
@@ -904,7 +904,7 @@
     path: "/etc/audit/"
     owner: root
 
-- name: "MEDIUM | RHEL-10-400200 | PATCH | RHEL 10 must enforce root group ownership of the '/etc/audit/' directory"
+- name: "MEDIUM | RHEL-10-400200 | PATCH | RHEL 10 must enforce root group ownership of the /etc/audit/ directory."
   when:
     - rhel10stig_400200
     - rhel10stig_auditd_required
@@ -922,7 +922,7 @@
     path: "/etc/audit/"
     group: root
 
-- name: "MEDIUM | RHEL-10-400205 | PATCH | RHEL 10 must enforce mode '755' or less permissive for system commands."
+- name: "MEDIUM | RHEL-10-400205 | PATCH | RHEL 10 must enforce mode 755 or less permissive for system commands."
   when:
     - rhel10stig_400205
     - rhel10stig_disruption_high
@@ -936,7 +936,7 @@
     - NIST800-53R4_CM-5
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400205 | AUDIT | RHEL 10 system commands must have mode 755 or less permissive."
+    - name: "MEDIUM | RHEL-10-400205 | AUDIT | RHEL 10 must enforce mode 755 or less permissive for system commands."
       ansible.builtin.shell: |
         set -o pipefail
         find -L /bin /sbin /usr/bin /usr/sbin /usr/libexec /usr/local/bin /usr/local/sbin -perm /022 -type f -exec ls -l {} \; | awk '{ print $NF}'
@@ -946,14 +946,14 @@
       failed_when: discovered_system_command_permissions.rc not in [ 0, 1 ]
       register: discovered_system_command_permissions
 
-    - name: "MEDIUM | RHEL-10-400205 | PATCH | RHEL 10 system commands must have mode 755 or less permissive."
+    - name: "MEDIUM | RHEL-10-400205 | PATCH | RHEL 10 must enforce mode 755 or less permissive for system commands."
       when: discovered_system_command_permissions.stdout | length > 0
       ansible.builtin.file:
         mode: 'u+x,go-w'
         path: "{{ item }}"
       loop: "{{ discovered_system_command_permissions.stdout_lines }}"
 
-- name: "MEDIUM | RHEL-10-400210 | PATCH | RHEL 10 must enforce mode '755' or less permissive for library directories."
+- name: "MEDIUM | RHEL-10-400210 | PATCH | RHEL 10 must enforce mode 755 or less permissive on library directories."
   when:
     - rhel10stig_400210
     - rhel10stig_disruption_high
@@ -976,7 +976,7 @@
     - '/usr/lib'
     - '/usr/lib64'
 
-- name: "MEDIUM | RHEL-10-400215 | PATCH | RHEL 10 must enforce mode '755' or less permissive for library files."
+- name: "MEDIUM | RHEL-10-400215 | PATCH | RHEL 10 must enforce mode 755 or less permissive for library files."
   when:
     - rhel10stig_400215
     - rhel10stig_disruption_high
@@ -989,7 +989,7 @@
     - V-281060
     - NIST800-53R4_CM-5
   block:
-    - name: "MEDIUM | RHEL-10-400215 | AUDIT | RHEL 10 library files must have mode 755 or less permissive."
+    - name: "MEDIUM | RHEL-10-400215 | AUDIT | RHEL 10 must enforce mode 755 or less permissive for library files."
       ansible.builtin.shell: |
         set -o pipefail
         find -L /lib /lib64 /usr/lib /usr/lib64 -perm /022 -type f -exec ls -l {} \; | awk '{ print $NF}'
@@ -999,14 +999,14 @@
       failed_when: discovered_library_file_perms.rc not in [ 0, 1 ]
       register: discovered_library_file_perms
 
-    - name: "MEDIUM | RHEL-10-400215 | PATCH | RHEL 10 library files must have mode 755 or less permissive."
+    - name: "MEDIUM | RHEL-10-400215 | PATCH | RHEL 10 must enforce mode 755 or less permissive for library files."
       when: discovered_library_file_perms.stdout | length > 0
       ansible.builtin.file:
         path: "{{ item }}"
         mode: 'u+x,go-w'
       loop: "{{ discovered_library_file_perms.stdout_lines }}"
 
-- name: "MEDIUM | RHEL-10-400220 | PATCH | RHEL 10 must enforce mode '0755' or less permissive for the '/var/log' directory."
+- name: "MEDIUM | RHEL-10-400220 | PATCH | RHEL 10 must enforce mode 0755 or less permissive for the /var/log directory."
   when:
     - rhel10stig_400220
     - rhel10stig_disruption_high
@@ -1025,7 +1025,7 @@
     modification_time: preserve
     state: directory
 
-- name: "MEDIUM | RHEL-10-400225 | PATCH | RHEL 10 must enforce mode '0640' or less permissive for the '/var/log/messages' file."
+- name: "MEDIUM | RHEL-10-400225 | PATCH | RHEL 10 must enforce mode 0640 or less permissive for the /var/log/messages file."
   when:
     - rhel10stig_400225
     - rhel10stig_disruption_high
@@ -1091,7 +1091,7 @@
         rpm --setperms cronie crontabs
       changed_when: true
 
-- name: "MEDIUM | RHEL-10-400235 | PATCH | RHEL 10 must enforce mode '0740' or less permissive for local initialization files."
+- name: "MEDIUM | RHEL-10-400235 | PATCH | RHEL 10 must enforce mode 0740 or less permissive for local initialization files."
   when:
     - rhel10stig_400235
     - rhel10stig_disruption_high
@@ -1105,20 +1105,20 @@
     - NIST800-53R4_CM-6
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400235 | AUDIT | RHEL 10 must enforce mode '0740' or less permissive for local initialization files."
+    - name: "MEDIUM | RHEL-10-400235 | AUDIT | RHEL 10 must enforce mode 0740 or less permissive for local initialization files."
       ansible.builtin.command: find /home/ -name "\.*" -type f -perm /g+wx,o+wx
       changed_when: false
       failed_when: discovered_local_init_files.rc not in [ 0, 1 ]
       register: discovered_local_init_files
 
-    - name: "MEDIUM | RHEL-10-400235 | PATCH | RHEL 10 must enforce mode '0740' or less permissive for local initialization files."
+    - name: "MEDIUM | RHEL-10-400235 | PATCH | RHEL 10 must enforce mode 0740 or less permissive for local initialization files."
       when: discovered_local_init_files.stdout | length > 0
       ansible.builtin.file:
         path: "{{ item }}"
         mode: 'g-wx,o-rwx'
       loop: "{{ discovered_local_init_files.stdout_lines }}"
 
-- name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode '0750' or less permissive for local interactive user home directories."
+- name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode 0750 or less permissive for local interactive user home directories."
   when:
     - rhel10stig_400240
     - rhel10stig_disruption_high
@@ -1131,7 +1131,7 @@
     - V-281065
     - NIST800-53R4_AC-3
   block:
-    - name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode '0750' or less permissive for local interactive user home directories."
+    - name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode 0750 or less permissive for local interactive user home directories."
       ansible.builtin.file:
         path: "{{ item }}"
         mode: 'u+x,g-w,o-rwx'
@@ -1139,7 +1139,7 @@
       loop: "{{ discovered_interactive_users_home_dirs.stdout_lines }}"
 
     # set default ACLs so the homedir has an effective umask of 0027
-    - name: "MEDIUM | RHEL-10-400240 | PATCH | All RHEL 10 local interactive user home directories must have mode 0750 or less permissive. | Set group ACL"
+    - name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode 0750 or less permissive for local interactive user home directories. | Set group ACL"
       when: not system_is_container
       ansible.posix.acl:
         path: "{{ item }}"
@@ -1149,7 +1149,7 @@
         state: present
       loop: "{{ discovered_interactive_users_home_dirs.stdout_lines }}"
 
-    - name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode '0750' or less permissive for local interactive user home directories. | Set other ACL"
+    - name: "MEDIUM | RHEL-10-400240 | PATCH | RHEL 10 must enforce mode 0750 or less permissive for local interactive user home directories. | Set other ACL"
       when:
         - not system_is_container
         - item.stat.path is defined
@@ -1161,7 +1161,7 @@
         state: present
       loop: "{{ discovered_interactive_users_home_dirs.stdout_lines }}"
 
-- name: "MEDIUM | RHEL-10-400245 | PATCH | RHEL 10 must enforce mode '0644' or less permissive for the '/etc/group' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400245 | PATCH | RHEL 10 must enforce mode 0644 or less permissive for the /etc/group file to prevent unauthorized access."
   when:
     - rhel10stig_400245
     - rhel10stig_disruption_high
@@ -1178,7 +1178,7 @@
     path: /etc/group
     mode: 'u-x,go-wx'
 
-- name: "MEDIUM | RHEL-10-400250 | PATCH | RHEL 10 must enforce mode '0644' or less permissive for the '/etc/group-' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400250 | PATCH | RHEL 10 must enforce mode 0644 or less permissive for the /etc/group- file to prevent unauthorized access."
   when:
     - rhel10stig_400250
     - rhel10stig_disruption_high
@@ -1195,7 +1195,7 @@
     path: /etc/group-
     mode: 'u-x,go-wx'
 
-- name: "MEDIUM | RHEL-10-400255 | PATCH | RHEL 10 must enforce mode '0000' or less permissive for the '/etc/gshadow' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400255 | PATCH | RHEL 10 must enforce mode 0000 or less permissive for the /etc/gshadow file to prevent unauthorized access."
   when:
     - rhel10stig_400255
     - rhel10stig_disruption_high
@@ -1212,7 +1212,7 @@
     path: /etc/gshadow
     mode: 'u-x,go-wx'
 
-- name: "MEDIUM | RHEL-10-400260 | PATCH | RHEL 10 must enforce mode '0644' or less permissive for the '/etc/gshadow-' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400260 | PATCH | RHEL 10 must enforce mode 0000 or less permissive for the /etc/gshadow- file to prevent unauthorized access."
   when:
     - rhel10stig_400260
     - rhel10stig_disruption_high
@@ -1229,7 +1229,7 @@
     path: /etc/gshadow-
     mode: 'u-x,go-wx'
 
-- name: "MEDIUM | RHEL-10-400265 | PATCH | RHEL 10 must enforce mode '0644' or less permissive for the '/etc/passwd' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400265 | PATCH | RHEL 10 must enforce mode 0644 or less permissive for the /etc/passwd file to prevent unauthorized access."
   when:
     - rhel10stig_400265
     - rhel10stig_disruption_high
@@ -1246,7 +1246,7 @@
     path: /etc/passwd
     mode: 'u-x,go-wx'
 
-- name: "MEDIUM | RHEL-10-400270 | PATCH | RHEL 10 must enforce mode '0644' or less permissive for the '/etc/passwd-' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400270 | PATCH | RHEL 10 must enforce mode 0644 or less permissive for /etc/passwd- file to prevent unauthorized access."
   when:
     - rhel10stig_400270
     - rhel10stig_disruption_high
@@ -1263,7 +1263,7 @@
     path: /etc/passwd-
     mode: 'u-x,go-wx'
 
-- name: "MEDIUM | RHEL-10-400275 | PATCH | RHEL 10 must enforce mode '0644' or less permissive for the '/etc/shadow-' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400275 | PATCH | RHEL 10 must enforce mode 0000 or less permissive for /etc/shadow- file to prevent unauthorized access."
   when:
     - rhel10stig_400275
     - rhel10stig_disruption_high
@@ -1374,7 +1374,7 @@
       vars:
         warn_control_id: "MEDIUM | RHEL-10-400285"
 
-- name: "MEDIUM | RHEL-10-400290 | PATCH | RHEL 10 must be configured so that all local files and directories have a valid owner."
+- name: "MEDIUM | RHEL-10-400290 | PATCH | RHEL 10 must be configured so that all local files and directories must have a valid owner."
   when:
     - rhel10stig_400290
     - rhel10stig_disruption_high
@@ -1388,7 +1388,7 @@
     - NIST800-53R4_AC-3
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400290 | AUDIT | RHEL 10 must be configured so that all local files and directories have a valid owner."
+    - name: "MEDIUM | RHEL-10-400290 | AUDIT | RHEL 10 must be configured so that all local files and directories must have a valid owner."
       ansible.builtin.shell: |
         set -o pipefail
         df --local -P | awk {'if (NR!=1) print $6'} | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null
@@ -1398,7 +1398,7 @@
       failed_when: discovered_local_files_owner.rc not in [ 0, 1 ]
       register: discovered_local_files_owner
 
-    - name: "MEDIUM | RHEL-10-400290 | PATCH | RHEL 10 must be configured so that all local files and directories have a valid owner."
+    - name: "MEDIUM | RHEL-10-400290 | PATCH | RHEL 10 must be configured so that all local files and directories must have a valid owner."
       when:
         - discovered_local_files_owner.stdout | length > 0
         - rhel10stig_disruption_high
@@ -1407,14 +1407,14 @@
         owner: root
       loop: "{{ discovered_local_files_owner.stdout_lines }}"
 
-    - name: "MEDIUM | RHEL-10-400290 | WARN | RHEL 10 must be configured so that all local files and directories have a valid owner."
+    - name: "MEDIUM | RHEL-10-400290 | WARN | RHEL 10 must be configured so that all local files and directories must have a valid owner."
       when:
         - discovered_local_files_owner.stdout | length > 0
         - not rhel10stig_disruption_high
       ansible.builtin.debug:
         msg: "Warning!! Missing owner on items in {{ discovered_local_files_owner.stdout_lines }}"
 
-    - name: "MEDIUM | RHEL-10-400290 | WARN | RHEL 10 must be configured so that all local files and directories have a valid owner."
+    - name: "MEDIUM | RHEL-10-400290 | WARN | RHEL 10 must be configured so that all local files and directories must have a valid owner."
       when:
         - discovered_local_files_owner.stdout | length > 0
         - not rhel10stig_disruption_high
@@ -1423,7 +1423,7 @@
       vars:
         warn_control_id: "MEDIUM | RHEL-10-400290"
 
-- name: "MEDIUM | RHEL-10-400295 | PATCH | RHEL 10 must enforce mode '0000' for the '/etc/shadow' file to prevent unauthorized access."
+- name: "MEDIUM | RHEL-10-400295 | PATCH | RHEL 10 must enforce mode 0000 for /etc/shadow to prevent unauthorized access."
   when:
     - rhel10stig_400295
     - rhel10stig_disruption_high
@@ -1440,7 +1440,7 @@
     path: /etc/shadow
     mode: 'ugo-rwx'
 
-- name: "MEDIUM | RHEL-10-400300 | PATCH | RHEL 10 audit tools must be owned by root."
+- name: "MEDIUM | RHEL-10-400300 | PATCH | RHEL 10 must be configured so that audit tools are owned by root."
   when:
     - rhel10stig_400300
     - rhel10stig_auditd_required
@@ -1468,12 +1468,14 @@
   loop_control:
     label: "{{ item }}"
 
-- name: "MEDIUM | RHEL-10-400305 | PATCH | RHEL 10 must be configured so that audit tools are group-owned by 'root'."
+- name: "MEDIUM | RHEL-10-400305 | PATCH | RHEL 10 must be configured so that audit tools are group-owned by root."
   when: rhel10stig_400305
   tags:
     - RHEL-10-400305
     - CAT2
-    - CCI-000213
+    - CCI-001493
+    - CCI-001494
+    - CCI-001495
     - SRG-OS-000080-GPOS-00048
     - SV-281078r1165589_rule
     - V-281078
@@ -1488,7 +1490,7 @@
   loop_control:
     label: "{{ item }}"
 
-- name: "MEDIUM | RHEL-10-400310 | PATCH | RHEL 10 must set the umask value to '077' for all local interactive user accounts."
+- name: "MEDIUM | RHEL-10-400310 | PATCH | RHEL 10 must set the umask value to 077 for all local interactive user accounts."
   when:
     - rhel10stig_400310
     - rhel10stig_disruption_high
@@ -1502,7 +1504,7 @@
     - NIST800-53R4_AC-3
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400310 | AUDIT | RHEL 10 must set the umask value to '077' for all local interactive user accounts."
+    - name: "MEDIUM | RHEL-10-400310 | AUDIT | RHEL 10 must set the umask value to 077 for all local interactive user accounts."
       ansible.builtin.find:
         paths: "{{ rhel10stig_home_filesystem }}/*/.[^.]*"
         patterns: "umask"
@@ -1512,7 +1514,7 @@
       changed_when: false
       register: discovered_homedirs_umasks_set
 
-    - name: "MEDIUM | RHEL-10-400310 | PATCH | RHEL 10 must set the umask value to '077' for all local interactive user accounts."
+    - name: "MEDIUM | RHEL-10-400310 | PATCH | RHEL 10 must set the umask value to 077 for all local interactive user accounts."
       when:
         - discovered_homedirs_umasks_set is defined
         - discovered_homedirs_umasks_set.stdout | length > 0
@@ -1570,7 +1572,7 @@
         regexp: umask \d\d\d
         replace: umask 077
 
-- name: "MEDIUM | RHEL-10-400325 | PATCH | RHEL 10 must define default permissions for all authenticated users in such a way that the user can only read and modify their own files."
+- name: "MEDIUM | RHEL-10-400325 | PATCH | RHEL 10 must define default permissions for all authenticated users in such a way that the user can read and modify only their own files."
   when: rhel10stig_400325
   tags:
     - RHEL-10-400325
@@ -1582,13 +1584,13 @@
     - NIST800-53R4_AC-3
     - file_permissions
   block:
-    - name: "MEDIUM | RHEL-10-400325 | PATCH | RHEL 10 must define default permissions for all authenticated users in such a way that the user can only read and modify their own files. | Exists"
+    - name: "MEDIUM | RHEL-10-400325 | PATCH | RHEL 10 must define default permissions for all authenticated users in such a way that the user can read and modify only their own files. | Exists"
       ansible.builtin.lineinfile:
         path: /etc/login.defs
         regexp: UMASK \d\d\d
         line: UMASK 077
 
-    - name: "MEDIUM | RHEL-10-400325 | PATCH | RHEL 10 must define default permissions for all authenticated users in such a way that the user can only read and modify their own files. | Amend all instances"
+    - name: "MEDIUM | RHEL-10-400325 | PATCH | RHEL 10 must define default permissions for all authenticated users in such a way that the user can read and modify only their own files. | Amend all instances"
       ansible.builtin.replace:
         path: /etc/login.defs
         regexp: UMASK\s+\d\d\d
@@ -1618,7 +1620,7 @@
         regexp: umask \d\d\d
         replace: umask 077
 
-- name: "MEDIUM | RHEL-10-400335 | PATCH | RHEL 10 must enforce that all local initialization files configured by systemd-tmpfiles have mode '0600' or less permissive."
+- name: "MEDIUM | RHEL-10-400335 | PATCH | RHEL 10 must enforce that all local initialization files configured by systemd-tmpfiles have mode 0600 or less permissive."
   when:
     - rhel10stig_400335
     - rhel10stig_disruption_high
@@ -1665,7 +1667,7 @@
         mode: "u-x,go-rwx"
       loop: "{{ discovered_private_ssh_keys_mode.files }}"
 
-- name: "MEDIUM | RHEL-10-400345 | PATCH | RHEL 10 must enforce 'root' group ownership of the '/boot/grub2/grub.cfg' file."
+- name: "MEDIUM | RHEL-10-400345 | PATCH | RHEL 10 must enforce root group ownership of the /boot/grub2/grub.cfg file."
   when: rhel10stig_400345
   tags:
     - RHEL-10-400345
@@ -1681,7 +1683,7 @@
     path: /boot/grub2/grub.cfg
     group: root
 
-- name: "MEDIUM | RHEL-10-400350 | PATCH | RHEL 10 must enforce 'root' ownership of the '/boot/grub2/grub.cfg' file."
+- name: "MEDIUM | RHEL-10-400350 | PATCH | RHEL 10 must enforce root ownership of the /boot/grub2/grub.cfg file."
   when: rhel10stig_400350
   tags:
     - RHEL-10-400350
@@ -1760,10 +1762,10 @@
   tags:
     - RHEL-10-400365
     - CAT2
-    - CCI-000366
+    - CCI-000213
     - SRG-OS-000480-GPOS-00227
-    - SV-257852r991589_rule
-    - V-257852
+    - SV-281090r1165625_rule
+    - V-281090
     - NIST800-53R4_CM-6
     - home_permissions
     - mountpoints
@@ -1860,12 +1862,14 @@
   loop_control:
     label: "{{ item.device }}"
 
-- name: "MEDIUM | RHEL-10-400450 | PATCH | RHEL 10 must enforce mode '0755' or less permissive for audit tools."
+- name: "MEDIUM | RHEL-10-400450 | PATCH | RHEL 10 must enforce a mode of 0755 or less permissive for audit tools."
   when: rhel10stig_400450
   tags:
     - RHEL-10-400450
     - CAT2
     - CCI-001493
+    - CCI-001494
+    - CCI-001495
     - SRG-OS-000256-GPOS-00097
     - SV-281094r1165637_rule
     - V-281094

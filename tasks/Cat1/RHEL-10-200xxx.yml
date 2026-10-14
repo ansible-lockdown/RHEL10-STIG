@@ -17,9 +17,9 @@
   when: rhel10stig_200070
   tags:
     - RHEL-10-200070
-    - CAT2
+    - CAT1
     - CCI-000197
-    - SRG-OS-000074-GPOS-0042
+    - SRG-OS-000074-GPOS-00042
     - SV-280949r1195338_rule
     - V-280949
     - NIST800-53R4_IA-5

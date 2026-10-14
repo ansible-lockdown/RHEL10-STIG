@@ -65,7 +65,7 @@
         line: '\1\2 audit=1"'
         backrefs: true
 
-- name: "MEDIUM | RHEL-10-500010 | PATCH | RHEL 10 audit system must audit local events."
+- name: "MEDIUM | RHEL-10-500010 | PATCH | RHEL 10 must audit local events."
   when:
     - rhel10stig_500010
     - rhel10stig_auditd_required
@@ -103,7 +103,7 @@
     regexp: ^(#?)\s*write_logs\s*=
     line: write_logs = yes
 
-- name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful logon attempts occur."
+- name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful login attempts occur."
   when:
     - rhel10stig_500020
     - rhel10stig_disruption_high
@@ -117,13 +117,13 @@
     - NIST800-53R4_AC-7
     - auditd
   block:
-    - name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful logon attempts occur."
+    - name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful login attempts occur."
       ansible.builtin.lineinfile:
         path: /etc/security/faillock.conf
         regexp: ^(#?)\s*audit\s*=
         line: audit = yes
 
-    - name: "MEDIUM | RHEL-10-500020 | AUDIT | RHEL 10 must log username information when unsuccessful logon attempts occur."
+    - name: "MEDIUM | RHEL-10-500020 | AUDIT | RHEL 10 must log username information when unsuccessful login attempts occur."
       ansible.builtin.shell: |
         set -o pipefail
         authselect current | grep with-faillock
@@ -133,11 +133,11 @@
       failed_when: discovered_authselect_faillock_state.rc not in [ 0, 1 ]
       register: discovered_authselect_faillock_state
 
-    - name: "MEDIUM | RHEL-10-500020 | AUDIT | RHEL 10 must log username information when unsuccessful logon attempts occur."
+    - name: "MEDIUM | RHEL-10-500020 | AUDIT | RHEL 10 must log username information when unsuccessful login attempts occur."
       ansible.builtin.debug:
         msg: "discovered_authselect_faillock_state: {{ discovered_authselect_faillock_state }}"
 
-    - name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful logon attempts occur."
+    - name: "MEDIUM | RHEL-10-500020 | PATCH | RHEL 10 must log username information when unsuccessful login attempts occur."
       when: "'with-faillock' not in discovered_authselect_faillock_state.stdout"
       ansible.builtin.command: authselect enable-feature with-faillock
       changed_when: true
@@ -185,7 +185,7 @@
         - { path: '/etc/audit/auditd.conf' }
         - { path: '/etc/audit/audit.rules' }
 
-- name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an 'audit_backlog_limit' of sufficient size to capture processes that start prior to the audit daemon."
+- name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an audit_backlog_limit of sufficient size to capture processes that start prior to the audit daemon."
   when:
     - rhel10stig_500030
     - rhel10stig_auditd_required
@@ -207,7 +207,7 @@
     - SRG-OS-000392-GPOS-00172
     - SRG-OS-000462-GPOS-00206
     - SRG-OS-000471-GPOS-00215
-    - SV-281102r1166264_rule
+    - SV-281102r1195414_rule
     - V-281102
     - NIST800-53R4_AU-12
     - NIST800-53R4_AU-3
@@ -216,7 +216,7 @@
     - NIST800-53R4_MA-4
     - auditd
   block:
-    - name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an 'audit_backlog_limit' of sufficient size to capture processes that start prior to the audit daemon."
+    - name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an audit_backlog_limit of sufficient size to capture processes that start prior to the audit daemon."
       ansible.builtin.shell: |
         set -o pipefail
         grubby --info=ALL | grep args | grep "audit_backlog_limit={{ rhel10stig_audit_backlog_limit }}"
@@ -226,7 +226,7 @@
       failed_when: discovered_grubby_audit_backlog_limit.rc not in [ 0, 1 ]
       register: discovered_grubby_audit_backlog_limit
 
-    - name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an 'audit_backlog_limit' of sufficient size to capture processes that start prior to the audit daemon."
+    - name: "MEDIUM | RHEL-10-500030 | PATCH | RHEL 10 must allocate an audit_backlog_limit of sufficient size to capture processes that start prior to the audit daemon."
       when: discovered_grubby_audit_backlog_limit.stdout | length == 0
       ansible.builtin.command: grubby --update-kernel=ALL --args="audit_backlog_limit={{ rhel10stig_audit_backlog_limit }}"
       changed_when: true
@@ -247,7 +247,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500040 | PATCH | RHEL 10 must take action when allocated audit record storage volume reaches 75 percent of the repository maximum audit record storage capacity."
+- name: "MEDIUM | RHEL-10-500040 | PATCH | RHEL 10 must take action when allocated audit record storage volume reaches 75 percent of the audit record storage capacity."
   when:
     - rhel10stig_500040
     - rhel10stig_auditd_required
@@ -256,7 +256,7 @@
     - CAT2
     - CCI-001855
     - SRG-OS-000343-GPOS-00134
-    - SV-281104r1166264_rule
+    - SV-281104r1208795_rule
     - V-281104
     - NIST800-53R4_AU-5
     - auditd
@@ -266,7 +266,7 @@
     line: space_left = {{ rhel10stig_audit_conf_space_left }}
   notify: Auditd checks
 
-- name: "MEDIUM | RHEL-10-500045 | PATCH | RHEL 10 must label all offloaded audit logs before sending them to the central log server."
+- name: "MEDIUM | RHEL-10-500045 | PATCH | RHEL 10 must label all off-loaded audit logs before sending them to the central log server."
   when:
     - rhel10stig_500045
     - rhel10stig_auditd_required
@@ -274,6 +274,7 @@
     - RHEL-10-500045
     - CAT2
     - CCI-000132
+    - CCI-001851
     - SRG-OS-000039-GPOS-00017
     - SV-281105r1166267_rule
     - V-281105
@@ -333,7 +334,7 @@
     - CAT2
     - CCI-001851
     - SRG-OS-000342-GPOS-00133
-    - SV-281109r1166279_rule
+    - SV-281109r1184691_rule
     - V-281109
     - NIST800-53R4_AU-4
     - auditd
@@ -391,8 +392,8 @@
     - CAT2
     - CCI-001855
     - SRG-OS-000343-GPOS-00134
-    - SV-281112r1166288_rule
-    - V-281112
+    - SV-281113r1184746_rule
+    - V-281113
     - NIST800-53R4_AU-5
     - auditd
   ansible.builtin.lineinfile:
@@ -401,7 +402,7 @@
     line: space_left_action = {{ rhel10stig_audit_conf_space_left_action }}
   notify: Auditd checks
 
-- name: "MEDIUM | RHEL-10-500210 | PATCH | RHEL 10 System Administrator (SA) and/or information system security officer (ISSO) (at a minimum) must be alerted of an audit processing failure event."
+- name: "MEDIUM | RHEL-10-500210 | PATCH | RHEL 10 must notify the system administrator (SA) and/or information system security officer (ISSO) (at a minimum) of an audit processing failure."
   when:
     - rhel10stig_500210
     - rhel10stig_auditd_required
@@ -412,8 +413,8 @@
     - CCI-001855
     - SRG-OS-000046-GPOS-00022
     - SRG-OS-000343-GPOS-00134
-    - SV-281113r1166294_rule
-    - V-281113
+    - SV-281114r1166294_rule
+    - V-281114
     - NIST800-53R4_AU-4
     - auditd
   ansible.builtin.lineinfile:
@@ -422,7 +423,7 @@
     line: action_mail_acct = {{ rhel10stig_audit_conf_action_mail_acct }}
   notify: Auditd checks
 
-- name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log SSH connection attempts and failures to the server."
+- name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log Secure Shell (SSH) connection attempts and failures to the server."
   when:
     - rhel10stig_500215
     - rhel10stig_sshd_required
@@ -431,14 +432,14 @@
     - CAT2
     - CCI-000067
     - SRG-OS-000032-GPOS-00013
-    - SV-257982r1045021_rule
-    - V-257982
+    - SV-281115r1184650_rule
+    - V-281115
     - NIST800-53R4_AC-17
     - ssh
     - auditd
   notify: Restart sshd service
   block:
-    - name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log SSH connection attempts and failures to the server. | Remove"
+    - name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log Secure Shell (SSH) connection attempts and failures to the server. | Remove"
       when: "item.path != '/etc/ssh/sshd_config.d/50-stig-loglevel.conf'"
       ansible.builtin.replace:
         path: "{{ item.path }}"
@@ -446,7 +447,7 @@
         replace: '#\1'
       loop: "{{ prelim_sshd_config_files.files }}"
 
-    - name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log SSH connection attempts and failures to the server."
+    - name: "MEDIUM | RHEL-10-500215 | PATCH | RHEL 10 must log Secure Shell (SSH) connection attempts and failures to the server."
       ansible.builtin.template:
         src: "etc/ssh/sshd_config.d/50-stig-loglevel.conf.j2"
         dest: "/etc/ssh/sshd_config.d/50-stig-loglevel.conf"
@@ -456,7 +457,7 @@
         validate: sshd -t -f %s
       notify: Restart sshd service
 
-- name: "MEDIUM | RHEL-10-500300 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the 'execve' system call."
+- name: "MEDIUM | RHEL-10-500300 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the execve system call."
   when:
     - rhel10stig_500300
     - rhel10stig_auditd_required
@@ -465,6 +466,7 @@
     - CAT2
     - CCI-002233
     - CCI-002234
+    - CCI-004188
     - SRG-OS-000326-GPOS-00126
     - SRG-OS-000327-GPOS-00127
     - SRG-OS-000755-GPOS-00220
@@ -498,7 +500,7 @@
     - SRG-OS-000474-GPOS-00219
     - SRG-OS-000064-GPOS-00033
     - SRG-OS-000466-GPOS-00210
-    - SV-281117r1166302_rule
+    - SV-281117r1184680_rule
     - V-281117
     - NIST800-53R4_AU-3
     - NIST800-53R4_AU-12
@@ -507,7 +509,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500320 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses on umount system calls."
+- name: "MEDIUM | RHEL-10-500320 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of umount system calls."
   when:
     - rhel10stig_500320
     - rhel10stig_auditd_required
@@ -734,7 +736,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500400 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the delete_module system calls"
+- name: "MEDIUM | RHEL-10-500400 | PATCH | RHEL 10 must generate audit records for successful and unsuccessful uses of the delete_module system call."
   when:
     - rhel10stig_500400
     - rhel10stig_auditd_required
@@ -783,7 +785,7 @@
     - SRG-OS-000471-GPOS-00215
     - SRG-OS-000471-GPOS-00216
     - SRG-OS-000477-GPOS-00222
-    - SV-281127r1166333_rule
+    - SV-281127r1208796_rule
     - V-281127
     - NIST800-53R4_AU-3
     - NIST800-53R4_AU-12
@@ -1129,6 +1131,7 @@
     - CCI-000169
     - CCI-000172
     - CCI-002884
+    - CCI-004188
     - SRG-OS-000037-GPOS-00015
     - SRG-OS-000042-GPOS-00020
     - SRG-OS-000062-GPOS-00031
@@ -1158,6 +1161,7 @@
     - CCI-000169
     - CCI-000172
     - CCI-002884
+    - CCI-004188
     - SRG-OS-000037-GPOS-00015
     - SRG-OS-000042-GPOS-00020
     - SRG-OS-000062-GPOS-00031
@@ -1187,6 +1191,7 @@
     - CCI-000169
     - CCI-000172
     - CCI-002884
+    - CCI-004188
     - SRG-OS-000037-GPOS-00015
     - SRG-OS-000042-GPOS-00020
     - SRG-OS-000062-GPOS-00031
@@ -1453,7 +1458,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500680 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination actions that affect /etc/sudoers."
+- name: "MEDIUM | RHEL-10-500680 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/sudoers."
   when:
     - rhel10stig_500680
     - rhel10stig_auditd_required
@@ -1496,7 +1501,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500690 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination actions that affect /etc/sudoers.d directory and any contained files."
+- name: "MEDIUM | RHEL-10-500690 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect the /etc/sudoers.d/ directory."
   when:
     - rhel10stig_500690
     - rhel10stig_auditd_required
@@ -1513,6 +1518,7 @@
     - CCI-001404
     - CCI-001405
     - CCI-002130
+    - CCI-002884
     - SRG-OS-000004-GPOS-00004
     - SRG-OS-000037-GPOS-00015
     - SRG-OS-000042-GPOS-00020
@@ -1538,7 +1544,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500700 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/group"
+- name: "MEDIUM | RHEL-10-500700 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/group."
   when:
     - rhel10stig_500700
     - rhel10stig_auditd_required
@@ -1581,7 +1587,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500710 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/gshadow"
+- name: "MEDIUM | RHEL-10-500710 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/gshadow."
   when:
     - rhel10stig_500710
     - rhel10stig_auditd_required
@@ -1624,7 +1630,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500720 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/opasswd"
+- name: "MEDIUM | RHEL-10-500720 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/opasswd."
   when:
     - rhel10stig_500720
     - rhel10stig_auditd_required
@@ -1667,7 +1673,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500730 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/passwd"
+- name: "MEDIUM | RHEL-10-500730 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/passwd."
   when:
     - rhel10stig_500730
     - rhel10stig_auditd_required
@@ -1710,7 +1716,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500740 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/shadow"
+- name: "MEDIUM | RHEL-10-500740 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /etc/shadow."
   when:
     - rhel10stig_500740
     - rhel10stig_auditd_required
@@ -1753,7 +1759,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500750 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /var/log/faillock"
+- name: "MEDIUM | RHEL-10-500750 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /var/log/faillock."
   when:
     - rhel10stig_500750
     - rhel10stig_auditd_required
@@ -1773,7 +1779,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500760 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /var/log/lastlog"
+- name: "MEDIUM | RHEL-10-500760 | PATCH | RHEL 10 must generate audit records for all account creations, modifications, disabling, and termination events that affect /var/log/lastlog."
   when:
     - rhel10stig_500760
     - rhel10stig_auditd_required
@@ -1862,7 +1868,7 @@
   ansible.builtin.set_fact:
     update_audit_template: true
 
-- name: "MEDIUM | RHEL-10-500810 | PATCH | RHEL 10 must generate audit records for all uses of the rename, unlink, rmdir, renameat, and unlinkat system calls."
+- name: "MEDIUM | RHEL-10-500810 | PATCH | RHEL 10 must generate audit records for all uses of the rename, unlink, rmdir, renameat, renameat2, and unlinkat system calls."
   when:
     - rhel10stig_500810
     - rhel10stig_auditd_required

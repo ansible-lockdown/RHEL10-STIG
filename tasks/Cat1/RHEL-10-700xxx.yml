@@ -25,7 +25,7 @@
       loop: "{{ prelim_sshd_config_files.files }}"
       notify: Restart sshd service
 
-    - name: "HIGH | RHEL-10-700640 | PATCH | RHEL 10 must not allow users to override SSH environment variables. | Exists"
+    - name: "HIGH | RHEL-10-700640 | PATCH | RHEL 10 must not allow users to override Secure Shell (SSH) environment variables. | Exists"
       ansible.builtin.lineinfile:
         path: "{{ rhel10stig_sshd_config_file }}"
         regexp: (?i)^(#?)\s*PermitUserEnvironment\s*(yes|no)
@@ -35,7 +35,7 @@
         validate: sshd -t -f %s
       notify: Restart sshd service
 
-- name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for SSH connections to the server."
+- name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for Secure Shell (SSH) connections to the server."
   when:
     - rhel10stig_700650
     - rhel10stig_sshd_required
@@ -54,7 +54,7 @@
     - NIST800-53R4_SC-8
     - ssh
   block:
-    - name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for SSH connections to the server. | Remove"
+    - name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for Secure Shell (SSH) connections to the server. | Remove"
       when: "item.path != rhel10stig_sshd_config_file"
       ansible.builtin.replace:
         path: "{{ item }}"
@@ -65,7 +65,7 @@
       loop: "{{ prelim_sshd_config_files.files }}"
       notify: Restart sshd service
 
-    - name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for SSH connections to the server. | Exists"
+    - name: "HIGH | RHEL-10-700650 | PATCH | RHEL 10 must force a frequent session key renegotiation for Secure Shell (SSH) connections to the server. | Exists"
       ansible.builtin.lineinfile:
         path: "/etc/ssh/sshd_config.d/49-stig-rekeylimit.conf"
         regexp: (?i)^(#?)\s*RekeyLimit.*
@@ -104,7 +104,7 @@
     - CAT1
     - CCI-002235
     - SRG-OS-000324-GPOS-00125
-    - SV-281298r1184808_rule
+    - SV-281298r1166846_rule
     - V-281298
     - NIST800-53R4_AC-6
   block:
@@ -140,7 +140,7 @@
     - CAT1
     - CCI-002235
     - SRG-OS-000324-GPOS-00125
-    - SV-281299r1184849_rule
+    - SV-281299r1166849_rule
     - V-281299
     - NIST800-53R4_AC-6
   block:
