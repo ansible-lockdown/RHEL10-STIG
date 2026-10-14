@@ -1203,35 +1203,34 @@
     - sudo
     - privilege_escalation
   block:
+    # The contains pattern is matched per line, so ^ and $ anchor to a line rather than the whole
+    # file. read_whole_file must stay off for that: with it on, contains is applied to the file as
+    # a single string and the leading (?!\s*#) is tested only against the first line, so a file
+    # whose first line is a comment never matches at all.
+    # sudoers.d entries carry no extension - sudo ignores files with a dot in the name. Excluding
+    # '*.*' and editor backups matches how prelim.yml enumerates them
+    # (find ... ! -name '*~' ! -name '*.*'); a '*.conf' pattern matched nothing, so this AUDIT
+    # always reported 0 and the PATCH below never ran.
     - name: "MEDIUM | RHEL-10-600520 | AUDIT | RHEL 10 must restrict privilege elevation to authorized personnel."
       ansible.builtin.find:
         paths:
           - /etc/sudoers.d
-        # Matched per line, so ^ and $ anchor to a line rather than the whole file.
-        # read_whole_file must stay off for that: with it on, contains is applied to the
-        # file as a single string and the leading (?!\s*#) is tested only against the
-        # first line, so a file whose first line is a comment never matches at all.
         contains: '^(?!\s*#).*ALL\s*ALL=\(ALL(?::ALL|)\)\s*ALL.*$'
-        # sudoers.d entries carry no extension - sudo ignores files with a dot in the
-        # name. Excluding '*.*' and editor backups matches how prelim.yml enumerates
-        # them (find ... ! -name '*~' ! -name '*.*'); a '*.conf' pattern here matched
-        # nothing, so this AUDIT always reported 0 and the PATCH below never ran.
         excludes:
           - '*~'
           - '*.*'
       changed_when: false
       register: discovered_unauthorized_sudoers_entries
 
+    # The regexp captures the whole line so '#\1' comments it out rather than replacing it. The
+    # inner alternation is non-capturing, otherwise \1 is ':ALL' or empty and the offending line is
+    # destroyed. The leading (?!\s*#) makes a re-run a no-op instead of prefixing another '#'.
     - name: "MEDIUM | RHEL-10-600520 | PATCH | RHEL 10 must restrict privilege elevation to authorized personnel."
       when:
         - discovered_unauthorized_sudoers_entries.matched > 0
         - rhel10stig_disruption_high
       ansible.builtin.lineinfile:
         path: "{{ item.path }}"
-        # The whole line is captured so '#\1' comments it out rather than replacing it.
-        # The inner alternation is non-capturing, otherwise \1 is ':ALL' or empty and the
-        # offending line is destroyed. The leading (?!\s*#) makes a re-run a no-op instead
-        # of prefixing another '#'.
         regexp: '^(?!\s*#)(.*ALL\s*ALL=\(ALL(?::ALL|)\)\s*ALL.*)$'
         line: '#\1'
         backrefs: true

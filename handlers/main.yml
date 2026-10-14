@@ -213,14 +213,14 @@
   register: discovered_augenrule_check
   listen: Auditd checks
 
+# A debug task reports ok, never changed, so without `changed_when: true` the notify never
+# fires and the reboot-required signal is silently lost.
 - name: Audit immutable fact
   when:
     - not system_is_container
     - prelim_auditd_immutable_check is defined
   ansible.builtin.debug:
     msg: "Reboot required for auditd to apply new rules as immutable set"
-  # A debug task reports ok, never changed, so without this the notify below
-  # never fires and the reboot-required signal is silently lost.
   changed_when: true
   notify: Reboot required
   listen: Auditd checks

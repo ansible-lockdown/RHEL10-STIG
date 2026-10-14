@@ -64,8 +64,9 @@
     name: tuned
     state: absent
 
+# When TFTP is required (rhel10stig_tftp_server_required), secure-mode (-s) enforcement is handled
+# by RHEL-10-800310.
 - name: "MEDIUM | RHEL-10-200050 | PATCH | RHEL 10 must not have a Trivial File Transfer Protocol (TFTP) server package installed unless it is required by the mission, and if required, the TFTP daemon must be configured to operate in secure mode."
-  # When TFTP is required (rhel10stig_tftp_server_required), secure-mode (-s) enforcement is handled by RHEL-10-800310.
   when:
     - rhel10stig_200050
     - not rhel10stig_tftp_server_required

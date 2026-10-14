@@ -214,13 +214,14 @@
   loop_control:
     label: "{{ item.device }}"
 
+# The fixtext requires a "sec" option on every NFS mount, set to a Kerberos flavour and never to
+# "sys". Existing options are preserved and any sec=sys is dropped before rhel10stig_nfs_sec_options
+# is appended. Mounts that already carry that exact value are skipped, which is what makes this
+# idempotent; anything else - absent, sec=sys, or a weaker Kerberos flavour - is corrected.
 - name: "MEDIUM | RHEL-10-700115 | PATCH | RHEL 10 must be configured so that the Network File System (NFS) is configured to use RPCSEC_GSS."
   when:
     - rhel10stig_700115
     - rhel10stig_disruption_high
-    # The fixtext requires sec to be exactly this value, so anything else - absent,
-    # sec=sys, or a weaker Kerberos flavour - is corrected. Already-correct mounts skip,
-    # which is what makes this idempotent.
     - rhel10stig_nfs_sec_options not in item.options
   notify:
     - Systemd daemon reload
@@ -232,9 +233,6 @@
     - SV-281231r1166645_rule
     - V-281231
     - NIST800-53R4_IA-5
-  # The fixtext requires a "sec" option on every NFS mount, set to a Kerberos
-  # flavour and never to "sys". Existing options are preserved and any sec=sys
-  # is dropped before the required value is appended.
   ansible.posix.mount:
     path: "{{ item.mount }}"
     src: "{{ item.device }}"
@@ -1215,12 +1213,12 @@
       register: discovered_rootlogin_exists
       loop: "{{ prelim_sshd_config_files.files }}"
 
+    # The regexp matches the keyword and any value. Enumerating (yes|no|true|false) missed
+    # prohibit-password, so lineinfile appended a duplicate directive instead of
+    # correcting the existing one.
     - name: "MEDIUM | RHEL-10-700620 | PATCH | RHEL 10 must not permit direct logins to the root account using remote access via Secure Shell (SSH). | Exists"
       ansible.builtin.lineinfile:
         path: "{{ rhel10stig_sshd_config_file }}"
-        # Match the keyword and any value. Enumerating (yes|no|true|false) missed
-        # prohibit-password, so lineinfile appended a duplicate directive instead of
-        # correcting the existing one.
         regexp: (?i)^(#?)\s*PermitRootLogin\b
         line: "PermitRootLogin {{ rhel10stig_sshd_config_permitroot }}"
         validate: sshd -t -f %s
