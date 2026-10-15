@@ -6,9 +6,10 @@
   vars:
     setup_audit: true
     run_audit: true
-    # audit_git_version intentionally omitted: vars/audit.yml derives it from
-    # benchmark_version via include_vars (which outranks play/host vars), so a
-    # value here is inert. Pin a QA branch at run time with:
+    # audit_git_version can be set here now. It used to be inert: vars/audit.yml
+    # was loaded with include_vars, which outranks play vars, so a value here was
+    # discarded. That file is now defaults/main/audit.yml at defaults precedence,
+    # so play vars win. Still overridable at run time with:
     #   molecule converge -s ubi -- --extra-vars 'audit_git_version=<branch>'
     system_is_container: true
     skip_reboot: true
@@ -51,6 +52,9 @@
     - name: Set root password so PAM rules do not lock us out
       ansible.builtin.user:
         name: root
-        password: "{{ 'changeme123!' | password_hash('sha512') }}"
+        # The salt is pinned so the hash is stable between runs. Without it
+        # password_hash generates a fresh salt each time, the user module sees a
+        # different hash and always reports changed, which fails idempotence.
+        password: "{{ 'changeme123!' | password_hash('sha512', 'moleculetestsalt') }}"
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') }}"

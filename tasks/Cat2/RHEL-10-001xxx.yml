@@ -5,7 +5,7 @@
   tags:
     - RHEL-10-001020
     - CAT2
-    - CCI-NA
+    - CCI-003992
     - SRG-OS-000366-GPOS-00153
     - SV-280931r1197213_rule
     - V-280931

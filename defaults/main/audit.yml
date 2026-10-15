@@ -2,6 +2,51 @@
 
 #### Audit Configuration Settings ####
 
+###
+### Settings for associated Audit role using Goss
+###
+
+###########################################
+### Goss is required on the remote host ###
+### Other settings are below in this file     ###
+
+## Audit setup
+# Audits are carried out using Goss. This variable
+# determines whether execution of the role prepares for auditing
+# by installing the required binary.
+setup_audit: false
+
+## Enable audits to run - this runs the audit and get the latest content
+# This variable governs whether the audit using the
+# separately maintained audit role using Goss
+# is carried out.
+# This runs the audit and gets the latest content
+run_audit: false
+# Run heavy tests - some tests can have more impact on a system enabling these can have greater impact on a system
+audit_run_heavy_tests: true
+
+## Only run Audit do not remediate
+audit_only: false
+
+#############################
+
+## Ability to collect and take audit files moving to a centralized location
+# This enables the collection of the files from the host
+fetch_audit_output: false
+
+# Method of getting,uploading the summary files
+## Ensure access and permissions are available for these to occur.
+## options are
+# fetch - fetches from server and moves to location on the ansible controller (could be a mount point available to controller)
+# copy - copies file to a location available to the managed node
+audit_output_collection_method: fetch
+
+# Location to put the audit files
+audit_output_destination: /opt/audit_summaries/
+
+### Goss Settings ##
+####### END ########
+
 # Timeout for those cmds that take longer to run where timeout set
 audit_cmd_timeout: 120000
 

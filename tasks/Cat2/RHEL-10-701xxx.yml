@@ -7,8 +7,8 @@
     - CAT2
     - CCI-001084
     - SRG-OS-000134-GPOS-00068
-    - SV-257793r1044843_rule
-    - V-257793
+    - SV-281302r1167056_rule
+    - V-281302
     - NIST800-53R4_SC-3
   block:
     - name: "MEDIUM | RHEL-10-701000 | AUDIT | RHEL 10 must clear the page allocator to prevent use-after-free attacks. | Capture grubby"
@@ -52,8 +52,8 @@
     - CAT2
     - CCI-001084
     - SRG-OS-000134-GPOS-00068
-    - SV-257794r1069362_rule
-    - V-257794
+    - SV-281303r1167059_rule
+    - V-281303
     - NIST800-53R4_SC-3
   block:
     - name: "MEDIUM | RHEL-10-701010 | AUDIT | RHEL 10 must clear memory when it is freed to prevent use-after-free attacks. | Capture grubby"
@@ -169,8 +169,8 @@
     - CCI-001090
     - SRG-OS-000132-GPOS-00067
     - SRG-OS-000138-GPOS-00069
-    - SV-257798r1155694_rule
-    - V-257798
+    - SV-281306r1167068_rule
+    - V-281306
     - NIST800-53R4_SC-2
     - NIST800-53R4_SC-4
   ansible.builtin.template:
@@ -181,7 +181,7 @@
     group: root
   notify: Reload sysctl
 
-- name: "MEDIUM | RHEL-10-701060 | PATCH | RHEL 10 must restrict exposed kernel pointer addresses access."
+- name: "MEDIUM | RHEL-10-701060 | PATCH | RHEL 10 must restrict exposed kernel pointer address access."
   when: rhel10stig_701060
   tags:
     - RHEL-10-701060
@@ -190,8 +190,8 @@
     - CCI-002824
     - SRG-OS-000132-GPOS-00067
     - SRG-OS-000433-GPOS-00193
-    - SV-281306r1167068_rule
-    - V-281306
+    - SV-281308r1167074_rule
+    - V-281308
     - NIST800-53R4_SC-2
     - NIST800-53R4_SC-4
   ansible.builtin.template:
@@ -202,7 +202,7 @@
     group: root
   notify: Reload sysctl
 
-- name: "MEDIUM | RHEL-10-701070 | PATCH | RHEL 10 must enable kernel parameters to enforce discretionary access control on (DAC) hardlinks."
+- name: "MEDIUM | RHEL-10-701070 | PATCH | RHEL 10 must enable kernel parameters to enforce discretionary access control (DAC) on hardlinks."
   when: rhel10stig_701070
   tags:
     - RHEL-10-701070
@@ -224,7 +224,7 @@
     group: root
   notify: Reload sysctl
 
-- name: "MEDIUM | RHEL-10-701080 | PATCH | RHEL 10 must enable kernel parameters to enforce discretionary access control on symlinks."
+- name: "MEDIUM | RHEL-10-701080 | PATCH | RHEL 10 must enable kernel parameters to enforce discretionary access control (DAC) on symlinks."
   when: rhel10stig_701080
   tags:
     - RHEL-10-701080
@@ -264,7 +264,7 @@
     group: root
   notify: Reload sysctl
 
-- name: "MEDIUM | RHEL-10-701100 | PATCH | RHEL 10 must be configured to disable the Controller Area Network kernel module."
+- name: "MEDIUM | RHEL-10-701100 | PATCH | RHEL 10 must be configured to disable the Controller Area Network (CAN) kernel module."
   when: rhel10stig_701100
   tags:
     - RHEL-10-701100
@@ -325,7 +325,7 @@
     - CAT2
     - CCI-002824
     - SRG-OS-000433-GPOS-00193
-    - SV-281315r1167095_rule
+    - SV-281315r1208802_rule
     - V-281315
     - NIST800-53R4_SI-16
   ansible.builtin.template:
@@ -475,7 +475,7 @@
     name: kdump.service
     state: "{{ omit if 'kdump' not in ansible_facts['packages'] else 'stopped' }}"
 
-- name: "MEDIUM | RHEL-10-701210 | PATCH | RHEL 10 must disable the file system automount function unless required."
+- name: "MEDIUM | RHEL-10-701210 | PATCH | RHEL 10 must disable file system automount function unless required."
   when:
     - rhel10stig_701210
     - not system_is_ec2
@@ -495,7 +495,7 @@
     masked: true
     state: "{{ omit if 'autofs' not in ansible_facts['packages'] else 'stopped' }}"
 
-- name: "MEDIUM | RHEL-10-701220 | PATCH | RHEL 10 must enable certificate based smart card authentication."
+- name: "MEDIUM | RHEL-10-701220 | PATCH | RHEL 10 must enable certificate-based smart card authentication."
   when:
     - rhel10stig_701220
     - rhel10stig_disruption_high
@@ -506,6 +506,7 @@
     - CAT2
     - CCI-000765
     - CCI-000766
+    - CCI-004046
     - SRG-OS-000105-GPOS-00052
     - SRG-OS-000106-GPOS-00053
     - SRG-OS-000107-GPOS-00054
@@ -534,6 +535,8 @@
     - RHEL-10-701230
     - CAT2
     - CCI-001954
+    - CCI-004046
+    - CCI-004047
     - SRG-OS-000375-GPOS-00160
     - SRG-OS-000377-GPOS-00162
     - SRG-OS-000705-GPOS-00150
@@ -640,7 +643,7 @@
         mode: 'u-x,go-wx'
       notify: Systemd daemon reload
 
-- name: "MEDIUM | RHEL-10-701260 | PATCH | RHEL 10 must require authentication to access single-user mode"
+- name: "MEDIUM | RHEL-10-701260 | PATCH | RHEL 10 must require authentication to access single-user mode."
   when: rhel10stig_701260
   tags:
     - RHEL-10-701260
@@ -674,6 +677,9 @@
     - RHEL-10-701270
     - CAT2
     - CCI-000185
+    - CCI-004068
+    - CCI-004909
+    - CCI-004910
     - SRG-OS-000066-GPOS-00034
     - SRG-OS-000384-GPOS-00167
     - SV-281329r1195452_rule
@@ -702,7 +708,7 @@
       vars:
         warn_control_id: "MEDIUM | RHEL-10-701270"
 
-- name: "MEDIUM | RHEL-10-701280 | PATCH | RHEL 10 must map the authenticated identity to the user or group account for PKI-based authentication."
+- name: "MEDIUM | RHEL-10-701280 | PATCH | RHEL 10 must map the authenticated identity to the user or group account for public key infrastructure (PKI)-based authentication."
   when:
     - rhel10stig_701280
     - rhel10stig_configure_sssd
@@ -711,8 +717,8 @@
     - CAT2
     - CCI-000187
     - SRG-OS-000068-GPOS-00036
-    - SV-258132r1045260_rule
-    - V-258132
+    - SV-281330r1167140_rule
+    - V-281330
     - NIST800-53R4_IA-5
   ansible.builtin.blockinfile:
     path: /etc/sssd/sssd.conf
@@ -729,8 +735,8 @@
     - CAT2
     - CCI-002007
     - SRG-OS-000383-GPOS-00166
-    - SV-258133r1045263_rule
-    - V-258133
+    - SV-281331r1167143_rule
+    - V-281331
     - NIST800-53R4_IA-5
   community.general.ini_file:
     path: /etc/sssd/conf.d/stig.conf

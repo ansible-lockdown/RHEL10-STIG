@@ -30,7 +30,7 @@
   when: rhel10stig_allow_auditd_uid_user_exclusions
   notify: Auditd checks
   ansible.builtin.template:
-    src: audit/98_auditd_exception.rules.j2
+    src: etc/audit/rules.d/98-auditd_exception.rules.j2
     dest: /etc/audit/rules.d/98_auditd_exceptions.rules
     owner: root
     group: root

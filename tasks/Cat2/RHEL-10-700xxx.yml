@@ -214,10 +214,17 @@
   loop_control:
     label: "{{ item.device }}"
 
+# The fixtext requires a "sec" option on every NFS mount, set to a Kerberos flavour and never to
+# "sys". Existing options are preserved and any sec=sys is dropped before rhel10stig_nfs_sec_options
+# is appended. Mounts that already carry that exact value are skipped, which is what makes this
+# idempotent; anything else - absent, sec=sys, or a weaker Kerberos flavour - is corrected.
 - name: "MEDIUM | RHEL-10-700115 | PATCH | RHEL 10 must be configured so that the Network File System (NFS) is configured to use RPCSEC_GSS."
   when:
     - rhel10stig_700115
     - rhel10stig_disruption_high
+    - rhel10stig_nfs_sec_options not in item.options
+  notify:
+    - Systemd daemon reload
   tags:
     - RHEL-10-700115
     - CAT2
@@ -226,74 +233,113 @@
     - SV-281231r1166645_rule
     - V-281231
     - NIST800-53R4_IA-5
-  community.general.ini_file:
-    path: /etc/libuser.conf
-    option: crypt_style
-    section: 'default'
-    value: 'sha512'
-    mode: 'u-x,go-wx'
+  ansible.posix.mount:
+    path: "{{ item.mount }}"
+    src: "{{ item.device }}"
+    fstype: "nfs"
+    opts: "{{ (item.options.split(',') | reject('match', '^sec=') | list + [rhel10stig_nfs_sec_options]) | join(',') }}"
+    state: present
+  loop: "{{ ansible_facts['mounts'] | selectattr('fstype', 'contains', 'nfs') | rejectattr('fstype',
+    'equalto', 'autofs') | list }}"
+  loop_control:
+    label: "{{ item.device }}"
 
 - name: "MEDIUM | RHEL-10-700120 | PATCH | RHEL 10 must mount /boot with the nodev option."
-  when: rhel10stig_700120 or rhel10stig_700135 or rhel10stig_700140
+  when:
+    - rhel10stig_700120
+    - item.mount == '/boot'
+    - "'nodev' not in item.options"
+  notify:
+    - Reboot required
   tags:
     - RHEL-10-700120
-    - RHEL-10-700135
-    - RHEL-10-700140
     - CAT2
     - CCI-001764
     - SRG-OS-000368-GPOS-00154
     - SV-281232r1166648_rule
-    - SV-281235r1166657_rule
-    - SV-281236r1166660_rule
     - V-281232
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /boot
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700135 | PATCH | RHEL 10 must mount /dev/shm with the nodev option."
+  when:
+    - rhel10stig_700135
+    - item.mount == '/dev/shm'
+    - "'nodev' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount dev_shm
+  tags:
+    - RHEL-10-700135
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281235r1166657_rule
     - V-281235
+    - NIST800-53R4_CM-7
+  ansible.posix.mount:
+    path: /dev/shm
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},nodev"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700140 | PATCH | RHEL 10 must mount /dev/shm with the noexec option."
+  when:
+    - rhel10stig_700140
+    - item.mount == '/dev/shm'
+    - "'noexec' not in item.options"
+  notify:
+    - Systemd daemon reload
+    - Remount dev_shm
+  tags:
+    - RHEL-10-700140
+    - CAT2
+    - CCI-001764
+    - SRG-OS-000368-GPOS-00154
+    - SV-281236r1166660_rule
     - V-281236
     - NIST800-53R4_CM-7
-  notify:
-    - Reboot required
+  ansible.posix.mount:
+    path: /dev/shm
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    opts: "{{ item.options }},noexec"
+    state: present
+  loop: "{{ ansible_facts['mounts'] }}"
+  loop_control:
+    label: "{{ item.device }}"
+
+- name: "MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount /dev/shm with the nodev option. | No /dev/shm mount"
+  when:
+    - rhel10stig_700135 or rhel10stig_700140 or rhel10stig_700145
+    - ansible_facts['mounts'] | selectattr('mount', 'equalto', '/dev/shm') | list | length == 0
+  tags:
+    - RHEL-10-700135
+    - RHEL-10-700140
+    - RHEL-10-700145
+    - CAT2
+  vars:
+    warn_control_id: "MEDIUM | RHEL-10-700135"
   block:
-    - name: |
-        "MEDIUM | RHEL-10-700120 | AUDIT | RHEL 10 must mount "/boot" with the "nodev" option.
-         MEDIUM | RHEL-10-700135 | AUDIT | RHEL 10 must mount "/dev/shm" with the "nodev" option.
-         MEDIUM | RHEL-10-700140 | AUDIT | RHEL 10 must mount "/dev/shm" with the "noexec" option.
-      ansible.builtin.shell: |
-        set -o pipefail
-        mount | grep /dev/shm
-      args:
-        executable: "{{ rhel10stig_shell_executable }}"
-      changed_when: false
-      failed_when: false
-      register: discovered_dev_shm_status
-
-    - name: |
-        "MEDIUM | RHEL-10-700120 | PATCH | RHEL 10 must mount "/boot" with the "nodev" option.
-         MEDIUM | RHEL-10-700135 | PATCH | RHEL 10 must mount "/dev/shm" with the "nodev" option.
-         MEDIUM | RHEL-10-700140 | PATCH | RHEL 10 must mount "/dev/shm" with the "noexec" option.
-      when: discovered_dev_shm_status.stdout | length > 0
-      ansible.posix.mount:
-        path: /dev/shm
-        src: mpfs
-        fstype: tmpfs
-        opts: "defaults{{ rhel10stig_700120 | ternary(',nodev', '') }}{{ rhel10stig_700135 | ternary(',noexec', '') }}{{ rhel10stig_700140 | ternary(',nosuid', '') }}"
-        state: mounted
-
-    - name: |
-        "MEDIUM | RHEL-10-700120 | WARN | RHEL 10 must mount "/boot" with the "nodev" option.
-         MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount "/dev/shm" with the "nodev" option.
-         MEDIUM | RHEL-10-700140 | WARN | RHEL 10 must mount "/dev/shm" with the "noexec" option.
-      when: discovered_dev_shm_status.stdout | length == 0
+    - name: "MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount /dev/shm with the nodev option. | Warning"
       ansible.builtin.debug:
-        msg: "Warning!! You have no /dev/shm mount"
+        msg: "Warning!! You have no /dev/shm mount - the /dev/shm mount option controls cannot be applied"
 
-    - name: |
-        "MEDIUM | RHEL-10-700120 | WARN | RHEL 10 must mount "/boot" with the "nodev" option.
-         MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount "/dev/shm" with the "nodev" option.
-         MEDIUM | RHEL-10-700140 | WARN | RHEL 10 must mount "/dev/shm" with the "noexec" option.
-      when: discovered_dev_shm_status.stdout | length == 0
+    - name: "MEDIUM | RHEL-10-700135 | WARN | RHEL 10 must mount /dev/shm with the nodev option. | Warning count"
       ansible.builtin.import_tasks:
         file: warning_facts.yml
-      vars:
-        warn_control_id: "MEDIUM | RHEL-10-700120"
 
 - name: "MEDIUM | RHEL-10-700125 | PATCH | RHEL 10 must prevent files with the setuid and setgid bit set from being executed on the /boot directory. | BIOS based OS"
   when:
@@ -344,11 +390,11 @@
   loop_control:
     label: "{{ item.device }}"
 
-- name: MEDIUM | RHEL-10-700145 | PATCH | RHEL 10 must mount /dev/shm with the nosuid option.
+- name: "MEDIUM | RHEL-10-700145 | PATCH | RHEL 10 must mount /dev/shm with the nosuid option."
   when:
     - rhel10stig_700145
-    - item.mount == '/tmp'
-    - "'nodev' not in item.options"
+    - item.mount == '/dev/shm'
+    - "'nosuid' not in item.options"
   notify:
     - Systemd daemon reload
     - Remount dev_shm
@@ -361,12 +407,11 @@
     - V-281237
     - NIST800-53R4_CM-7
   ansible.posix.mount:
-    path: /tmp
+    path: /dev/shm
     src: "{{ item.device }}"
     fstype: "{{ item.fstype }}"
-    opts: "{{ item.options }},nodev"
+    opts: "{{ item.options }},nosuid"
     state: present
-  register: discovered_tmp_nodev
   loop: "{{ ansible_facts['mounts'] }}"
   loop_control:
     label: "{{ item.device }}"
@@ -392,6 +437,7 @@
     fstype: "{{ item.fstype }}"
     opts: "{{ item.options }},nodev"
     state: present
+  register: discovered_tmp_nodev
   loop: "{{ ansible_facts['mounts'] }}"
   loop_control:
     label: "{{ item.device }}"
@@ -1167,10 +1213,13 @@
       register: discovered_rootlogin_exists
       loop: "{{ prelim_sshd_config_files.files }}"
 
+    # The regexp matches the keyword and any value. Enumerating (yes|no|true|false) missed
+    # prohibit-password, so lineinfile appended a duplicate directive instead of
+    # correcting the existing one.
     - name: "MEDIUM | RHEL-10-700620 | PATCH | RHEL 10 must not permit direct logins to the root account using remote access via Secure Shell (SSH). | Exists"
       ansible.builtin.lineinfile:
         path: "{{ rhel10stig_sshd_config_file }}"
-        regexp: (?i)^(#?)\s*PermitRootLogin\s*(yes|no|true|false)
+        regexp: (?i)^(#?)\s*PermitRootLogin\b
         line: "PermitRootLogin {{ rhel10stig_sshd_config_permitroot }}"
         validate: sshd -t -f %s
 
@@ -1382,7 +1431,7 @@
     mode: 'go-wx'
   loop: "{{ discovered_dconf_db.stdout_lines }}"
 
-- name: "MEDIUM | RHEL-10-700750 | PATCH | RHEL 10 must automatically lock graphical user sessions after 15 minutes of inactivity."
+- name: "MEDIUM | RHEL-10-700750 | PATCH | RHEL 10 must automatically lock graphical user sessions after 10 minutes of inactivity."
   when:
     - rhel10stig_700750
     - rhel10stig_gui
@@ -1392,7 +1441,7 @@
     - CCI-000057
     - CCI-000060
     - SRG-OS-000029-GPOS-00010
-    - SV-281278r1166786_rule
+    - SV-281278r1208799_rule
     - V-281278
     - NIST800-53R4_AC-11
   notify: Update dconf
@@ -1570,20 +1619,15 @@
     - SV-281286r1166810_rule
     - V-281286
     - NIST800-53R4_CM-6
-  block:
-    - name: "MEDIUM | RHEL-10-700830 | AUDIT | RHEL 10 must disable the ability of a user to accidentally press Ctrl-Alt-Del and cause a system to shut down or reboot."
-      ansible.builtin.command: gsettings set org.gnome.settings-daemon.plugins.media-keys
-        logout
-      changed_when: false
-      register: discovered_gnome_logout_option
-      failed_when: discovered_gnome_logout_option.rc not in [0, 1]
-
-    - name: "MEDIUM | RHEL-10-700830 | PATCH | RHEL 10 must disable the ability of a user to accidentally press Ctrl-Alt-Del and cause a system to shut down or reboot."
-      when: discovered_gnome_logout_option.stdout | length > 2 or discovered_gnome_logout_option.stdout
-        is not defined
-      ansible.builtin.command: gsettings set org.gnome.settings-daemon.plugins.media-keys
-        logout "['']"
-      changed_when: true
+  notify: Update dconf
+  community.general.ini_file:
+    path: "/etc/dconf/db/{{ item }}.d/00-disable-CAD"
+    option: logout
+    section: 'org/gnome/settings-daemon/plugins/media-keys'
+    value: "['']"
+    create: true
+    mode: 'go-wx'
+  loop: "{{ discovered_dconf_db.stdout_lines }}"
 
 - name: "MEDIUM | RHEL-10-700840 | PATCH | RHEL 10 must disable the user list at login for graphical user interfaces."
   when:
@@ -1737,9 +1781,8 @@
     - RHEL-10-700920
     - CAT2
     - CCI-001133
-    - CCI-000057
     - SRG-OS-000163-GPOS-00072
-    - SV-281295r1166837_rule
+    - SV-281295r1208800_rule
     - V-281295
     - NIST800-53R4_AC-11
     - NIST800-53R4_SC-10

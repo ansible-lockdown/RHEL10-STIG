@@ -11,11 +11,11 @@ This `molecule/` directory ships two scenarios. Pick the right one before runnin
 | **When to use** | Every QA cycle, before merging/pushing. This is the **gating scenario**. | Occasional sanity check against Red Hat's upstream UBI image (e.g. confirm role still applies on the registry image, not just on the Rocky variant). |
 | **Container image** | `rockylinux/rockylinux:10-ubi-init` | `redhat/ubi10-init:latest` |
 | **Container name** | `rhel10-stig-qa` | `rhel10-stig-ubi` |
-| **`audit_git_version`** | not pinned in the scenario - derived from `benchmark_version` via `vars/audit.yml`; override at run time with `--extra-vars` | same - derived from `benchmark_version`, so it cannot drift |
+| **`audit_git_version`** | not pinned in the scenario - derived from `benchmark_version` in `defaults/main/main.yml`; settable in the scenario or at run time | same - derived from `benchmark_version`, so it cannot drift |
 | **`rhel10stig_disruption_high`** | `true` (exercises full code path) | `true` (same code path; scope is narrowed by the disabled-control list instead) |
 | **Disabled controls** | none - all controls run | 26 toggles switched off in `converge.yml` because UBI's repos cannot install their packages (aide, audit, s-nail, firewalld, chrony, usbguard, fapolicyd, opensc, rsyslog-gnutls, libreswan, pkcs11-provider) or the subsystem is absent (SELinux config, crypto-policies) |
 | **`fetch_audit_output`** | `true` (auto-copies audit JSONs out to `_temp_fetched_audits/`) | not set (audit results stay inside the container; `docker cp` them out manually) |
-| **`prepare.yml` package set** | Full (audit, aide, chrony, rsyslog, logrotate, cronie, acl, kmod, dnf-plugins-core, python3-libselinux, python3-policycoreutils, python3-dnf-plugin-versionlock, tmux, git, procps-ng, openssl-pkcs11, opensc) | Subset; some packages aren't in UBI repos so the install task carries `failed_when: false` - a partial install is the expected outcome, not an error |
+| **`prepare.yml` package set** | Full (audit, aide, crypto-policies, crypto-policies-scripts, firewalld, policycoreutils, policycoreutils-python-utils, selinux-policy-targeted, chrony, rsyslog, logrotate, cronie, acl, kmod, dnf-plugins-core, python3-libselinux, python3-policycoreutils, python3-dnf-plugin-versionlock, tmux, git, procps-ng, hostname, dmidecode, pkcs11-provider, opensc) | Subset; some packages aren't in UBI repos so the install task carries `failed_when: false` - a partial install is the expected outcome, not an error |
 | **Maintenance** | Kept in lock-step with the role and audit repos every cycle | Updated less often; intentionally drift-tolerant |
 
 **Rule of thumb:** if you don't know which to use, use `default/`. `ubi/` is for cases where you specifically want to validate against Red Hat's `redhat/ubi10-init` registry image rather than the Rocky variant.
@@ -121,7 +121,7 @@ rhel10-stig-qa : ok=238  changed=73  unreachable=0  failed=0  skipped=547  rescu
 
 The post-scan will still show some controls failing. Most fall into three buckets that aren't role bugs - they're inherent to containerized testing:
 
-1. **SSH-config controls** (banner, ciphers, KexAlgorithms, MACs, idle timeouts, login grace time): these check `/etc/ssh/sshd_config`, which doesn't exist because `openssh-server` is intentionally NOT installed (running sshd inside Docker is an anti-pattern; containers use `docker exec` for shell access). The role's `when: rhel10stig_sshd_required` gate handles this correctly on real hosts.
+1. **SSH-config controls** (banner, ciphers, KexAlgorithms, MACs, idle timeouts, login grace time): these check `/etc/ssh/sshd_config`. Both scenarios **do** install `openssh-server` and `openssh-clients` in `prepare.yml`, but sshd is never started (running it inside Docker is an anti-pattern; containers use `docker exec` for shell access), so the drop-ins the role writes are never loaded and a live `sshd -T` read returns nothing. The role's `when: rhel10stig_sshd_required` gate handles this correctly on real hosts.
 
 2. **User-state controls** (FIPS-hashed passwords, password lifetime, dotfile audit): need real interactive users (UID >= 1000) with shadow entries and home directories. Containers only have system accounts (`chrony`, `polkitd`, `tss`, etc.), so the controls can't satisfy their preconditions.
 
@@ -148,7 +148,7 @@ RHEL 10 / Rocky 10 ship a current Python (3.12) with full `dnf` Python bindings,
 | File | Purpose |
 |---|---|
 | `molecule.yml` | Driver: docker. Image: `rockylinux/rockylinux:10-ubi-init` on `${MOLECULE_DOCKER_PLATFORM:-linux/arm64}` (multi-arch image; the default keeps local Apple Silicon runs native, and CI exports `linux/amd64` for GitHub-hosted runners). Host vars listed in the next table. |
-| `prepare.yml` | Bootstraps minimal Rocky 10 UBI via `raw` (python3, sudo, iproute, openssh), then installs supporting packages (`audit`, `aide`, `crypto-policies`, `firewalld`, `chrony`, `rsyslog`, `logrotate`, `cronie`, `acl`, `kmod`, `dnf-plugins-core`, `python3-libselinux`, `python3-policycoreutils`, `python3-dnf-plugin-versionlock`, `tmux`, `git`, `procps-ng`, `openssl-pkcs11`, `opensc`). Stubs `/etc/default/grub` so GRUB-tag tasks don't fail in the container. |
+| `prepare.yml` | Bootstraps minimal Rocky 10 UBI via `raw` (python3, sudo, iproute, openssh), then installs supporting packages (`audit`, `aide`, `crypto-policies`, `crypto-policies-scripts`, `firewalld`, `policycoreutils`, `policycoreutils-python-utils`, `selinux-policy-targeted`, `chrony`, `rsyslog`, `logrotate`, `cronie`, `acl`, `kmod`, `dnf-plugins-core`, `python3-libselinux`, `python3-policycoreutils`, `python3-dnf-plugin-versionlock`, `tmux`, `git`, `procps-ng`, `hostname`, `dmidecode`, `pkcs11-provider`, `opensc`). Stubs `/etc/default/grub` so GRUB-tag tasks don't fail in the container. |
 | `converge.yml` | Sets root password (so PAM tasks don't lock us out), includes the role. |
 | `verify.yml` | Spot-checks a container-applicable subset of the hardening. Its real job is to stop `molecule verify` being a silent no-op: a scenario with no `verify.yml` logs `Executed: Missing playbook` and exits 0, which reads as a pass. `molecule/ubi/verify.yml` imports this one rather than duplicating it. The authoritative validation remains the Goss audit run during converge. |
 
@@ -157,14 +157,20 @@ RHEL 10 / Rocky 10 ship a current Python (3.12) with full `dnf` Python bindings,
 | Override | Default | Purpose |
 |---|---|---|
 | `audit_output_destination` | `<working_dir>/_temp_fetched_audits/` (relative to `MOLECULE_PROJECT_DIRECTORY`) | Where fetched audit JSONs land. Pinned outside the role tree so they don't pollute system paths or git. |
-| `rhel10stig_disruption_high` | `true` (molecule default) | Exercises high-disruption code paths (account locks, password lifetime resets, fapolicyd rules, sysctl reloads). Safe in throwaway containers; risky on real hosts. Defaults to `false` in `defaults/main.yml` for production safety. |
+| `rhel10stig_disruption_high` | `true` (molecule default) | Exercises high-disruption code paths (account locks, password lifetime resets, fapolicyd rules, sysctl reloads). Safe in throwaway containers; risky on real hosts. Defaults to `false` in `defaults/main/main.yml` for production safety. |
 | `fetch_audit_output` | `true` | Auto-copies audit JSONs out of the container to `audit_output_destination`. |
 | `system_is_container` | `true` | Gates container-incompatible tasks (auditd, FIPS, kernel sysctls, mount changes, GRUB, etc.) - see `vars/is_container.yml`. |
 | `skip_reboot` | `true` | Suppresses reboot handlers (containers can't reboot). |
+| `ansible_become` | `false` | The container runs as root, so privilege escalation is unnecessary and `become` would need sudo installed and configured. |
+| `setup_audit` | `true` | Installs the goss binary and the audit content so the scan can run. |
+| `run_audit` | `true` | Runs the pre- and post-remediation goss scans as part of the converge. |
+
+> These are also re-set as play vars in `converge.yml` with identical values. Play vars outrank
+> host vars, so the `converge.yml` copy is the one that takes effect.
 
 ## Overriding the audit branch
 
-The audit branch is **not** set in the molecule scenarios. It derives from `benchmark_version` in `defaults/main.yml`, which `vars/audit.yml` expands to `benchmark_{{ benchmark_version }}` and loads via `include_vars`. So bumping `benchmark_version` moves both scenarios in lock-step - there is no per-scenario pin to keep in sync (or to drift).
+The audit branch is **not** set in the molecule scenarios. It derives from `benchmark_version` in `defaults/main/main.yml`, which `defaults/main/audit.yml` expands to `benchmark_{{ benchmark_version }}`. So bumping `benchmark_version` moves both scenarios in lock-step - there is no per-scenario pin to keep in sync (or to drift). Unlike before, a scenario *may* now override `audit_git_version` directly: the value used to be loaded with `include_vars`, which outranked scenario vars and silently discarded them.
 
 If you're QA'ing a feature branch on `RHEL10-STIG-Audit` that hasn't been merged yet, override at run time with extra-vars:
 
@@ -172,7 +178,7 @@ If you're QA'ing a feature branch on `RHEL10-STIG-Audit` that hasn't been merged
 molecule converge -- --extra-vars 'audit_git_version=<your-qa-branch>'
 ```
 
-`include_vars` (precedence 18) outranks molecule play/host vars, so a value set in `molecule.yml`/`converge.yml` would be ignored - `--extra-vars` (precedence 22) is the only way to override the audit branch at run time.
+`audit_git_version` now lives in `defaults/main/audit.yml` at defaults precedence (2), so a scenario or inventory **can** set it. It was previously loaded by `include_vars` (precedence 18), which outranked molecule host and play vars and silently discarded them; `--extra-vars` was the only way through. That is no longer the case.
 
 ## Where to ask for help
 

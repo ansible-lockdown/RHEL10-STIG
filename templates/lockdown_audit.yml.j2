@@ -1,7 +1,7 @@
 {{ file_managed_by_ansible }}
 
 ## metadata for Audit benchmark
-benchmark_version: 'v1r1'
+benchmark_version: '{{ benchmark_version }}'
 benchmark: RHEL10-STIG
 {% if ansible_facts['distribution'] == "RedHat" %}
 rhel10stig_os_distribution: redhat

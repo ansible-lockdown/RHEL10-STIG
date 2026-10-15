@@ -154,6 +154,9 @@
     - RHEL-10-800040
     - CAT2
     - CCI-001890
+    - CCI-004922
+    - CCI-004923
+    - CCI-004926
     - SRG-OS-000355-GPOS-00143
     - SRG-OS-000356-GPOS-00144
     - SRG-OS-000359-GPOS-00146
@@ -800,6 +803,7 @@
 - name: "MEDIUM | RHEL-10-800310 | PATCH | RHEL 10 must be configured to operate in secure mode if the Trivial File Transfer Protocol (TFTP) server service is required."
   when:
     - rhel10stig_800310
+    - rhel10stig_tftp_server_required
     - "'tftp' in ansible_facts['packages']"
   tags:
     - RHEL-10-800310
