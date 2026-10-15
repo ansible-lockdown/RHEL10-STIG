@@ -14,17 +14,11 @@
       ansible.builtin.set_fact:
         prelim_sssd_installed: "{{ prelim_sssd_installed.stat.exists | default(false) }}"
 
-- name: PRELIM | Include audit specific variables
-  when: run_audit or audit_only or setup_audit
-  tags:
-    - setup_audit
-    - run_audit
-  ansible.builtin.include_vars:
-    file: audit.yml
-
 - name: PRELIM | Include pre-remediation audit tasks
   when: run_audit or audit_only
-  tags: run_audit
+  tags:
+    - run_audit
+    - molecule-idempotence-notest
   ansible.builtin.import_tasks:
     file: pre_remediation_audit.yml
 

@@ -35,9 +35,10 @@ provisioner:
         ansible_become: false
         setup_audit: true
         run_audit: true
-        # audit_git_version intentionally omitted: vars/audit.yml derives it from
-        # benchmark_version via include_vars (which outranks play/host vars), so a
-        # value here is inert. Pin a QA branch at run time with:
+        # audit_git_version can now be set here. It used to be inert: vars/audit.yml
+        # was loaded with include_vars, which outranks host vars, so any value here
+        # was discarded. That file is now defaults/main/audit.yml at defaults
+        # precedence, so host vars win. Still overridable at run time with:
         #   molecule converge -s ubi -- --extra-vars 'audit_git_version=<branch>'
         skip_reboot: true
         system_is_container: true

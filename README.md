@@ -2,7 +2,7 @@
 
 ## Configure a RHEL10 based system to be compliant with DISA STIG
 
-This role is based on RHEL 10 DISA STIG: [Version 1, Rel 1 released in March, 2026](https://dl.dod.cyber.mil/wp-content/uploads/stigs/U_RHEL_10_V1R1_STIG.zip).
+This role is based on RHEL 10 DISA STIG: [Version 1, Rel 2 released in July, 2026](https://dl.dod.cyber.mil/wp-content/uploads/stigs/U_RHEL_10_V1R2_STIG.zip).
 
 ---
 
@@ -63,6 +63,12 @@ This role is based on RHEL 10 DISA STIG: [Version 1, Rel 1 released in March, 20
 
 On our [Discord Server](https://www.lockdownenterprise.com/discord) to ask questions, discuss features, or just chat with other Ansible-Lockdown users
 
+### Contributing
+
+Bug reports and feature requests are welcome from everyone, please raise an issue.
+
+Pull requests are accepted from approved contributors only. To be onboarded, join the [Discord Server](https://www.lockdownenterprise.com/discord) and request contributor access. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full process.
+
 ---
 
 ## Caution(s)
@@ -86,7 +92,7 @@ This role **will make changes to the system** which may have unintended conseque
 STIG release always contains changes, it is highly recommended to review the new references and available variables. This have changed significantly since ansible-lockdown initial release.
 This is now compatible with python3 if it is found to be the default interpreter. This does come with pre-requisites which it configures the system accordingly.
 
-Further details can be seen in the [Changelog](./Changelog.md)
+Further details can be seen in the [Changelog](./CHANGELOG.md)
 
 ---
 
@@ -114,7 +120,7 @@ The control found in defaults main also need to reflect this as this control the
   - [Tower User Guide](https://docs.ansible.com/ansible-tower/latest/html/userguide/index.html)
   - [Ansible Community Info](https://docs.ansible.com/ansible/latest/community/index.html)
 - Functioning Ansible and/or Tower Installed, configured, and running. This includes all of the base Ansible/Tower configurations, needed packages installed, and infrastructure setup.
-- Please read through the tasks in this role to gain an understanding of what each control is doing. Some of the tasks are disruptive and can have unintended consequences in a live production system. Also familiarize yourself with the variables in the defaults/main.yml file.
+- Please read through the tasks in this role to gain an understanding of what each control is doing. Some of the tasks are disruptive and can have unintended consequences in a live production system. Also familiarize yourself with the variables in the defaults/main/ directory.
 
 **Technical Dependencies:**
 
@@ -131,7 +137,7 @@ RHEL Family OS 10
 
 ## Auditing
 
-This can be turned on or off within the defaults/main.yml file with the variable run_audit. The value is false by default, please refer to the wiki for more details. The defaults file also populates the goss checks to check only the controls that have been enabled in the ansible role.
+This can be turned on or off within defaults/main/audit.yml with the variable run_audit. The value is false by default, please refer to the wiki for more details. The defaults file also populates the goss checks to check only the controls that have been enabled in the ansible role.
 
 This is a much quicker, very lightweight, checking (where possible) config compliance and live/running settings.
 
@@ -170,7 +176,7 @@ default                    : ok=270  changed=23   unreachable=0    failed=0    s
 
 ## Role Variables
 
-This role is designed that the end user should not have to edit the tasks themselves. All customizing should be done via the defaults/main.yml file or with extra vars within the project, job, workflow, etc.
+This role is designed that the end user should not have to edit the tasks themselves. All customizing should be done via the defaults/main/ directory or with extra vars within the project, job, workflow, etc.
 
 ## Tags
 
@@ -194,23 +200,20 @@ Below is an example of the tag section from a control within this role. Using th
 
 ```sh
       tags:
-        - RHEL-09-211010
+        - RHEL-10-000500
         - CAT1
-        - CCI-000366
-        - SRG-OS-000480-GPOS-00227
-        - SV-257777r991589_rule
-        - V-257777
-        - NIST800-53R4_CM-6
+        - CCI-000068
+        - SRG-OS-000033-GPOS-00014
+        - SV-281009r1184724_rule
+        - V-281009
+        - NIST800-53R4_AC-17
 ```
 
 ## Community Contribution
 
-We encourage you (the community) to contribute to this role. Please read the rules below.
-
-- Your work is done in your own individual branch. Make sure to Signed-off-by and GPG sign all commits you intend to merge.
-- All community Pull Requests are pulled into the devel branch
-- Pull Requests into devel will confirm your commits have a GPG signature, Signed-off-by, and a functional test before being approved
-- Once your changes are merged and a more detailed review is complete, an authorized member will merge your changes into the main branch for a new release
+Pull requests are accepted from approved contributors only, and issues are welcome from everyone.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the onboarding process, the rules, and the commit signing
+requirements (GPG signature and Signed-off-by on every commit).
 
 ## Pipeline Testing
 

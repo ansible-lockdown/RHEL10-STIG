@@ -1,6 +1,6 @@
 ---
 
-- name: "LOW | RHEL-10-600475 | PATCH | RHEL 10 must limit the number of concurrent sessions to ten for all accounts and/or account types."
+- name: "LOW | RHEL-10-600475 | PATCH | RHEL 10 must limit the number of concurrent sessions to 10 for all accounts and/or account types."
   when: rhel10stig_600475
   tags:
     - RHEL-10-600475
